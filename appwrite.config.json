@@ -1,0 +1,532 @@
+{
+    "projectId": "68cb65a4000ab2fec182",
+    "endpoint": "https://syd.cloud.appwrite.io/v1",
+    "projectName": "yousuf_rice_website",
+    "settings": {
+        "services": {
+            "account": true,
+            "avatars": true,
+            "databases": true,
+            "locale": true,
+            "health": true,
+            "storage": true,
+            "teams": true,
+            "users": true,
+            "sites": true,
+            "functions": true,
+            "graphql": true,
+            "messaging": true
+        },
+        "auth": {
+            "methods": {
+                "jwt": true,
+                "phone": true,
+                "invites": true,
+                "anonymous": true,
+                "email-otp": true,
+                "magic-url": true,
+                "email-password": true
+            },
+            "security": {
+                "duration": 31536000,
+                "limit": 0,
+                "sessionsLimit": 10,
+                "passwordHistory": 0,
+                "passwordDictionary": false,
+                "personalDataCheck": false,
+                "sessionAlerts": false,
+                "mockNumbers": []
+            }
+        }
+    },
+    "tablesDB": [
+        {
+            "$id": "68ee0a5c0008c5158119",
+            "name": "yousuf_rice",
+            "enabled": true
+        }
+    ],
+    "tables": [
+        {
+            "$id": "68ee0a5f00025a74262a",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "Products",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "has_tier_pricing",
+                    "type": "boolean",
+                    "required": true,
+                    "array": false,
+                    "default": null
+                },
+                {
+                    "key": "description",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "available",
+                    "type": "boolean",
+                    "required": true,
+                    "array": false,
+                    "default": null
+                },
+                {
+                    "key": "primary_image_id",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tier_2_4kg_price",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "tier_5_9kg_price",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "tier_10kg_up_price",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "base_price_per_kg",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "name_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "columns": [
+                        "name"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "68ee0a6000183542058b",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "Product Images",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "file_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "product_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "is_primary",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "product_id_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "product_id"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "68ee0a620033781a6f3a",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "Customers",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "email",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "user_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "full_name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "phone",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "68ee0a64001bd2ca45c7",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "Orders",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "address_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customer_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "total_price",
+                    "type": "integer",
+                    "required": true,
+                    "array": false,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "elements": [
+                        "pending",
+                        "accepted",
+                        "out_for_delivery",
+                        "delivered"
+                    ],
+                    "format": "enum",
+                    "default": null
+                },
+                {
+                    "key": "order_items",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "status_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "status"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "68ee0a6500390bee2a71",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "Addresses",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "address_line",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "longitude",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "customer_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "latitude",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "order_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "maps_url",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "customer_id_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "customer_id"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "mill_image_for_about_us",
+            "$permissions": [],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "mill image for about us",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "file_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "sessions",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "68ee0a5c0008c5158119",
+            "name": "Sessions",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "sessionId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "createdAt",
+                    "type": "datetime",
+                    "required": true,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "lastAccessedAt",
+                    "type": "datetime",
+                    "required": true,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "userId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "userId"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "sessionId_idx",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "sessionId"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "lastAccessed_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "lastAccessedAt"
+                    ],
+                    "orders": [
+                        "DESC"
+                    ]
+                }
+            ]
+        }
+    ],
+    "buckets": [
+        {
+            "$id": "product-images",
+            "$permissions": [],
+            "fileSecurity": false,
+            "name": "product-images",
+            "enabled": true,
+            "maximumFileSize": 5242880,
+            "allowedFileExtensions": [
+                "jpg",
+                "jpeg",
+                "png",
+                "webp"
+            ],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": false
+        }
+    ]
+}
