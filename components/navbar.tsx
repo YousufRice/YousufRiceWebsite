@@ -63,7 +63,7 @@ export function Navbar() {
   };
 
   return (
-    <AceternityNavbar className="sticky top-0  -navbar">
+    <AceternityNavbar className="sticky top-0">
       {/* Desktop Navigation */}
       <NavBody>
         {/* Logo */}
