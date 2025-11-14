@@ -7,7 +7,7 @@ import {
   ORDERS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
   ADDRESSES_TABLE_ID,
-  ORDER_ITEMS_TABLE_ID
+  ORDER_ITEMS_TABLE_ID,
 } from "@/lib/appwrite";
 import { Query, ID } from "appwrite";
 import { sendOrderConfirmation } from "@/lib/email";
@@ -111,7 +111,7 @@ function getPricePerKg(product: any, quantity: number): number {
  * Helper function to format and validate phone numbers
  * Ensures consistent format: +92XXXXXXXXXX
  */
-function formatPhoneNumber(phone: string): string {
+export function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters
   const digits = phone.replace(/\D/g, "");
 
