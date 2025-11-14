@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, User2, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -369,7 +369,7 @@ export default function ChatBox({
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-linear-to-r from-green-50 to-emerald-50">
         <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-          <Bot className="w-6 h-6 text-white" />
+          <User2 className="w-6 h-6 text-white" />
         </div>
         <div>
           <h3 className="font-semibold text-gray-900">Yousuf Rice Assistant</h3>
@@ -397,7 +397,7 @@ export default function ChatBox({
               {message.role === "user" ? (
                 <User className="w-5 h-5 text-white" />
               ) : (
-                <Bot className="w-5 h-5 text-white" />
+                <User2 className="w-5 h-5 text-white" />
               )}
             </div>
 
@@ -432,7 +432,7 @@ export default function ChatBox({
         {isStreaming && streamingContent && (
           <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-2">
             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0">
-              <Bot className="w-5 h-5 text-white" />
+              <User2 className="w-5 h-5 text-white" />
             </div>
             <div className="max-w-[75%] rounded-lg px-4 py-2 bg-gray-100 text-gray-900">
               <p className="text-sm whitespace-pre-wrap wrap-break-word">
@@ -447,7 +447,7 @@ export default function ChatBox({
         {isStreaming && !streamingContent && (
           <div className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0">
-              <Bot className="w-5 h-5 text-white" />
+              <User2 className="w-5 h-5 text-white" />
             </div>
             <div className="rounded-lg px-4 py-2 bg-gray-100">
               <Loader2 className="w-5 h-5 text-gray-600 animate-spin" />
