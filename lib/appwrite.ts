@@ -40,8 +40,7 @@ export const storage = serverStorage || new Storage(client);
 export const account = new Account(client); // Account always uses client-side for user sessions
 
 export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
-export const PRODUCTS_TABLE_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_PRODUCTS_TABLE_ID!;
+export const PRODUCTS_TABLE_ID = process.env.NEXT_PUBLIC_APPWRITE_PRODUCTS_TABLE_ID!;
 export const ORDERS_TABLE_ID =
   process.env.NEXT_PUBLIC_APPWRITE_ORDERS_TABLE_ID!;
 export const ORDER_ITEMS_TABLE_ID =

@@ -17,7 +17,6 @@ export async function getCachedProducts() {
     const response = await databases.listDocuments(
       DATABASE_ID,
       PRODUCTS_TABLE_ID,
-      [Query.equal('available', true), Query.orderDesc('$createdAt')]
     );
     return response.documents as unknown as Product[];
   } catch (error) {
@@ -38,7 +37,6 @@ export async function getCachedRegularProducts() {
     const response = await databases.listDocuments(
       DATABASE_ID,
       PRODUCTS_TABLE_ID,
-      [Query.equal('available', true), Query.orderDesc('$createdAt')]
     );
     
     // Filter out products that contain "hotel" or "restaurant" in their name or description

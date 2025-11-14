@@ -659,8 +659,15 @@ export const manageCustomerTool = tool({
       .nullable()
       .default(null)
       .describe("Customer email address (optional)"),
+    userId: z
+      .string()
+      .nullable()
+      .default(null)
+      .describe(
+        "Optional Appwrite auth user ID. If provided, will be stored in user_id field; otherwise 'guest' will be used."
+      ),
   }),
-  async execute({ name, phoneNumber, email }) {
+  async execute({ name, phoneNumber, email, userId }) {
     try {
       // Validate inputs
       if (!name || name.trim().length === 0) {
@@ -721,6 +728,8 @@ export const manageCustomerTool = tool({
           customerId,
           {
             full_name: name.trim(),
+            user_id:
+              userId || existingCustomers.documents[0].user_id || "guest",
             email: validatedEmail || existingCustomers.documents[0].email,
           }
         );
@@ -743,7 +752,7 @@ export const manageCustomerTool = tool({
           CUSTOMERS_TABLE_ID,
           ID.unique(),
           {
-            user_id: "guest",
+            user_id: userId || "guest",
             full_name: name.trim(),
             phone: formattedPhone,
             email: validatedEmail,
@@ -978,6 +987,13 @@ export const createOrderTool = tool({
       .nullable()
       .default(null)
       .describe("Delivery location longitude (optional, from GPS)"),
+    userId: z
+      .string()
+      .nullable()
+      .default(null)
+      .describe(
+        "Optional Appwrite auth user ID. If provided, will be stored in user_id for the customer; otherwise 'guest' will be used."
+      ),
   }),
   async execute({
     customerName,
@@ -988,6 +1004,7 @@ export const createOrderTool = tool({
     customerEmail,
     latitude,
     longitude,
+    userId,
   }) {
     try {
       // Validate customer name
@@ -1142,36 +1159,41 @@ export const createOrderTool = tool({
       }
 
       // Find or create customer
-      let customerId: string;
-      const existingCustomers = await databases.listDocuments(
+      // Create or find customer by phone number (reusing manageCustomerTool logic)
+      const customerResponse = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
         [Query.equal("phone", formattedPhone)]
       );
 
-      if (existingCustomers.documents.length > 0) {
-        customerId = existingCustomers.documents[0].$id;
-        // Update customer info
+      let customerId: string;
+
+      if (customerResponse.documents.length > 0) {
+        const existingCustomer = customerResponse.documents[0];
+        customerId = existingCustomer.$id;
+
+        // Update existing customer details (name/email) and user_id
         await databases.updateDocument(
           DATABASE_ID,
           CUSTOMERS_TABLE_ID,
           customerId,
           {
             full_name: customerName.trim(),
-            email: validatedEmail || existingCustomers.documents[0].email,
+            user_id: userId || existingCustomer.user_id || "guest",
+            email: customerEmail || existingCustomer.email,
           }
         );
       } else {
-        // Create new customer
+        // Create new customer record
         const newCustomer = await databases.createDocument(
           DATABASE_ID,
           CUSTOMERS_TABLE_ID,
           ID.unique(),
           {
-            user_id: "guest",
+            user_id: userId || "guest",
             full_name: customerName.trim(),
             phone: formattedPhone,
-            email: validatedEmail,
+            email: customerEmail || "",
           }
         );
         customerId = newCustomer.$id;
