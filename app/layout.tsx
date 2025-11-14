@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MetaPixel } from "@/components/meta-pixel";
@@ -21,24 +21,29 @@ const geistMono = Geist_Mono({
 });
 
 // Support multiple domains - uses primary domain for metadata
-const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'https://yourdomain.com';
+const primaryDomain =
+  process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yourdomain.com";
 
 // Validate URL format - if invalid, use fallback
 let metadataBaseUrl: URL;
 try {
   metadataBaseUrl = new URL(primaryDomain);
 } catch {
-  console.warn(`Invalid NEXT_PUBLIC_PRIMARY_DOMAIN: "${primaryDomain}". Using fallback.`);
-  metadataBaseUrl = new URL('https://yourdomain.com');
+  console.warn(
+    `Invalid NEXT_PUBLIC_PRIMARY_DOMAIN: "${primaryDomain}". Using fallback.`
+  );
+  metadataBaseUrl = new URL("https://yourdomain.com");
 }
 
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl,
   title: {
-    default: "Yousuf Rice - Premium Quality Rice With Free Delivery | Best Prices in Pakistan",
-    template: "%s | Yousuf Rice"
+    default:
+      "Yousuf Rice - Premium Quality Rice With Free Delivery | Best Prices in Pakistan",
+    template: "%s | Yousuf Rice",
   },
-  description: "Order premium quality basmati and sella rice online with discounts, free delivery, and cash on delivery. Every Grain XXXL, Steam Rice, Sella Rice, and Bachat varieties available.",
+  description:
+    "Order premium quality basmati and sella rice online with discounts, free delivery, and cash on delivery. Every Grain XXXL, Steam Rice, Sella Rice, and Bachat varieties available.",
   keywords: [
     "rice delivery",
     "basmati rice",
@@ -50,7 +55,7 @@ export const metadata: Metadata = {
     "Yousuf Rice",
     "Every Grain rice",
     "bulk rice order",
-    "cash on delivery rice"
+    "cash on delivery rice",
   ],
   authors: [{ name: "Yousuf Rice" }],
   creator: "Yousuf Rice",
@@ -66,7 +71,8 @@ export const metadata: Metadata = {
     url: primaryDomain,
     siteName: "Yousuf Rice",
     title: "Yousuf Rice - Premium Quality Rice Delivery",
-    description: "Order premium quality rice online with tier-based pricing, free delivery, and cash on delivery. Best prices in Pakistan.",
+    description:
+      "Order premium quality rice online with With Discounts, free delivery, and cash on delivery. Best prices in Pakistan.",
     images: [
       {
         url: "/opengraph-image",
@@ -79,7 +85,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Yousuf Rice - Premium Quality Rice Delivery",
-    description: "Order premium quality rice online with tier-based pricing and free delivery",
+    description:
+      "Order premium quality rice online with tier-based pricing and free delivery",
     images: ["/opengraph-image"],
   },
   robots: {
@@ -88,9 +95,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   verification: {
@@ -115,7 +122,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* Transitions removed */}
-        
+
         {/* Wrap dynamic components in Suspense for PPR */}
         <Suspense fallback={null}>
           <AnnocementBar />
