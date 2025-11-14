@@ -7,17 +7,25 @@ import {
   ORDERS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
   ADDRESSES_TABLE_ID,
+  ORDER_ITEMS_TABLE_ID
 } from "@/lib/appwrite";
 import { Query, ID } from "appwrite";
-import { sendOrderConfirmation } from '@/lib/email';
-import { trackAgentPurchase, trackAgentInitiateCheckout } from '@/lib/meta-agent-tracking';
+import { sendOrderConfirmation } from "@/lib/email";
+import {
+  trackAgentPurchase,
+  trackAgentInitiateCheckout,
+} from "@/lib/meta-agent-tracking";
 
 /**
  * Helper function to build price tiers from product data
  * Returns available tier ranges and their prices per kg
  */
 function buildPriceTiers(product: any) {
-  const tiers: Array<{ tierRange: string; pricePerKg: number; discountPercent: string }> = [];
+  const tiers: Array<{
+    tierRange: string;
+    pricePerKg: number;
+    discountPercent: string;
+  }> = [];
 
   if (!product.has_tier_pricing) {
     return tiers;
@@ -27,7 +35,10 @@ function buildPriceTiers(product: any) {
 
   // 2-4kg tier
   if (product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
-    const discount = ((basePrice - product.tier_2_4kg_price) / basePrice * 100).toFixed(1);
+    const discount = (
+      ((basePrice - product.tier_2_4kg_price) / basePrice) *
+      100
+    ).toFixed(1);
     tiers.push({
       tierRange: "2-4kg",
       pricePerKg: product.tier_2_4kg_price,
@@ -37,7 +48,10 @@ function buildPriceTiers(product: any) {
 
   // 5-9kg tier
   if (product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
-    const discount = ((basePrice - product.tier_5_9kg_price) / basePrice * 100).toFixed(1);
+    const discount = (
+      ((basePrice - product.tier_5_9kg_price) / basePrice) *
+      100
+    ).toFixed(1);
     tiers.push({
       tierRange: "5-9kg",
       pricePerKg: product.tier_5_9kg_price,
@@ -47,7 +61,10 @@ function buildPriceTiers(product: any) {
 
   // 10kg+ tier
   if (product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
-    const discount = ((basePrice - product.tier_10kg_up_price) / basePrice * 100).toFixed(1);
+    const discount = (
+      ((basePrice - product.tier_10kg_up_price) / basePrice) *
+      100
+    ).toFixed(1);
     tiers.push({
       tierRange: "10kg+",
       pricePerKg: product.tier_10kg_up_price,
@@ -67,11 +84,23 @@ function getPricePerKg(product: any, quantity: number): number {
     return product.base_price_per_kg;
   }
 
-  if (quantity >= 10 && product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
+  if (
+    quantity >= 10 &&
+    product.tier_10kg_up_price &&
+    product.tier_10kg_up_price > 0
+  ) {
     return product.tier_10kg_up_price;
-  } else if (quantity >= 5 && product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
+  } else if (
+    quantity >= 5 &&
+    product.tier_5_9kg_price &&
+    product.tier_5_9kg_price > 0
+  ) {
     return product.tier_5_9kg_price;
-  } else if (quantity >= 2 && product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
+  } else if (
+    quantity >= 2 &&
+    product.tier_2_4kg_price &&
+    product.tier_2_4kg_price > 0
+  ) {
     return product.tier_2_4kg_price;
   }
 
@@ -84,31 +113,38 @@ function getPricePerKg(product: any, quantity: number): number {
  */
 function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-  
+  const digits = phone.replace(/\D/g, "");
+
   // If starts with 92, add +
-  if (digits.startsWith('92')) {
-    return '+' + digits;
+  if (digits.startsWith("92")) {
+    return "+" + digits;
   }
-  
+
   // If starts with 0, replace with +92
-  if (digits.startsWith('0')) {
-    return '+92' + digits.substring(1);
+  if (digits.startsWith("0")) {
+    return "+92" + digits.substring(1);
   }
-  
+
   // Otherwise assume it's missing country code
-  return '+92' + digits;
+  return "+92" + digits;
 }
 
 /**
  * Helper function to validate quantity
  */
-function validateQuantity(quantity: number): { valid: boolean; error?: string } {
+function validateQuantity(quantity: number): {
+  valid: boolean;
+  error?: string;
+} {
   if (quantity <= 0) {
     return { valid: false, error: "Quantity must be greater than 0" };
   }
   if (quantity > 1000) {
-    return { valid: false, error: "Quantity exceeds maximum limit of 1000kg. Please contact us for bulk orders." };
+    return {
+      valid: false,
+      error:
+        "Quantity exceeds maximum limit of 1000kg. Please contact us for bulk orders.",
+    };
   }
   if (!Number.isFinite(quantity)) {
     return { valid: false, error: "Invalid quantity value" };
@@ -138,7 +174,9 @@ export const searchProductsTool = tool({
       .boolean()
       .nullable()
       .default(null)
-      .describe("Set true to show only hotel/restaurant products (filtered by name), false for regular products, null for all."),
+      .describe(
+        "Set true to show only hotel/restaurant products (filtered by name), false for regular products, null for all."
+      ),
     limit: z
       .number()
       .default(10)
@@ -159,8 +197,14 @@ export const searchProductsTool = tool({
       // Validate limit
       const validLimit = Math.max(1, Math.min(limit, 50));
       // Fetch more to account for filtering
-      const fetchLimit = forHotelsRestaurants !== null ? Math.min(validLimit * 3, 100) : validLimit;
-      const queries: any[] = [Query.limit(fetchLimit), Query.orderDesc('$createdAt')];
+      const fetchLimit =
+        forHotelsRestaurants !== null
+          ? Math.min(validLimit * 3, 100)
+          : validLimit;
+      const queries: any[] = [
+        Query.limit(fetchLimit),
+        Query.orderDesc("$createdAt"),
+      ];
 
       // Apply search query
       if (searchQuery && searchQuery.trim().length > 0) {
@@ -172,19 +216,22 @@ export const searchProductsTool = tool({
         queries.push(Query.equal("available", true));
       }
 
-      const response = await Promise.race([
+      const response = (await Promise.race([
         databases.listDocuments(DATABASE_ID, PRODUCTS_TABLE_ID, queries),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database request timeout')), 15000)
-        )
-      ]) as any;
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Database request timeout")), 15000)
+        ),
+      ])) as any;
 
       // Filter by hotel/restaurant in-memory (since field doesn't exist in DB)
       let filteredDocs = response.documents;
       if (forHotelsRestaurants !== null) {
         filteredDocs = response.documents.filter((doc: any) => {
-          const searchText = `${doc.name} ${doc.description || ''}`.toLowerCase();
-          const isHotelRestaurant = searchText.includes('hotel') || searchText.includes('restaurant');
+          const searchText = `${doc.name} ${
+            doc.description || ""
+          }`.toLowerCase();
+          const isHotelRestaurant =
+            searchText.includes("hotel") || searchText.includes("restaurant");
           return forHotelsRestaurants ? isHotelRestaurant : !isHotelRestaurant;
         });
       }
@@ -205,24 +252,33 @@ export const searchProductsTool = tool({
           primaryImageId: doc.primary_image_id || null,
         })),
         total: limitedDocs.length,
-        message: `Found ${limitedDocs.length} product(s)${inStockOnly ? " (in stock)" : ""}${
-          forHotelsRestaurants === true ? " for hotels/restaurants" : 
-          forHotelsRestaurants === false ? " (regular products)" : ""
+        message: `Found ${limitedDocs.length} product(s)${
+          inStockOnly ? " (in stock)" : ""
+        }${
+          forHotelsRestaurants === true
+            ? " for hotels/restaurants"
+            : forHotelsRestaurants === false
+            ? " (regular products)"
+            : ""
         }.`,
       };
     } catch (error: any) {
       console.error("searchProductsTool error:", error);
-      
+
       // Provide more specific error messages
       let errorMessage = "Failed to search products";
-      if (error.message?.includes('timeout')) {
+      if (error.message?.includes("timeout")) {
         errorMessage = "Database connection timeout. Please try again.";
-      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
-        errorMessage = "Network connection issue. Please check your internet connection.";
-      } else if (error.code === 'ENOTFOUND') {
+      } else if (
+        error.message?.includes("network") ||
+        error.message?.includes("fetch")
+      ) {
+        errorMessage =
+          "Network connection issue. Please check your internet connection.";
+      } else if (error.code === "ENOTFOUND") {
         errorMessage = "Database server not reachable. Please try again later.";
       }
-      
+
       return {
         success: false,
         error: errorMessage,
@@ -320,7 +376,8 @@ export const trackOrdersTool = tool({
       if (!orderId && !phoneNumber) {
         return {
           success: false,
-          error: "Please provide either an order ID or phone number to track orders",
+          error:
+            "Please provide either an order ID or phone number to track orders",
           orders: [],
           message: "Missing required information.",
         };
@@ -395,7 +452,7 @@ export const trackOrdersTool = tool({
       if (phoneNumber) {
         // Format phone number for consistent querying
         const formattedPhone = formatPhoneNumber(phoneNumber);
-        
+
         // First find customer by phone
         const customerResponse = await databases.listDocuments(
           DATABASE_ID,
@@ -412,7 +469,7 @@ export const trackOrdersTool = tool({
         }
 
         const customer = customerResponse.documents[0];
-        
+
         // Then find orders by customer_id
         const orderResponse = await databases.listDocuments(
           DATABASE_ID,
@@ -471,7 +528,8 @@ export const trackOrdersTool = tool({
 
       return {
         success: false,
-        error: "Please provide either an order ID or phone number to track orders",
+        error:
+          "Please provide either an order ID or phone number to track orders",
         orders: [],
         message: "Missing required information.",
       };
@@ -551,8 +609,10 @@ export const getCustomerTool = tool({
           success: false,
           error: "Customer not found",
           customer: null,
-          message: phoneNumber 
-            ? `No customer found with phone number ${formatPhoneNumber(phoneNumber)}`
+          message: phoneNumber
+            ? `No customer found with phone number ${formatPhoneNumber(
+                phoneNumber
+              )}`
             : `No customer found with email ${email?.trim()}`,
         };
       }
@@ -621,11 +681,12 @@ export const manageCustomerTool = tool({
 
       // Format and validate phone number
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const phoneDigits = formattedPhone.replace(/\D/g, '');
+      const phoneDigits = formattedPhone.replace(/\D/g, "");
       if (phoneDigits.length < 11 || phoneDigits.length > 13) {
         return {
           success: false,
-          error: "Invalid phone number format. Please provide a valid Pakistani phone number.",
+          error:
+            "Invalid phone number format. Please provide a valid Pakistani phone number.",
           customer: null,
         };
       }
@@ -743,7 +804,8 @@ export const calculateOrderPriceTool = tool({
       if (items.length > 20) {
         return {
           success: false,
-          error: "Maximum 20 items allowed per order. Please contact us for larger orders.",
+          error:
+            "Maximum 20 items allowed per order. Please contact us for larger orders.",
           calculation: null,
         };
       }
@@ -787,15 +849,27 @@ export const calculateOrderPriceTool = tool({
 
         // Calculate price per kg using helper function (matches frontend logic)
         const pricePerKg = getPricePerKg(product, item.quantity);
-        
+
         // Determine which tier was applied
         let tierApplied = "Base price";
         if (product.has_tier_pricing) {
-          if (item.quantity >= 10 && product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
+          if (
+            item.quantity >= 10 &&
+            product.tier_10kg_up_price &&
+            product.tier_10kg_up_price > 0
+          ) {
             tierApplied = "10kg+ tier";
-          } else if (item.quantity >= 5 && product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
+          } else if (
+            item.quantity >= 5 &&
+            product.tier_5_9kg_price &&
+            product.tier_5_9kg_price > 0
+          ) {
             tierApplied = "5-9kg tier";
-          } else if (item.quantity >= 2 && product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
+          } else if (
+            item.quantity >= 2 &&
+            product.tier_2_4kg_price &&
+            product.tier_2_4kg_price > 0
+          ) {
             tierApplied = "2-4kg tier";
           }
         }
@@ -830,16 +904,9 @@ export const calculateOrderPriceTool = tool({
       if (unavailableProducts.length > 0) {
         return {
           success: false,
-          error: `The following products are currently unavailable: ${unavailableProducts.join(", ")}`,
-          calculation: null,
-        };
-      }
-
-      // Validate minimum order
-      if (totalPrice < 500) {
-        return {
-          success: false,
-          error: "Minimum order value is PKR 500",
+          error: `The following products are currently unavailable: ${unavailableProducts.join(
+            ", "
+          )}`,
           calculation: null,
         };
       }
@@ -953,7 +1020,7 @@ export const createOrderTool = tool({
       }
 
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const phoneDigits = formattedPhone.replace(/\D/g, '');
+      const phoneDigits = formattedPhone.replace(/\D/g, "");
       if (phoneDigits.length < 11 || phoneDigits.length > 13) {
         return {
           success: false,
@@ -976,9 +1043,11 @@ export const createOrderTool = tool({
       if (deliveryAddress.trim().length < 10) {
         return {
           success: false,
-          error: "Delivery address is too short. Please provide complete address.",
+          error:
+            "Delivery address is too short. Please provide complete address.",
           order: null,
-          message: "Please provide a complete delivery address with area and city.",
+          message:
+            "Please provide a complete delivery address with area and city.",
         };
       }
 
@@ -1003,10 +1072,16 @@ export const createOrderTool = tool({
 
       // Validate each item
       for (const item of items) {
-        if (!item.productId || !item.productName || !item.quantity || !item.price) {
+        if (
+          !item.productId ||
+          !item.productName ||
+          !item.quantity ||
+          !item.price
+        ) {
           return {
             success: false,
-            error: "Invalid item data. Each item must have productId, productName, quantity, and price.",
+            error:
+              "Invalid item data. Each item must have productId, productName, quantity, and price.",
             order: null,
             message: "Order data is incomplete.",
           };
@@ -1030,15 +1105,6 @@ export const createOrderTool = tool({
           error: "Invalid total amount",
           order: null,
           message: "Order total must be greater than 0.",
-        };
-      }
-
-      if (totalAmount < 500) {
-        return {
-          success: false,
-          error: "Minimum order value is PKR 500",
-          order: null,
-          message: "Please add more items to meet minimum order value.",
         };
       }
 
@@ -1113,34 +1179,47 @@ export const createOrderTool = tool({
 
       // Format order items as CSV: productId:quantity,productId:quantity
       const orderItemsCSV = items
-        .map(item => `${item.productId}:${item.quantity}kg`)
-        .join(',');
+        .map((item) => `${item.productId}:${item.quantity}kg`)
+        .join(",");
 
       // Track Meta InitiateCheckout event before creating order (non-blocking)
       // Now we have customer information required by Meta API
-      console.log(`[DEBUG] Starting Meta InitiateCheckout tracking for customer ${customerName.trim()}`);
+      console.log(
+        `[DEBUG] Starting Meta InitiateCheckout tracking for customer ${customerName.trim()}`
+      );
       trackAgentInitiateCheckout({
         customerName: customerName.trim(),
         customerEmail: validatedEmail || undefined,
         customerPhone: formattedPhone,
         totalAmount,
-        currency: 'PKR',
-        items: items.map(item => ({
+        currency: "PKR",
+        items: items.map((item) => ({
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
         })),
       })
         .then((result) => {
-          console.log(`[DEBUG] Meta InitiateCheckout tracking completed:`, result);
+          console.log(
+            `[DEBUG] Meta InitiateCheckout tracking completed:`,
+            result
+          );
           if (result.success) {
-            console.log(`✅ Meta InitiateCheckout event tracked for agent order with event ID: ${result.eventId}`);
+            console.log(
+              `✅ Meta InitiateCheckout event tracked for agent order with event ID: ${result.eventId}`
+            );
           } else {
-            console.error(`❌ Failed to track Meta InitiateCheckout event:`, result.error);
+            console.error(
+              `❌ Failed to track Meta InitiateCheckout event:`,
+              result.error
+            );
           }
         })
         .catch((trackingError) => {
-          console.error('💥 Error tracking Meta InitiateCheckout event:', trackingError);
+          console.error(
+            "💥 Error tracking Meta InitiateCheckout event:",
+            trackingError
+          );
         });
 
       // Create order (without address_id first)
@@ -1158,14 +1237,61 @@ export const createOrderTool = tool({
         }
       );
 
+      // Create order items (full normalization)
+      for (const item of items) {
+        // Fetch product snapshot
+        const product = await databases.getDocument(
+          DATABASE_ID,
+          PRODUCTS_TABLE_ID,
+          item.productId
+        );
+
+        // Bag breakdown is not available in agent flow, so set as 0
+        await databases.createDocument(
+          DATABASE_ID,
+          ORDER_ITEMS_TABLE_ID,
+          ID.unique(),
+          {
+            order_id: orderId,
+            product_id: item.productId,
+            product_name: product.name,
+            product_description: product.description || "",
+            quantity_kg: item.quantity,
+            bags_1kg: 0,
+            bags_5kg: 0,
+            bags_10kg: 0,
+            bags_25kg: 0,
+            price_per_kg_at_order: item.price,
+            base_price_per_kg_at_order: product.base_price_per_kg,
+            tier_applied: product.has_tier_pricing
+              ? item.quantity >= 10
+                ? "10kg+"
+                : item.quantity >= 5
+                ? "5-9kg"
+                : item.quantity >= 2
+                ? "2-4kg"
+                : "base"
+              : "base",
+            tier_price_at_order: item.price,
+            discount_percentage: 0,
+            discount_amount: 0,
+            discount_reason: "",
+            subtotal_before_discount: item.price * item.quantity,
+            total_after_discount: item.price * item.quantity,
+            notes: "",
+            is_custom_price: false,
+          }
+        );
+      }
+
       // Create address with GPS coordinates if available
       const addressId = ID.unique();
       // Consider coordinates valid if they're not null (zero is valid)
       const hasCoordinates = latitude !== null && longitude !== null;
-      const mapsUrl = hasCoordinates 
+      const mapsUrl = hasCoordinates
         ? `https://www.google.com/maps?q=${latitude},${longitude}`
         : "";
-      
+
       await databases.createDocument(
         DATABASE_ID,
         ADDRESSES_TABLE_ID,
@@ -1181,14 +1307,9 @@ export const createOrderTool = tool({
       );
 
       // Update order with address_id
-      await databases.updateDocument(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        orderId,
-        {
-          address_id: addressId,
-        }
-      );
+      await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
+        address_id: addressId,
+      });
 
       // Send order confirmation email if customer provided email (non-blocking)
       // Fire and forget - don't wait for email to complete
@@ -1199,8 +1320,12 @@ export const createOrderTool = tool({
           customerEmail: validatedEmail,
           customerPhone: formattedPhone,
           deliveryAddress: deliveryAddress.trim(),
-          mapsUrl: mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deliveryAddress.trim())}`,
-          items: items.map(item => ({
+          mapsUrl:
+            mapsUrl ||
+            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              deliveryAddress.trim()
+            )}`,
+          items: items.map((item) => ({
             productName: item.productName,
             quantity: item.quantity,
             price: item.price * item.quantity,
@@ -1208,24 +1333,32 @@ export const createOrderTool = tool({
           totalPrice: totalAmount,
         })
           .then(() => {
-            console.log('Order confirmation email sent successfully to:', validatedEmail);
+            console.log(
+              "Order confirmation email sent successfully to:",
+              validatedEmail
+            );
           })
           .catch((emailError) => {
-            console.error('Error sending order confirmation email:', emailError);
+            console.error(
+              "Error sending order confirmation email:",
+              emailError
+            );
           });
       }
 
       // Track Meta Purchase event for agent order (non-blocking)
       // Fire and forget - don't wait for tracking to complete
-      console.log(`[DEBUG] Starting Meta Purchase tracking for order ${orderId}`);
+      console.log(
+        `[DEBUG] Starting Meta Purchase tracking for order ${orderId}`
+      );
       trackAgentPurchase({
         orderId,
         customerName: customerName.trim(),
         customerEmail: validatedEmail || undefined,
         customerPhone: formattedPhone,
         totalAmount,
-        currency: 'PKR',
-        items: items.map(item => ({
+        currency: "PKR",
+        items: items.map((item) => ({
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
@@ -1234,15 +1367,26 @@ export const createOrderTool = tool({
         deliveryAddress: deliveryAddress.trim(),
       })
         .then((result) => {
-          console.log(`[DEBUG] Meta Purchase tracking completed for order ${orderId}:`, result);
+          console.log(
+            `[DEBUG] Meta Purchase tracking completed for order ${orderId}:`,
+            result
+          );
           if (result.success) {
-            console.log(`✅ Meta Purchase event tracked for agent order ${orderId} with event ID: ${result.eventId}`);
+            console.log(
+              `✅ Meta Purchase event tracked for agent order ${orderId} with event ID: ${result.eventId}`
+            );
           } else {
-            console.error(`❌ Failed to track Meta Purchase event for agent order ${orderId}:`, result.error);
+            console.error(
+              `❌ Failed to track Meta Purchase event for agent order ${orderId}:`,
+              result.error
+            );
           }
         })
         .catch((trackingError) => {
-          console.error('💥 Error tracking Meta Purchase event for agent order:', trackingError);
+          console.error(
+            "💥 Error tracking Meta Purchase event for agent order:",
+            trackingError
+          );
         });
 
       return {
@@ -1256,7 +1400,9 @@ export const createOrderTool = tool({
           totalAmount,
           status: "pending",
         },
-        message: `Order ${orderId} created successfully! We'll deliver in 2-3 business days. You'll receive a confirmation call shortly.${validatedEmail ? ' Check your email for order confirmation.' : ''}`,
+        message: `Order ${orderId} created successfully! We'll deliver in 2-3 business days. You'll receive a confirmation call shortly.${
+          validatedEmail ? " Check your email for order confirmation." : ""
+        }`,
       };
     } catch (error: any) {
       console.error("createOrderTool error:", error);

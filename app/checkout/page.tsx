@@ -1,18 +1,30 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useCartStore } from '@/lib/store/cart-store';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { databases, DATABASE_ID, ORDERS_TABLE_ID, CUSTOMERS_TABLE_ID, ADDRESSES_TABLE_ID } from '@/lib/appwrite';
-import { formatCurrency, formatOrderItems, generateMapsUrl, calculateSavings } from '@/lib/utils';
-import { useMetaTracking } from '@/lib/hooks/use-meta-tracking';
-import { ID, Query } from 'appwrite';
-import toast from 'react-hot-toast';
-import { MapPin } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCartStore } from "@/lib/store/cart-store";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  databases,
+  DATABASE_ID,
+  ORDERS_TABLE_ID,
+  CUSTOMERS_TABLE_ID,
+  ADDRESSES_TABLE_ID,
+  ORDER_ITEMS_TABLE_ID
+} from "@/lib/appwrite";
+import {
+  formatCurrency,
+  formatOrderItems,
+  generateMapsUrl,
+  calculateSavings,
+} from "@/lib/utils";
+import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
+import { ID, Query } from "appwrite";
+import toast from "react-hot-toast";
+import { MapPin } from "lucide-react";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -23,12 +35,12 @@ export default function CheckoutPage() {
   const [gettingLocation, setGettingLocation] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    addressLine: '',
+    fullName: "",
+    phone: "",
+    email: "",
+    addressLine: "",
     latitude: 0,
-    longitude: 0
+    longitude: 0,
   });
 
   useEffect(() => {
@@ -38,35 +50,35 @@ export default function CheckoutPage() {
   // Auto-fill customer information if logged in
   useEffect(() => {
     if (customer) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         fullName: customer.full_name || prev.fullName,
         phone: customer.phone || prev.phone,
-        email: customer.email || prev.email
+        email: customer.email || prev.email,
       }));
     }
   }, [customer]);
 
   useEffect(() => {
     if (items.length === 0) {
-      router.push('/cart');
+      router.push("/cart");
     } else {
       // Track InitiateCheckout when user lands on checkout page
       trackInitiateCheckout({
         value: getTotalPrice(),
-        currency: 'PKR',
+        currency: "PKR",
         numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-        contentIds: items.map(item => item.product.$id),
+        contentIds: items.map((item) => item.product.$id),
       });
     }
   }, [items, router, getTotalPrice, trackInitiateCheckout]);
 
   const handleGetLocation = () => {
     setGettingLocation(true);
-    
+
     // Check if geolocation is supported
-    if (!('geolocation' in navigator)) {
-      toast.error('Geolocation is not supported by your browser');
+    if (!("geolocation" in navigator)) {
+      toast.error("Geolocation is not supported by your browser");
       setGettingLocation(false);
       return;
     }
@@ -75,105 +87,137 @@ export default function CheckoutPage() {
     const isSecureContext = window.isSecureContext;
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    
-    console.log('Security context:', { isSecureContext, protocol, hostname });
-    
-    if (!isSecureContext && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+
+    console.log("Security context:", { isSecureContext, protocol, hostname });
+
+    if (
+      !isSecureContext &&
+      hostname !== "localhost" &&
+      hostname !== "127.0.0.1"
+    ) {
       toast.error(
-        '⚠️ Geolocation requires HTTPS! Current URL is not secure. ' +
-        'Please access via HTTPS or localhost.',
+        "⚠️ Geolocation requires HTTPS! Current URL is not secure. " +
+          "Please access via HTTPS or localhost.",
         { duration: 8000 }
       );
-      console.error('Insecure context - Geolocation requires HTTPS or localhost');
+      console.error(
+        "Insecure context - Geolocation requires HTTPS or localhost"
+      );
       setGettingLocation(false);
       return;
     }
 
     // Request high accuracy location with timeout and retry
     const options = {
-      enableHighAccuracy: true,  // Use GPS if available
-      timeout: 10000,            // Wait up to 10 seconds
-      maximumAge: 0              // Don't use cached position
+      enableHighAccuracy: true, // Use GPS if available
+      timeout: 10000, // Wait up to 10 seconds
+      maximumAge: 0, // Don't use cached position
     };
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
-        
+
         // Check if accuracy is reasonable
         if (accuracy > 1000) {
           // Very poor accuracy (>1km) - likely using cell towers only
           toast.error(
-            `⚠️ Very poor accuracy (${Math.round(accuracy)}m)! GPS is not working. Please:\n` +
-            `1. Enable GPS/Location Services on your device\n` +
-            `2. Go outdoors or near a window\n` +
-            `3. Or enter coordinates manually`,
+            `⚠️ Very poor accuracy (${Math.round(
+              accuracy
+            )}m)! GPS is not working. Please:\n` +
+              `1. Enable GPS/Location Services on your device\n` +
+              `2. Go outdoors or near a window\n` +
+              `3. Or enter coordinates manually`,
             { duration: 8000 }
           );
-          console.warn('Very low accuracy - GPS not available:', { latitude, longitude, accuracy });
+          console.warn("Very low accuracy - GPS not available:", {
+            latitude,
+            longitude,
+            accuracy,
+          });
           // Don't save this inaccurate location
           setGettingLocation(false);
           return;
         } else if (accuracy > 100) {
           // Moderate accuracy - warn but allow
           toast.error(
-            `⚠️ Low accuracy (${Math.round(accuracy)}m). For better results:\n` +
-            `• Go outdoors\n` +
-            `• Enable GPS\n` +
-            `• Or try again`,
+            `⚠️ Low accuracy (${Math.round(
+              accuracy
+            )}m). For better results:\n` +
+              `• Go outdoors\n` +
+              `• Enable GPS\n` +
+              `• Or try again`,
             { duration: 6000 }
           );
-          console.warn('Low accuracy location:', { latitude, longitude, accuracy });
+          console.warn("Low accuracy location:", {
+            latitude,
+            longitude,
+            accuracy,
+          });
         } else if (accuracy > 50) {
           // Acceptable accuracy
-          toast.success(`Location captured (Accuracy: ${Math.round(accuracy)}m - Fair)`, {
-            duration: 4000
-          });
+          toast.success(
+            `Location captured (Accuracy: ${Math.round(accuracy)}m - Fair)`,
+            {
+              duration: 4000,
+            }
+          );
         } else {
           // Good accuracy
-          toast.success(`✓ Location captured! (Accuracy: ${Math.round(accuracy)}m - Excellent)`, {
-            duration: 4000
-          });
+          toast.success(
+            `✓ Location captured! (Accuracy: ${Math.round(
+              accuracy
+            )}m - Excellent)`,
+            {
+              duration: 4000,
+            }
+          );
         }
-        
-        setFormData(prev => ({
+
+        setFormData((prev) => ({
           ...prev,
           latitude,
-          longitude
+          longitude,
         }));
-        
+
         setGettingLocation(false);
       },
       (error) => {
-        let errorMessage = 'Failed to get location. ';
-        
+        let errorMessage = "Failed to get location. ";
+
         // Log detailed error information
-        console.error('Geolocation error details:', {
+        console.error("Geolocation error details:", {
           code: error.code,
           message: error.message,
           PERMISSION_DENIED: error.PERMISSION_DENIED,
           POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE,
-          TIMEOUT: error.TIMEOUT
+          TIMEOUT: error.TIMEOUT,
         });
-        
-        switch(error.code) {
+
+        switch (error.code) {
           case 1: // PERMISSION_DENIED
-            errorMessage += 'Please allow location access in your browser settings.';
-            console.error('Permission denied - User blocked location access');
+            errorMessage +=
+              "Please allow location access in your browser settings.";
+            console.error("Permission denied - User blocked location access");
             break;
           case 2: // POSITION_UNAVAILABLE
-            errorMessage += 'Location information is unavailable. Check if location services are enabled on your device.';
-            console.error('Position unavailable - GPS/location services may be disabled');
+            errorMessage +=
+              "Location information is unavailable. Check if location services are enabled on your device.";
+            console.error(
+              "Position unavailable - GPS/location services may be disabled"
+            );
             break;
           case 3: // TIMEOUT
-            errorMessage += 'Location request timed out. Try again or move to a location with better GPS signal.';
-            console.error('Timeout - Could not get location within 10 seconds');
+            errorMessage +=
+              "Location request timed out. Try again or move to a location with better GPS signal.";
+            console.error("Timeout - Could not get location within 10 seconds");
             break;
           default:
-            errorMessage += 'Unknown error occurred. Please enter your address manually.';
-            console.error('Unknown geolocation error');
+            errorMessage +=
+              "Unknown error occurred. Please enter your address manually.";
+            console.error("Unknown geolocation error");
         }
-        
+
         toast.error(errorMessage, { duration: 5000 });
         setGettingLocation(false);
       },
@@ -183,9 +227,9 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.fullName || !formData.phone || !formData.addressLine) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -199,7 +243,7 @@ export default function CheckoutPage() {
       const existingCustomerByPhone = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
-        [Query.equal('phone', formData.phone)]
+        [Query.equal("phone", formData.phone)]
       );
 
       let customerId: string;
@@ -207,16 +251,16 @@ export default function CheckoutPage() {
       if (existingCustomerByPhone.documents.length > 0) {
         // Use existing customer with this phone number
         customerId = existingCustomerByPhone.documents[0].$id;
-        
+
         // Update customer info (name, email, and link user_id if logged in)
         await databases.updateDocument(
           DATABASE_ID,
           CUSTOMERS_TABLE_ID,
           customerId,
           {
-            user_id: user?.$id || 'guest',
+            user_id: user?.$id || "guest",
             full_name: formData.fullName,
-            email: formData.email || null
+            email: formData.email || null,
           }
         );
       } else {
@@ -227,10 +271,10 @@ export default function CheckoutPage() {
           CUSTOMERS_TABLE_ID,
           customerId,
           {
-            user_id: user?.$id || 'guest',
+            user_id: user?.$id || "guest",
             full_name: formData.fullName,
             phone: formData.phone,
-            email: formData.email || null
+            email: formData.email || null,
           }
         );
       }
@@ -238,29 +282,64 @@ export default function CheckoutPage() {
       // Create order
       const orderId = ID.unique();
       const orderItems = formatOrderItems(
-        items.map(item => ({
+        items.map((item) => ({
           productId: item.product.$id,
-          quantity: item.quantity
+          quantity: item.quantity,
         }))
       );
 
-      await databases.createDocument(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        orderId,
-        {
-          customer_id: customerId,
-          address_id: '', // Will be updated after address creation
-          order_items: orderItems,
-          total_price: getTotalPrice(),
-          status: 'pending'
-        }
-      );
+      await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
+        customer_id: customerId,
+        address_id: "", // Will be updated after address creation
+        order_items: orderItems,
+        total_price: getTotalPrice(),
+        status: "pending",
+      });
+
+      // Create order items (full normalization)
+      for (const item of items) {
+        const product = item.product;
+        await databases.createDocument(
+          DATABASE_ID,
+          ORDER_ITEMS_TABLE_ID,
+          ID.unique(),
+          {
+            order_id: orderId,
+            product_id: product.$id,
+            product_name: product.name,
+            product_description: product.description || "",
+            quantity_kg: item.quantity,
+            bags_1kg: item.bags?.kg1 || 0,
+            bags_5kg: item.bags?.kg5 || 0,
+            bags_10kg: item.bags?.kg10 || 0,
+            bags_25kg: item.bags?.kg25 || 0,
+            price_per_kg_at_order: product.base_price_per_kg,
+            base_price_per_kg_at_order: product.base_price_per_kg,
+            tier_applied: product.has_tier_pricing
+              ? item.quantity >= 10
+                ? "10kg+"
+                : item.quantity >= 5
+                ? "5-9kg"
+                : item.quantity >= 2
+                ? "2-4kg"
+                : "base"
+              : "base",
+            tier_price_at_order: product.base_price_per_kg,
+            discount_percentage: 0,
+            discount_amount: 0,
+            discount_reason: "",
+            subtotal_before_discount: product.base_price_per_kg * item.quantity,
+            total_after_discount: product.base_price_per_kg * item.quantity,
+            notes: "",
+            is_custom_price: false,
+          }
+        );
+      }
 
       // Create address
       const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
       const addressId = ID.unique();
-      
+
       await databases.createDocument(
         DATABASE_ID,
         ADDRESSES_TABLE_ID,
@@ -271,28 +350,23 @@ export default function CheckoutPage() {
           address_line: formData.addressLine,
           latitude: formData.latitude,
           longitude: formData.longitude,
-          maps_url: mapsUrl
+          maps_url: mapsUrl,
         }
       );
 
       // Update order with address_id
-      await databases.updateDocument(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        orderId,
-        {
-          address_id: addressId
-        }
-      );
+      await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
+        address_id: addressId,
+      });
 
       // Track Purchase event
       await trackPurchase({
         value: getTotalPrice(),
-        currency: 'PKR',
+        currency: "PKR",
         orderId,
         numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-        contentIds: items.map(item => item.product.$id),
-        contents: items.map(item => ({
+        contentIds: items.map((item) => item.product.$id),
+        contents: items.map((item) => ({
           id: item.product.$id,
           quantity: item.quantity,
           item_price: item.product.base_price_per_kg,
@@ -300,18 +374,18 @@ export default function CheckoutPage() {
         userData: {
           email: formData.email || undefined,
           phone: formData.phone,
-          firstName: formData.fullName.split(' ')[0],
-          lastName: formData.fullName.split(' ').slice(1).join(' '),
+          firstName: formData.fullName.split(" ")[0],
+          lastName: formData.fullName.split(" ").slice(1).join(" "),
         },
       });
 
       // Send order confirmation email if email is provided
       if (formData.email) {
         try {
-          await fetch('/api/send-order-confirmation', {
-            method: 'POST',
+          await fetch("/api/send-order-confirmation", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               orderId,
@@ -320,8 +394,11 @@ export default function CheckoutPage() {
               customerPhone: formData.phone,
               deliveryAddress: formData.addressLine,
               mapsUrl,
-              items: items.map(item => {
-                const savingsInfo = calculateSavings(item.product, item.quantity);
+              items: items.map((item) => {
+                const savingsInfo = calculateSavings(
+                  item.product,
+                  item.quantity
+                );
                 return {
                   productName: item.product.name,
                   quantity: item.quantity,
@@ -338,32 +415,32 @@ export default function CheckoutPage() {
             }),
           });
           // Don't block order completion if email fails
-          console.log('Order confirmation email sent');
+          console.log("Order confirmation email sent");
         } catch (emailError) {
-          console.error('Failed to send order confirmation email:', emailError);
+          console.error("Failed to send order confirmation email:", emailError);
           // Continue with order completion even if email fails
         }
       }
 
-      toast.success('Order placed successfully!');
+      toast.success("Order placed successfully!");
       clearCart();
       router.push(`/orders/${orderId}`);
     } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error('Failed to place order. Please try again.');
+      console.error("Checkout error:", error);
+      toast.error("Failed to place order. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const totalPrice = getTotalPrice();
-  
+
   // Calculate total savings across all items
   const totalSavings = items.reduce((total, item) => {
     const savingsInfo = calculateSavings(item.product, item.quantity);
     return total + savingsInfo.savings;
   }, 0);
-  
+
   const totalOriginalPrice = items.reduce((total, item) => {
     const savingsInfo = calculateSavings(item.product, item.quantity);
     return total + savingsInfo.originalPrice;
@@ -374,7 +451,9 @@ export default function CheckoutPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-5xl font-bold text-[#27247b] mb-2">Checkout</h1>
-          <p className="text-gray-600">Complete your order with cash on delivery</p>
+          <p className="text-gray-600">
+            Complete your order with cash on delivery
+          </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -388,158 +467,213 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-bold text-[#27247b] mb-2">Full Name *</label>
-                    <Input
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      required
-                      className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-bold text-[#27247b] mb-2">Phone Number *</label>
+                      <label className="block text-sm font-bold text-[#27247b] mb-2">
+                        Full Name *
+                      </label>
                       <Input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        value={formData.fullName}
+                        onChange={(e) =>
+                          setFormData({ ...formData, fullName: e.target.value })
+                        }
                         required
                         className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
-                        placeholder="03XX XXXXXXX"
+                        placeholder="Enter your full name"
                       />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-[#27247b] mb-2">
+                          Phone Number *
+                        </label>
+                        <Input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) =>
+                            setFormData({ ...formData, phone: e.target.value })
+                          }
+                          required
+                          className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
+                          placeholder="03XX XXXXXXX"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-[#27247b] mb-2">
+                          Email (Optional)
+                        </label>
+                        <Input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                          }
+                          className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
+                          placeholder="your@email.com"
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-bold text-[#27247b] mb-2">Email (Optional)</label>
+                      <label className="block text-sm font-bold text-[#27247b] mb-2">
+                        Delivery Address *
+                      </label>
                       <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        value={formData.addressLine}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            addressLine: e.target.value,
+                          })
+                        }
+                        required
                         className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
-                        placeholder="your@email.com"
+                        placeholder="House #, Street, Area, City"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-[#27247b] mb-2">Delivery Address *</label>
-                    <Input
-                      value={formData.addressLine}
-                      onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                      required
-                      className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
-                      placeholder="House #, Street, Area, City"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4 mt-6">
-                  <label className="block text-sm font-bold text-[#27247b] mb-2">
-                    📍 Location (Recommended)
-                  </label>
-                  <div className="space-y-3">
-                    <div className="bg-[#27247b]/5 border-2 border-[#27247b]/20 rounded-xl p-4">
-                      <p className="text-sm text-[#27247b] font-bold mb-2">
-                        📍 For Best Delivery Experience (Optional but Recommended):
-                      </p>
-                      <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc">
-                        <li><strong>Enable GPS</strong> in device settings (not just "Location")</li>
-                        <li>Use <strong>Wi-Fi + GPS</strong> mode (not cellular only)</li>
-                        <li><strong>Go outdoors</strong> or stand near a window</li>
-                        <li>Allow <strong>precise location</strong> in browser permissions</li>
-                        <li>If GPS fails, use Google Maps to find your coordinates</li>
-                      </ul>
-                    </div>
-                    
-                    <Button
-                      type="button"
-                      onClick={handleGetLocation}
-                      disabled={gettingLocation}
-                      className="w-full bg-[#ffff03] hover:bg-[#ffff03]/90 text-[#27247b] font-bold py-4 rounded-xl border-2 border-[#27247b]/20 shadow-lg hover:shadow-xl transition-all"
-                    >
-                      <MapPin className="w-5 h-5 mr-2" />
-                      {gettingLocation ? 'Getting High-Accuracy Location...' : 'Capture Current Location (GPS)'}
-                    </Button>
-                    
-                    {/* Show location details only if actual coordinates are provided */}
-                    {((formData.latitude !== 0 && formData.longitude !== 0) || 
-                      (formData.latitude !== 0 && formData.longitude === 0) || 
-                      (formData.latitude === 0 && formData.longitude !== 0)) && (
-                      <div className="bg-[#ffff03]/20 border-2 border-[#ffff03] rounded-xl p-4">
-                        <p className="text-sm font-bold text-[#27247b] mb-1">
-                          ✓ Location Captured Successfully
+                  <div className="space-y-4 mt-6">
+                    <label className="block text-sm font-bold text-[#27247b] mb-2">
+                      📍 Location (Recommended)
+                    </label>
+                    <div className="space-y-3">
+                      <div className="bg-[#27247b]/5 border-2 border-[#27247b]/20 rounded-xl p-4">
+                        <p className="text-sm text-[#27247b] font-bold mb-2">
+                          📍 For Best Delivery Experience (Optional but
+                          Recommended):
                         </p>
-                        <p className="text-xs text-[#27247b]/80">
-                          Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                        <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc">
+                          <li>
+                            <strong>Enable GPS</strong> in device settings (not
+                            just "Location")
+                          </li>
+                          <li>
+                            Use <strong>Wi-Fi + GPS</strong> mode (not cellular
+                            only)
+                          </li>
+                          <li>
+                            <strong>Go outdoors</strong> or stand near a window
+                          </li>
+                          <li>
+                            Allow <strong>precise location</strong> in browser
+                            permissions
+                          </li>
+                          <li>
+                            If GPS fails, use Google Maps to find your
+                            coordinates
+                          </li>
+                        </ul>
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleGetLocation}
+                        disabled={gettingLocation}
+                        className="w-full bg-[#ffff03] hover:bg-[#ffff03]/90 text-[#27247b] font-bold py-4 rounded-xl border-2 border-[#27247b]/20 shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <MapPin className="w-5 h-5 mr-2" />
+                        {gettingLocation
+                          ? "Getting High-Accuracy Location..."
+                          : "Capture Current Location (GPS)"}
+                      </Button>
+
+                      {/* Show location details only if actual coordinates are provided */}
+                      {((formData.latitude !== 0 && formData.longitude !== 0) ||
+                        (formData.latitude !== 0 && formData.longitude === 0) ||
+                        (formData.latitude === 0 &&
+                          formData.longitude !== 0)) && (
+                        <div className="bg-[#ffff03]/20 border-2 border-[#ffff03] rounded-xl p-4">
+                          <p className="text-sm font-bold text-[#27247b] mb-1">
+                            ✓ Location Captured Successfully
+                          </p>
+                          <p className="text-xs text-[#27247b]/80">
+                            Coordinates: {formData.latitude.toFixed(6)},{" "}
+                            {formData.longitude.toFixed(6)}
+                          </p>
+                          <a
+                            href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
+                          >
+                            📍 View on Google Maps →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                        <p className="text-xs text-[#27247b] font-bold">
+                          💡 Manual Entry (Optional): If GPS doesn't work, get
+                          coordinates from Google Maps:
                         </p>
-                        <a
-                          href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
-                        >
-                          📍 View on Google Maps →
-                        </a>
+                        <ol className="text-xs text-gray-700 mt-1 ml-4 list-decimal space-y-0.5">
+                          <li>Open Google Maps on your phone/computer</li>
+                          <li>Long-press on your exact location</li>
+                          <li>Copy the coordinates (e.g., 24.9056, 67.0822)</li>
+                          <li>Paste them in the fields below</li>
+                        </ol>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
-                      <p className="text-xs text-[#27247b] font-bold">
-                        💡 Manual Entry (Optional): If GPS doesn't work, get coordinates from Google Maps:
-                      </p>
-                      <ol className="text-xs text-gray-700 mt-1 ml-4 list-decimal space-y-0.5">
-                        <li>Open Google Maps on your phone/computer</li>
-                        <li>Long-press on your exact location</li>
-                        <li>Copy the coordinates (e.g., 24.9056, 67.0822)</li>
-                        <li>Paste them in the fields below</li>
-                      </ol>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-[#27247b] mb-1">Latitude</label>
-                        <Input
-                          type="number"
-                          step="any"
-                          placeholder="e.g., 24.9056"
-                          value={formData.latitude || ''}
-                          onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
-                          className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[#27247b] mb-1">Longitude</label>
-                        <Input
-                          type="number"
-                          step="any"
-                          placeholder="e.g., 67.0822"
-                          value={formData.longitude || ''}
-                          onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
-                          className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-2 text-sm"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-[#27247b] mb-1">
+                            Latitude
+                          </label>
+                          <Input
+                            type="number"
+                            step="any"
+                            placeholder="e.g., 24.9056"
+                            value={formData.latitude || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                latitude: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-2 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-[#27247b] mb-1">
+                            Longitude
+                          </label>
+                          <Input
+                            type="number"
+                            step="any"
+                            placeholder="e.g., 67.0822"
+                            value={formData.longitude || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                longitude: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-2 text-sm"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full bg-linear-to-r from-[#27247b] to-[#27247b]/90 hover:from-[#27247b]/90 hover:to-[#27247b] text-white font-bold py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-[#ffff03] mt-6"
-                  disabled={loading}
-                >
-                  {loading ? '⏳ Placing Order...' : '🛒 Place Order (Cash on Delivery)'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full bg-linear-to-r from-[#27247b] to-[#27247b]/90 hover:from-[#27247b]/90 hover:to-[#27247b] text-white font-bold py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-[#ffff03] mt-6"
+                    disabled={loading}
+                  >
+                    {loading
+                      ? "⏳ Placing Order..."
+                      : "🛒 Place Order (Cash on Delivery)"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="lg:col-span-1">
             <Card className="sticky top-20 border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
@@ -550,67 +684,86 @@ export default function CheckoutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-              <div className="space-y-3 mb-6">
-                {items.map((item) => (
-                  <div key={item.product.$id} className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <span className="text-sm font-medium text-[#27247b]">
-                      {item.product.name}
-                    </span>
-                    <span className="text-sm font-bold text-[#27247b]">
-                      {item.quantity}kg
-                    </span>
-                  </div>
-                ))}
-              </div>
+                <div className="space-y-3 mb-6">
+                  {items.map((item) => (
+                    <div
+                      key={item.product.$id}
+                      className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200"
+                    >
+                      <span className="text-sm font-medium text-[#27247b]">
+                        {item.product.name}
+                      </span>
+                      <span className="text-sm font-bold text-[#27247b]">
+                        {item.quantity}kg
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="border-t-2 border-gray-200 pt-4">
-                {totalSavings > 0 && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex justify-between items-center text-sm mb-1">
-                      <span className="text-gray-600">Original Total:</span>
-                      <span className="text-gray-500 line-through">
-                        {formatCurrency(totalOriginalPrice)}
-                      </span>
+                <div className="border-t-2 border-gray-200 pt-4">
+                  {totalSavings > 0 && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex justify-between items-center text-sm mb-1">
+                        <span className="text-gray-600">Original Total:</span>
+                        <span className="text-gray-500 line-through">
+                          {formatCurrency(totalOriginalPrice)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-700 font-semibold">
+                          You Save:
+                        </span>
+                        <span className="text-green-700 font-bold">
+                          -{formatCurrency(totalSavings)} (
+                          {((totalSavings / totalOriginalPrice) * 100).toFixed(
+                            0
+                          )}
+                          % off)
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-green-700 font-semibold">You Save:</span>
-                      <span className="text-green-700 font-bold">
-                        -{formatCurrency(totalSavings)} ({((totalSavings / totalOriginalPrice) * 100).toFixed(0)}% off)
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-semibold text-[#27247b]">Subtotal</span>
-                  <span className="font-bold text-[#27247b]">{formatCurrency(totalPrice)}</span>
-                </div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-semibold text-[#27247b]">Delivery</span>
-                  <span className="text-[#ffff03] font-bold bg-[#27247b] px-3 py-1 rounded-full text-sm">FREE</span>
-                </div>
-                <div className="border-t-2 border-[#ffff03] pt-4 bg-[#ffff03]/10 -mx-6 px-6 py-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold text-[#27247b]">Total</span>
-                    <span className="text-3xl font-bold text-[#27247b]">
+                  )}
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-semibold text-[#27247b]">
+                      Subtotal
+                    </span>
+                    <span className="font-bold text-[#27247b]">
                       {formatCurrency(totalPrice)}
                     </span>
                   </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="font-semibold text-[#27247b]">
+                      Delivery
+                    </span>
+                    <span className="text-[#ffff03] font-bold bg-[#27247b] px-3 py-1 rounded-full text-sm">
+                      FREE
+                    </span>
+                  </div>
+                  <div className="border-t-2 border-[#ffff03] pt-4 bg-[#ffff03]/10 -mx-6 px-6 py-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-bold text-[#27247b]">
+                        Total
+                      </span>
+                      <span className="text-3xl font-bold text-[#27247b]">
+                        {formatCurrency(totalPrice)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="mt-6 p-4 bg-[#27247b] rounded-xl">
-                <p className="text-sm text-white font-bold flex items-center">
-                  <span className="text-xl mr-2">💰</span>
-                  Cash on Delivery
-                </p>
-                <p className="text-xs text-white/90 mt-1">
-                  Pay when you receive your order
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="mt-6 p-4 bg-[#27247b] rounded-xl">
+                  <p className="text-sm text-white font-bold flex items-center">
+                    <span className="text-xl mr-2">💰</span>
+                    Cash on Delivery
+                  </p>
+                  <p className="text-xs text-white/90 mt-1">
+                    Pay when you receive your order
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );
