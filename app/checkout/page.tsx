@@ -14,9 +14,7 @@ import {
   CUSTOMERS_TABLE_ID,
   ADDRESSES_TABLE_ID,
   ORDER_ITEMS_TABLE_ID,
-  account,
 } from "@/lib/appwrite";
-import { formatPhoneNumber } from "@/lib/agents/tools/appwriteTools";
 import {
   formatCurrency,
   formatOrderItems,
@@ -240,31 +238,12 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Always ensure we have the latest authenticated user before placing order
-      await checkAuth();
-      let liveUserId = user?.$id;
-      // If not present in store, fetch directly from Appwrite
-      if (!liveUserId && typeof account !== "undefined" && account.get) {
-        try {
-          const liveUser = await account.get();
-          liveUserId = liveUser.$id;
-        } catch {}
-      }
-
-      // Format phone number to +92 format
-      let formattedPhone = formData.phone;
-      if (typeof formatPhoneNumber === "function") {
-        formattedPhone = formatPhoneNumber(formData.phone);
-      } else {
-        // fallback basic formatting
-        formattedPhone = formData.phone.replace(/^0/, "+92");
-      }
       // Use phone number as customer identifier
       // Check if a customer with this phone number already exists
       const existingCustomerByPhone = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formattedPhone)]
+        [Query.equal("phone", formData.phone)]
       );
 
       let customerId: string;
@@ -279,7 +258,7 @@ export default function CheckoutPage() {
           CUSTOMERS_TABLE_ID,
           customerId,
           {
-            user_id: liveUserId || "guest",
+            user_id: user?.$id || "guest",
             full_name: formData.fullName,
             email: formData.email || null,
           }
@@ -292,9 +271,9 @@ export default function CheckoutPage() {
           CUSTOMERS_TABLE_ID,
           customerId,
           {
-            user_id: liveUserId || "guest",
+            user_id: user?.$id || "guest",
             full_name: formData.fullName,
-            phone: formattedPhone,
+            phone: formData.phone,
             email: formData.email || null,
           }
         );

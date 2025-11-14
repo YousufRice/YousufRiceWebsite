@@ -74,33 +74,6 @@ const nextConfig: NextConfig = {
   // It provides 5-10x faster builds and hot module replacement
   
   // ============================================
-  // Additional Performance Features
-  // ============================================
-  
-  // React Compiler can be enabled once babel-plugin-react-compiler is installed
-  // reactCompiler: true,
-  
-  // Experimental features for even better performance
-  experimental: {
-    // Enable optimistic client cache for instant navigation
-    optimisticClientCache: true,
-    
-    // Optimize package imports
-    optimizePackageImports: [
-      'lucide-react',
-      'react-hot-toast',
-      'zustand',
-      'motion',
-    ],
-    
-    // Enable CSS chunking for better caching
-    cssChunking: true,
-
-    // Enable View Transitions API for page transitions
-    viewTransition: true,
-  },
-  
-  // ============================================
   // Headers for SEO and Security
   // ============================================
   async headers() {

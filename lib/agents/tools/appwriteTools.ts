@@ -111,7 +111,7 @@ function getPricePerKg(product: any, quantity: number): number {
  * Helper function to format and validate phone numbers
  * Ensures consistent format: +92XXXXXXXXXX
  */
-export function formatPhoneNumber(phone: string): string {
+function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters
   const digits = phone.replace(/\D/g, "");
 
