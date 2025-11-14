@@ -1,3 +1,5 @@
+// Updated TypeScript types for improved database schema
+
 export interface Product {
   $id: string;
   name: string;
@@ -25,41 +27,41 @@ export interface OrderItem {
   $id: string;
   order_id: string;
   product_id: string;
-
+  
   // Product snapshot (prevents data loss if product is deleted/modified)
   product_name: string;
   product_description?: string;
-
+  
   // Quantity information
   quantity_kg: number;
-
+  
   // Bag breakdown for inventory tracking
   bags_1kg: number;
   bags_5kg: number;
   bags_10kg: number;
   bags_25kg: number;
-
+  
   // Price information at time of order (CRITICAL for price integrity)
   price_per_kg_at_order: number;
   base_price_per_kg_at_order: number;
-
+  
   // Tier pricing snapshot
-  tier_applied?: string; // 'base', '2-4kg', '5-9kg', '10kg+'
+  tier_applied: 'base' | '2-4kg' | '5-9kg' | '10kg+';
   tier_price_at_order?: number;
-
+  
   // Discount information
   discount_percentage: number;
   discount_amount: number;
   discount_reason?: string; // 'bulk_discount', 'promo_code', 'manual'
-
+  
   // Calculated totals
   subtotal_before_discount: number;
   total_after_discount: number;
-
+  
   // Additional metadata
   notes?: string;
   is_custom_price: boolean;
-
+  
   $createdAt: string;
 }
 
@@ -68,20 +70,17 @@ export interface Order {
   $id: string;
   customer_id: string;
   address_id: string;
-
-  // Legacy CSV field (kept for backward compatibility during migration)
-  order_items?: string;
-
+  
   // Summary fields (calculated from OrderItems)
-  total_items_count?: number;
-  total_weight_kg?: number;
-  subtotal_before_discount?: number;
-  total_discount_amount?: number;
+  total_items_count: number;
+  total_weight_kg: number;
+  subtotal_before_discount: number;
+  total_discount_amount: number;
   total_price: number; // final total after all discounts
-
-  status: "pending" | "accepted" | "out_for_delivery" | "delivered";
+  
+  status: 'pending' | 'accepted' | 'out_for_delivery' | 'delivered';
   $createdAt: string;
-
+  
   // Navigation properties (not stored in DB, populated by queries)
   items?: OrderItem[];
   customer?: Customer;
@@ -108,14 +107,27 @@ export interface Address {
   $createdAt: string;
 }
 
+// Updated Cart Item structure
 export interface CartItem {
   product: Product;
   quantity: number; // in kg (calculated from bags)
   bags: {
-    kg1: number; // count of 1kg bags
-    kg5: number; // count of 5kg bags
-    kg10: number; // count of 10kg bags
-    kg25: number; // count of 25kg bags
+    kg1: number;   // count of 1kg bags
+    kg5: number;   // count of 5kg bags
+    kg10: number;  // count of 10kg bags
+    kg25: number;  // count of 25kg bags
+  };
+  
+  // Price calculation (live, not stored)
+  pricePerKg?: number;
+  subtotal?: number;
+  appliedTier?: 'base' | '2-4kg' | '5-9kg' | '10kg+';
+  
+  // Discount (if any)
+  discount?: {
+    percentage: number;
+    amount: number;
+    reason: string;
   };
 }
 
@@ -154,4 +166,51 @@ export interface OrderWithDetails extends Order {
   items: OrderItem[];
   customer: Customer;
   address: Address;
+}
+
+// Discount types
+export interface Discount {
+  $id: string;
+  code?: string; // promo code
+  type: 'percentage' | 'fixed_amount' | 'bulk_discount';
+  value: number;
+  min_quantity?: number;
+  min_amount?: number;
+  max_discount?: number;
+  valid_from: string;
+  valid_until: string;
+  is_active: boolean;
+  usage_limit?: number;
+  used_count: number;
+  description: string;
+  $createdAt: string;
+}
+
+// Analytics and reporting types
+export interface OrderAnalytics {
+  total_orders: number;
+  total_revenue: number;
+  total_weight_sold: number;
+  average_order_value: number;
+  top_products: Array<{
+    product_id: string;
+    product_name: string;
+    total_quantity: number;
+    total_revenue: number;
+  }>;
+  revenue_by_month: Array<{
+    month: string;
+    revenue: number;
+    orders: number;
+  }>;
+}
+
+export interface InventoryReport {
+  product_id: string;
+  product_name: string;
+  total_ordered: number;
+  orders_count: number;
+  revenue: number;
+  avg_price_per_kg: number;
+  last_ordered: string;
 }

@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // ============================================
   // Next.js 16 Advanced Features
   // ============================================
-  reactCompiler : true,
+  // reactCompiler : true,
   // Enable Cache Components with PPR (Partial Prerendering)
   // This enables the new caching model with 'use cache' directive
   // But disable it for API routes to avoid build-time authentication issues
@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'syd.cloud.appwrite.io',
+        hostname: 'sgp.cloud.appwrite.io',
         port: '',
         pathname: '/v1/storage/buckets/**',
       },

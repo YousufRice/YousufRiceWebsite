@@ -1,30 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { databases, DATABASE_ID, ORDERS_TABLE_ID, ADDRESSES_TABLE_ID, PRODUCTS_TABLE_ID } from '@/lib/appwrite';
-import { Order, Address, Product } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { formatCurrency, parseOrderItems } from '@/lib/utils';
-import { MapPin, Package, Clock, Truck, CheckCircle, ExternalLink, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useEffect, useState } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { OrderWithDetails, OrderItem } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
+import { OrderService } from "@/lib/services/order-service";
+import {
+  MapPin,
+  Package,
+  Clock,
+  Truck,
+  CheckCircle,
+  ExternalLink,
+  ArrowLeft,
+} from "lucide-react";
+import Link from "next/link";
+import { useAuthStore } from "@/lib/store/auth-store";
 
-interface OrderItemWithProduct {
-  productId: string;
-  productName: string;
-  quantity: number;
-  pricePerKg: number;
-  totalPrice: number;
-  product: Product | null;
-}
-
-interface OrderData {
-  order: Order;
-  address: Address;
-  products: OrderItemWithProduct[];
-}
+// Remove old interfaces since we're using the new OrderWithDetails type
 
 export default function OrderDetailPage() {
   const router = useRouter();
@@ -32,61 +27,23 @@ export default function OrderDetailPage() {
   const searchParams = useSearchParams();
   const orderId = params.id as string;
   const { isAdmin } = useAuthStore();
-  
-  const [data, setData] = useState<OrderData | null>(null);
+
+  const [data, setData] = useState<OrderWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Check if coming from customer detail page
-  const fromCustomer = searchParams.get('from') === 'customer';
-  const customerId = searchParams.get('customerId');
+  const fromCustomer = searchParams.get("from") === "customer";
+  const customerId = searchParams.get("customerId");
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const order = await databases.getDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId) as unknown as Order;
-        const address = await databases.getDocument(DATABASE_ID, ADDRESSES_TABLE_ID, order.address_id) as unknown as Address;
-        
-        // Parse order items and fetch product details
-        const orderItems = parseOrderItems(order.order_items);
-        const products: OrderItemWithProduct[] = await Promise.all(
-          orderItems.map(async (item) => {
-            try {
-              const product = await databases.getDocument(DATABASE_ID, PRODUCTS_TABLE_ID, item.productId) as unknown as Product;
-              // Calculate price based on quantity and tier pricing
-              let pricePerKg = product.base_price_per_kg;
-              if (product.has_tier_pricing) {
-                if (item.quantity >= 10 && product.tier_10kg_up_price) {
-                  pricePerKg = product.tier_10kg_up_price;
-                } else if (item.quantity >= 5 && product.tier_5_9kg_price) {
-                  pricePerKg = product.tier_5_9kg_price;
-                } else if (item.quantity >= 2 && product.tier_2_4kg_price) {
-                  pricePerKg = product.tier_2_4kg_price;
-                }
-              }
-              return {
-                productId: item.productId,
-                productName: product.name,
-                quantity: item.quantity,
-                pricePerKg: pricePerKg,
-                totalPrice: pricePerKg * item.quantity,
-                product
-              };
-            } catch {
-              return {
-                productId: item.productId,
-                productName: 'Unknown Product',
-                quantity: item.quantity,
-                pricePerKg: 0,
-                totalPrice: 0,
-                product: null
-              };
-            }
-          })
+        const orderWithDetails = await OrderService.getOrderWithDetails(
+          orderId
         );
-
-        setData({ order, address, products });
+        setData(orderWithDetails);
       } catch (error) {
-        console.error('Error fetching order details:', error);
+        console.error("Error fetching order details:", error);
         setData(null);
       } finally {
         setLoading(false);
@@ -99,15 +56,15 @@ export default function OrderDetailPage() {
   }, [orderId]);
 
   // Determine back URL and text based on context
-  let backUrl = '/orders';
-  let backText = 'Back to My Orders';
-  
+  let backUrl = "/orders";
+  let backText = "Back to My Orders";
+
   if (fromCustomer && customerId) {
     backUrl = `/admin/customers/${customerId}`;
-    backText = 'Back to Customer Details';
+    backText = "Back to Customer Details";
   } else if (isAdmin) {
-    backUrl = '/admin/orders';
-    backText = 'Back to Order Management';
+    backUrl = "/admin/orders";
+    backText = "Back to Order Management";
   }
 
   if (loading) {
@@ -124,8 +81,12 @@ export default function OrderDetailPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center py-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Order Not Found</h2>
-          <p className="text-gray-600 mb-6">The order you're looking for doesn't exist</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Order Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            The order you're looking for doesn't exist
+          </p>
           <Link href={backUrl}>
             <Button>Back to Orders</Button>
           </Link>
@@ -134,31 +95,29 @@ export default function OrderDetailPage() {
     );
   }
 
-  const { order, address, products } = data;
-
-  const getStatusIcon = (status: Order['status']) => {
+  const getStatusIcon = (status: OrderWithDetails["status"]) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock className="w-6 h-6 text-yellow-500" />;
-      case 'accepted':
+      case "accepted":
         return <Package className="w-6 h-6 text-blue-500" />;
-      case 'out_for_delivery':
+      case "out_for_delivery":
         return <Truck className="w-6 h-6 text-purple-500" />;
-      case 'delivered':
+      case "delivered":
         return <CheckCircle className="w-6 h-6 text-green-500" />;
     }
   };
 
-  const getStatusText = (status: Order['status']) => {
+  const getStatusText = (status: OrderWithDetails["status"]) => {
     switch (status) {
-      case 'pending':
-        return 'Pending';
-      case 'accepted':
-        return 'Accepted';
-      case 'out_for_delivery':
-        return 'Out for Delivery';
-      case 'delivered':
-        return 'Delivered';
+      case "pending":
+        return "Pending";
+      case "accepted":
+        return "Accepted";
+      case "out_for_delivery":
+        return "Out for Delivery";
+      case "delivered":
+        return "Delivered";
     }
   };
 
@@ -178,7 +137,7 @@ export default function OrderDetailPage() {
         <div className="flex items-center gap-2">
           <span className="text-gray-500">Order ID:</span>
           <code className="px-3 py-1 bg-gray-100 rounded-md font-mono text-sm font-medium text-gray-900">
-            {order.$id}
+            {data.$id}
           </code>
         </div>
       </div>
@@ -191,16 +150,19 @@ export default function OrderDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-3">
-              {getStatusIcon(order.status)}
+              {getStatusIcon(data.status)}
               <div>
-                <p className="text-xl font-bold">{getStatusText(order.status)}</p>
+                <p className="text-xl font-bold">
+                  {getStatusText(data.status)}
+                </p>
                 <p className="text-sm text-gray-500">
-                  Ordered on {new Date(order.$createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                  Ordered on{" "}
+                  {new Date(data.$createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </p>
               </div>
@@ -208,19 +170,49 @@ export default function OrderDetailPage() {
 
             {/* Status Timeline */}
             <div className="mt-6 space-y-3">
-              <div className={`flex items-center space-x-3 ${order.status === 'pending' || order.status === 'accepted' || order.status === 'out_for_delivery' || order.status === 'delivered' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div
+                className={`flex items-center space-x-3 ${
+                  data.status === "pending" ||
+                  data.status === "accepted" ||
+                  data.status === "out_for_delivery" ||
+                  data.status === "delivered"
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
+              >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Order Placed</span>
               </div>
-              <div className={`flex items-center space-x-3 ${order.status === 'accepted' || order.status === 'out_for_delivery' || order.status === 'delivered' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div
+                className={`flex items-center space-x-3 ${
+                  data.status === "accepted" ||
+                  data.status === "out_for_delivery" ||
+                  data.status === "delivered"
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
+              >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Order Accepted</span>
               </div>
-              <div className={`flex items-center space-x-3 ${order.status === 'out_for_delivery' || order.status === 'delivered' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div
+                className={`flex items-center space-x-3 ${
+                  data.status === "out_for_delivery" ||
+                  data.status === "delivered"
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
+              >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Out for Delivery</span>
               </div>
-              <div className={`flex items-center space-x-3 ${order.status === 'delivered' ? 'text-green-600' : 'text-gray-400'}`}>
+              <div
+                className={`flex items-center space-x-3 ${
+                  data.status === "delivered"
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
+              >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Delivered</span>
               </div>
@@ -235,11 +227,20 @@ export default function OrderDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {products.map((item, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
+              {data.items.map((item: OrderItem, index: number) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-2 border-b last:border-b-0"
+                >
                   <div>
-                    <p className="font-medium">{item.product?.name || 'Unknown Product'}</p>
-                    <p className="text-sm text-gray-500">{item.quantity} kg</p>
+                    <p className="font-medium">{item.product_name}</p>
+                    <p className="text-sm text-gray-500">
+                      {item.quantity_kg} kg
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {formatCurrency(item.price_per_kg_at_order)}/kg • Total:{" "}
+                      {formatCurrency(item.total_after_discount)}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -249,10 +250,12 @@ export default function OrderDetailPage() {
               <div className="flex justify-between items-center">
                 <span className="text-xl font-bold">Total</span>
                 <span className="text-2xl font-bold text-green-600">
-                  {formatCurrency(order.total_price)}
+                  {formatCurrency(data.total_price)}
                 </span>
               </div>
-              <p className="text-sm text-gray-500 mt-2">Payment: Cash on Delivery</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Payment: Cash on Delivery
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -267,15 +270,16 @@ export default function OrderDetailPage() {
               <div className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
                 <div>
-                  <p className="font-medium">{address.address_line}</p>
+                  <p className="font-medium">{data.address.address_line}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Coordinates: {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
+                    Coordinates: {data.address.latitude.toFixed(6)},{" "}
+                    {data.address.longitude.toFixed(6)}
                   </p>
                 </div>
               </div>
 
               <a
-                href={address.maps_url}
+                href={data.address.maps_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block"
