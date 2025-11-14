@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useRef, useState, useEffect } from "react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
@@ -29,14 +29,14 @@ interface ChatBoxProps {
 export default function ChatBox({
   userId,
   className,
-  placeholder = 'Ask about our products, orders, or anything else...',
-  welcomeMessage = 'Hello! How can I help you today?',
+  placeholder = "Ask about our products, orders, or anything else...",
+  welcomeMessage = "Hello! How can I help you today?",
   userContext,
 }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState('');
+  const [streamingContent, setStreamingContent] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showLocationButton, setShowLocationButton] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -45,21 +45,52 @@ export default function ChatBox({
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  // Show welcome message on mount
+  // Load messages from localStorage on mount
   useEffect(() => {
-    if (welcomeMessage && messages.length === 0) {
+    const savedMessages = localStorage.getItem(`chat_messages_${userId}`);
+    if (savedMessages) {
+      try {
+        const parsed = JSON.parse(savedMessages);
+        // Convert timestamp strings back to Date objects
+        const messagesWithDates = parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }));
+        setMessages(messagesWithDates);
+      } catch (error) {
+        console.error("Failed to load messages from localStorage:", error);
+        // Fall back to welcome message
+        if (welcomeMessage) {
+          setMessages([
+            {
+              role: "assistant",
+              content: welcomeMessage,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      }
+    } else if (welcomeMessage) {
+      // Show welcome message on first load
       setMessages([
         {
-          role: 'assistant',
+          role: "assistant",
           content: welcomeMessage,
           timestamp: new Date(),
         },
       ]);
     }
-  }, [welcomeMessage]);
+  }, [userId, welcomeMessage]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(`chat_messages_${userId}`, JSON.stringify(messages));
+    }
+  }, [messages, userId]);
 
   /**
    * Send message to the chat API with streaming
@@ -68,16 +99,16 @@ export default function ChatBox({
     if (!input.trim() || isStreaming) return;
 
     const userMessage = input.trim();
-    setInput('');
-    
+    setInput("");
+
     // Reset textarea height
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
     }
 
     // Add user message to chat
     const newUserMessage: Message = {
-      role: 'user',
+      role: "user",
       content: userMessage,
       timestamp: new Date(),
     };
@@ -85,13 +116,13 @@ export default function ChatBox({
 
     // Start streaming
     setIsStreaming(true);
-    setStreamingContent('');
+    setStreamingContent("");
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId,
@@ -103,24 +134,24 @@ export default function ChatBox({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error("Failed to get response");
       }
 
       if (!response.body) {
-        throw new Error('No response body');
+        throw new Error("No response body");
       }
 
       // Extract session ID from response headers
-      const newSessionId = response.headers.get('X-Session-Id');
+      const newSessionId = response.headers.get("X-Session-Id");
       if (newSessionId && !sessionId) {
         setSessionId(newSessionId);
-        console.log('New session started:', newSessionId);
+        console.log("New session started:", newSessionId);
       }
 
       // Read the stream
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let accumulatedContent = '';
+      let accumulatedContent = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -134,32 +165,35 @@ export default function ChatBox({
       // Add completed assistant message
       if (accumulatedContent) {
         // Check if agent is requesting location
-        const hasLocationRequest = accumulatedContent.includes('[REQUEST_LOCATION]');
-        
+        const hasLocationRequest =
+          accumulatedContent.includes("[REQUEST_LOCATION]");
+
         // Remove the marker from display
-        const displayContent = accumulatedContent.replace('[REQUEST_LOCATION]', '').trim();
-        
+        const displayContent = accumulatedContent
+          .replace("[REQUEST_LOCATION]", "")
+          .trim();
+
         const assistantMessage: Message = {
-          role: 'assistant',
+          role: "assistant",
           content: displayContent,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        
+
         // Show location button if requested
         if (hasLocationRequest) {
           setShowLocationButton(true);
         }
       }
 
-      setStreamingContent('');
+      setStreamingContent("");
     } catch (error) {
-      console.error('Chat error:', error);
-      
+      console.error("Chat error:", error);
+
       // Add error message
       const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -173,7 +207,7 @@ export default function ChatBox({
    */
   const shareLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser');
+      alert("Geolocation is not supported by your browser");
       return;
     }
 
@@ -182,49 +216,50 @@ export default function ChatBox({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
-        
+
         // Hide location button
         setShowLocationButton(false);
         setGettingLocation(false);
-        
+
         // Send location to agent as a message
         const locationMessage = `[LOCATION: ${latitude}, ${longitude}]`;
-        
+
         // Add user message showing location was shared
         const userMessage: Message = {
-          role: 'user',
+          role: "user",
           content: `📍 Location shared (Accuracy: ${Math.round(accuracy)}m)`,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, userMessage]);
-        
+
         // Send actual coordinates to agent (hidden from user)
         sendMessageToAgent(locationMessage);
       },
       (error) => {
         setGettingLocation(false);
-        let errorMessage = 'Failed to get location. ';
-        
-        switch(error.code) {
+        let errorMessage = "Failed to get location. ";
+
+        switch (error.code) {
           case 1: // PERMISSION_DENIED
-            errorMessage += 'Please allow location access in your browser settings.';
+            errorMessage +=
+              "Please allow location access in your browser settings.";
             break;
           case 2: // POSITION_UNAVAILABLE
-            errorMessage += 'Location information is unavailable.';
+            errorMessage += "Location information is unavailable.";
             break;
           case 3: // TIMEOUT
-            errorMessage += 'Location request timed out.';
+            errorMessage += "Location request timed out.";
             break;
           default:
-            errorMessage += 'Unknown error occurred.';
+            errorMessage += "Unknown error occurred.";
         }
-        
+
         alert(errorMessage);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0,
       }
     );
   };
@@ -236,13 +271,13 @@ export default function ChatBox({
     if (isStreaming) return;
 
     setIsStreaming(true);
-    setStreamingContent('');
+    setStreamingContent("");
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId,
@@ -254,21 +289,21 @@ export default function ChatBox({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error("Failed to get response");
       }
 
       if (!response.body) {
-        throw new Error('No response body');
+        throw new Error("No response body");
       }
 
-      const newSessionId = response.headers.get('X-Session-Id');
+      const newSessionId = response.headers.get("X-Session-Id");
       if (newSessionId && !sessionId) {
         setSessionId(newSessionId);
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let accumulatedContent = '';
+      let accumulatedContent = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -281,20 +316,20 @@ export default function ChatBox({
 
       if (accumulatedContent) {
         const assistantMessage: Message = {
-          role: 'assistant',
+          role: "assistant",
           content: accumulatedContent,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
       }
 
-      setStreamingContent('');
+      setStreamingContent("");
     } catch (error) {
-      console.error('Chat error:', error);
-      
+      console.error("Chat error:", error);
+
       const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -308,9 +343,9 @@ export default function ChatBox({
    */
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    
+
     // Auto-resize textarea
-    e.target.style.height = 'auto';
+    e.target.style.height = "auto";
     e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
   };
 
@@ -318,7 +353,7 @@ export default function ChatBox({
    * Handle Enter key to send message
    */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -327,7 +362,7 @@ export default function ChatBox({
   return (
     <div
       className={cn(
-        'flex flex-col h-full max-h-[600px] border border-gray-200 rounded-lg bg-white shadow-lg',
+        "flex flex-col h-full max-h-[600px] border border-gray-200 rounded-lg bg-white shadow-lg",
         className
       )}
     >
@@ -348,20 +383,18 @@ export default function ChatBox({
           <div
             key={index}
             className={cn(
-              'flex gap-3 animate-in fade-in slide-in-from-bottom-2',
-              message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+              "flex gap-3 animate-in fade-in slide-in-from-bottom-2",
+              message.role === "user" ? "flex-row-reverse" : "flex-row"
             )}
           >
             {/* Avatar */}
             <div
               className={cn(
-                'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-                message.role === 'user'
-                  ? 'bg-blue-600'
-                  : 'bg-green-600'
+                "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                message.role === "user" ? "bg-blue-600" : "bg-green-600"
               )}
             >
-              {message.role === 'user' ? (
+              {message.role === "user" ? (
                 <User className="w-5 h-5 text-white" />
               ) : (
                 <Bot className="w-5 h-5 text-white" />
@@ -371,10 +404,10 @@ export default function ChatBox({
             {/* Message bubble */}
             <div
               className={cn(
-                'max-w-[75%] rounded-lg px-4 py-2',
-                message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                "max-w-[75%] rounded-lg px-4 py-2",
+                message.role === "user"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-900"
               )}
             >
               <p className="text-sm whitespace-pre-wrap wrap-break-word">
@@ -382,13 +415,13 @@ export default function ChatBox({
               </p>
               <span
                 className={cn(
-                  'text-xs mt-1 block',
-                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                  "text-xs mt-1 block",
+                  message.role === "user" ? "text-blue-100" : "text-gray-500"
                 )}
               >
                 {message.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </span>
             </div>
@@ -444,14 +477,12 @@ export default function ChatBox({
                   Getting location...
                 </>
               ) : (
-                <>
-                  📍 Share My Location
-                </>
+                <>📍 Share My Location</>
               )}
             </button>
           </div>
         )}
-        
+
         <div className="flex gap-2 items-end">
           <textarea
             ref={textareaRef}
@@ -462,7 +493,7 @@ export default function ChatBox({
             disabled={isStreaming}
             rows={1}
             className="flex-1 resize-none rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ maxHeight: '120px' }}
+            style={{ maxHeight: "120px" }}
           />
           <button
             onClick={sendMessage}
