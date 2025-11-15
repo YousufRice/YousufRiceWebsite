@@ -39,6 +39,24 @@
             }
         }
     },
+    "sites": [
+        {
+            "$id": "69160b27001d4b0e40fe",
+            "name": "YousufRiceWebsite",
+            "enabled": true,
+            "logging": true,
+            "framework": "nextjs",
+            "timeout": 30,
+            "installCommand": "pnpm i",
+            "buildCommand": "pnpm build",
+            "outputDirectory": "./.next",
+            "specification": "s-0.5vcpu-512mb",
+            "buildRuntime": "node-22",
+            "adapter": "ssr",
+            "fallbackFile": "",
+            "path": "sites/YousufRiceWebsite"
+        }
+    ],
     "tablesDB": [
         {
             "$id": "6915ff74001aa13f6189",
@@ -48,12 +66,9 @@
     ],
     "tables": [
         {
-            "$id": "6915ff9a0032c016dffe",
+            "$id": "6916ac06002cba46aaa9",
             "$permissions": [
-                "create(\"any\")",
-                "read(\"any\")",
-                "update(\"any\")",
-                "delete(\"any\")"
+                "read(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Products",
@@ -151,12 +166,9 @@
             ]
         },
         {
-            "$id": "6915ff9a0032d42785f3",
+            "$id": "6916ac06002cd4ccd508",
             "$permissions": [
-                "create(\"any\")",
-                "read(\"any\")",
-                "update(\"any\")",
-                "delete(\"any\")"
+                "read(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Product Images",
@@ -202,7 +214,7 @@
             ]
         },
         {
-            "$id": "6915ff9a0032d07f1ac2",
+            "$id": "6916ac06002cd811b613",
             "$permissions": [
                 "create(\"any\")",
                 "read(\"any\")",
@@ -254,7 +266,7 @@
             "indexes": []
         },
         {
-            "$id": "6915ff9a0032df558a38",
+            "$id": "6916ac06002cd3573362",
             "$permissions": [
                 "create(\"any\")",
                 "read(\"any\")",
@@ -315,6 +327,42 @@
                     "size": 5000,
                     "default": null,
                     "encrypt": false
+                },
+                {
+                    "key": "total_items_count",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "total_weight_kg",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "subtotal_before_discount",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "total_discount_amount",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
                 }
             ],
             "indexes": [
@@ -330,7 +378,7 @@
             ]
         },
         {
-            "$id": "6915ff9a0032dd9541cc",
+            "$id": "6916ac06002cdc8982bf",
             "$permissions": [
                 "create(\"any\")",
                 "read(\"any\")",
@@ -352,6 +400,15 @@
                     "encrypt": false
                 },
                 {
+                    "key": "longitude",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
                     "key": "customer_id",
                     "type": "string",
                     "required": true,
@@ -359,6 +416,15 @@
                     "size": 255,
                     "default": null,
                     "encrypt": false
+                },
+                {
+                    "key": "latitude",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
                 },
                 {
                     "key": "order_id",
@@ -377,20 +443,6 @@
                     "size": 255,
                     "default": null,
                     "encrypt": false
-                },
-                {
-                    "key": "longitude",
-                    "type": "point",
-                    "required": true,
-                    "array": false,
-                    "default": null
-                },
-                {
-                    "key": "latitude",
-                    "type": "point",
-                    "required": true,
-                    "array": false,
-                    "default": null
                 }
             ],
             "indexes": [
@@ -404,12 +456,241 @@
                     "orders": []
                 }
             ]
+        },
+        {
+            "$id": "order_items_table",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "6915ff74001aa13f6189",
+            "name": "Order Items",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "order_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "product_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "product_name",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "product_description",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "quantity_kg",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "bags_1kg",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "bags_5kg",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "bags_10kg",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "bags_25kg",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "price_per_kg_at_order",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "base_price_per_kg_at_order",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "tier_applied",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tier_price_at_order",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "discount_percentage",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "discount_amount",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "discount_reason",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "subtotal_before_discount",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "total_after_discount",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "notes",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "is_custom_price",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "order_id_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "order_id"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "product_id_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "product_id"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "order_product_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "order_id",
+                        "product_id"
+                    ],
+                    "orders": []
+                }
+            ]
         }
     ],
     "buckets": [
         {
             "$id": "product-images",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")",
+                "read(\"any\")"
+            ],
             "fileSecurity": false,
             "name": "product-images",
             "enabled": true,
@@ -426,7 +707,13 @@
         },
         {
             "$id": "banner-images",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")",
+                "read(\"any\")"
+            ],
             "fileSecurity": false,
             "name": "banner-images",
             "enabled": true,
