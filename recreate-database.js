@@ -2,10 +2,10 @@ const { Client, Databases, Storage, ID, Permission, Role } = require('node-appwr
 
 // Configuration from your env.example
 const config = {
-  endpoint: 'https://sgp.cloud.appwrite.io/v1',
-  projectId: '6915f70f003815538919',
-  apiKey: 'standard_1809713173ba2bbfd4872efee22439a6842cb1c70f769202981d588f1a84964ddfdede3812af076be74f00d61ea99f87cc2e94c3697a2e82730ea14fe88b05ae87f04f23f3e79e883056e0b41fa69bf3459a3eb027e6d178fa06b62ce00dc00673f265fe2b2b7d0b016a9424aaabb97d73125af552e8273839fd1a70ca7b393e', // Replace with your actual API key
-  databaseId: '6915ff74001aa13f6189',
+  endpoint: process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT,
+  projectId: process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID,
+  apiKey: process.env.APPWRITE_API_KEY, // Replace with your actual API key
+  databaseId: process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
   databaseName: 'YousufRiceWebsite'
 };
 

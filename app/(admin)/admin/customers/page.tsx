@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthStore, AdminPermission } from '@/lib/store/auth-store';
 import { databases, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID } from '@/lib/appwrite';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import { Customer, Order } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
