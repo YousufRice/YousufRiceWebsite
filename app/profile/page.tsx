@@ -227,13 +227,27 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-600 mb-3">
                   Enter your password to confirm changes
                 </p>
-                <Input
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                />
+
+                <div className="space-y-1">
+                  <Input
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                  />
+
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-xs text-[#27247b] hover:underline block text-right"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent the form from submitting
+                      setIsEditing(false); // Close the edit mode
+                    }}
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
