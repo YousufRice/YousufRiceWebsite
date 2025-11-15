@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MetaPixel } from "@/components/meta-pixel";
 import FloatingChatbox from "@/components/floating-chatbox";
+import { PWAInstall } from "@/components/PWAInstall";
 import "./globals.css";
 import AnnocementBar from "@/components/annoucement-bar";
 import { Suspense } from "react";
@@ -142,6 +143,9 @@ export default function RootLayout({
         </Suspense>
         <Suspense fallback={null}>
           <FloatingChatbox />
+        </Suspense>
+        <Suspense fallback={null}>
+          <PWAInstall />
         </Suspense>
       </body>
     </html>
