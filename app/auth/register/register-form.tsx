@@ -36,11 +36,23 @@ export default function RegisterForm() {
 
   // Format phone number with country code for Appwrite Auth
   const formatPhoneForAuth = (phone: string): string => {
-    const trimmed = phone.trim();
-    // If already starts with +, return as is
+    let trimmed = phone.trim();
+
+    // If already in correct format (+92XXXXXXXXXX), return as is
+    if (trimmed.startsWith("+92") && trimmed.length === 13) {
+      return trimmed;
+    }
+
+    // If starts with +, but not +92, return as is (user provided different country code)
     if (trimmed.startsWith("+")) {
       return trimmed;
     }
+
+    // Remove leading 0 if present
+    if (trimmed.startsWith("0")) {
+      trimmed = trimmed.substring(1);
+    }
+
     // Add Pakistan country code
     return `+92${trimmed}`;
   };

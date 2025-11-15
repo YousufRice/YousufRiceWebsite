@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, User, LogOut } from "lucide-react";
+import { ShoppingCart, User, LogOut, ChevronDown } from "lucide-react";
 import { useCartStore } from "@/lib/store/cart-store";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Navbar as AceternityNavbar,
   NavBody,
@@ -21,31 +21,51 @@ export function Navbar() {
   const { user, isAdmin, isReadOnly, checkAuth, logout } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-  
+
   // Log auth status for debugging
   useEffect(() => {
-    console.log('Auth status:', { 
-      user: !!user, 
-      isAdmin, 
+    console.log("Auth status:", {
+      user: !!user,
+      isAdmin,
       isReadOnly,
-      canAccessAdmin: isAdmin || isReadOnly
+      canAccessAdmin: isAdmin || isReadOnly,
     });
   }, [user, isAdmin, isReadOnly]);
 
   // Prevent hydration mismatch by only reading cart on client
   useEffect(() => {
     setTotalItems(useCartStore.getState().getTotalItems());
-    
+
     const unsubscribe = useCartStore.subscribe((state) => {
       setTotalItems(state.getTotalItems());
     });
-    
+
     return unsubscribe;
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileDropdownOpen(false);
+      }
+    }
+
+    if (isProfileDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isProfileDropdownOpen]);
 
   const navItems = [
     { name: "Products", link: "/#products" },
@@ -55,7 +75,7 @@ export function Navbar() {
     // Manual tracking temporarily disabled - uncomment below to enable
     // { name: user ? "My Orders" : "Track Order", link: user ? "/orders" : "/track-order" },
     ...(user ? [{ name: "My Orders", link: "/orders" }] : []),
-    ...((isAdmin || isReadOnly) ? [{ name: "Admin", link: "/admin" }] : []),
+    ...(isAdmin || isReadOnly ? [{ name: "Admin", link: "/admin" }] : []),
   ];
 
   const handleMobileItemClick = () => {
@@ -102,16 +122,41 @@ export function Navbar() {
 
           {/* Auth Section */}
           {user ? (
-            <div className="flex items-center space-x-2  ">
-              <span className="text-sm text-[#27247b] dark:text-neutral-300 font-medium  ">
-                {user.name || user.email}
-              </span>
+            <div className="relative" ref={profileDropdownRef}>
               <button
-                onClick={logout}
-                className="p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white    "
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition text-[#27247b] dark:text-neutral-300"
               >
-                <LogOut className="w-4 h-4  " />
+                <User className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {user.name || user.email}
+                </span>
+                <ChevronDown className="w-4 h-4" />
               </button>
+
+              {/* Dropdown Menu */}
+              {isProfileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-800 z-50">
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="flex items-center space-x-2 px-4 py-3 text-[#27247b] dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition first:rounded-t-lg"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>My Profile</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsProfileDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center space-x-2 px-4 py-3 text-[#27247b] dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition last:rounded-b-lg border-t border-gray-200 dark:border-neutral-800"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <NavbarButton
@@ -177,19 +222,26 @@ export function Navbar() {
             </Link>
           ))}
 
-
           {/* Auth Section in Mobile Menu */}
           {user ? (
-            <div className="flex flex-col space-y-2 w-full pt-4 border-t border-[#27247b]/20 dark:border-neutral-800">
+            <div className="flex flex-col space-y-3 w-full pt-4 border-t border-[#27247b]/20 dark:border-neutral-800">
               <span className="text-sm text-[#27247b] dark:text-neutral-300 font-medium">
                 {user.name || user.email}
               </span>
+              <Link
+                href="/profile"
+                onClick={handleMobileItemClick}
+                className="flex items-center space-x-2 text-[#27247b] dark:text-neutral-300 hover:text-[#27247b]/80 dark:hover:text-white"
+              >
+                <User className="w-4 h-4" />
+                <span>My Profile</span>
+              </Link>
               <button
                 onClick={() => {
                   logout();
                   setIsMobileMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 text-[#27247b] dark:text-neutral-300 hover:text-[#27247b]/80 dark:hover:text-white  "
+                className="flex items-center space-x-2 text-[#27247b] dark:text-neutral-300 hover:text-[#27247b]/80 dark:hover:text-white"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
