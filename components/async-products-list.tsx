@@ -1,4 +1,4 @@
-import { ProductCardSimple } from "@/components/product-card-simple";
+import { ProductCard } from "@/components/product-card";
 import {
   getCachedRegularProducts,
   getCachedProductImages,
@@ -154,7 +154,7 @@ export async function AsyncProductsList() {
                   {categories[category].map((product) => (
                     <div key={product.$id} className="flex justify-center">
                       <div className="w-full max-w-sm">
-                        <ProductCardSimple
+                        <ProductCard
                           product={product}
                           imageFileId={imageMap.get(product.$id)}
                         />

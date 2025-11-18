@@ -77,18 +77,10 @@ export function Footer() {
           <div>
             <h4 className="text-lg font-bold text-[#ffff03] mb-4">Contact Us</h4>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-white/80 text-sm">
-                <MapPin className="w-5 h-5 text-[#ffff03] shrink-0 mt-0.5" />
-                <span>
-                  Suit No. 5-6, 5th Floor, Textile Plaza,<br />
-                  M.A. Jinnah Road,<br />
-                  Karachi-74000, Pakistan
-                </span>
-              </li>
               <li className="flex items-center gap-3 text-white/80 text-sm">
                 <Phone className="w-5 h-5 text-[#ffff03] shrink-0" />
-                <a href="tel:+923098619358" className="hover:text-[#ffff03] transition-colors">
-                  +92 309 8619358
+                <a href="tel:+923332339557" className="hover:text-[#ffff03] transition-colors">
+                  03332339557
                 </a>
               </li>
               <li className="flex items-center gap-3 text-white/80 text-sm">

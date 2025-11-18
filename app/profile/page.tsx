@@ -47,13 +47,13 @@ export default function ProfilePage() {
           const customerData = response.documents[0];
           setFormData({
             full_name: customerData.full_name || user.name || "",
-            phone: customerData.phone || "",
+            phone: customerData.phone || user.phone || "",
             email: customerData.email || user.email || "",
           });
         } else {
           setFormData({
             full_name: user.name || "",
-            phone: "",
+            phone: user.phone || "",
             email: user.email || "",
           });
         }

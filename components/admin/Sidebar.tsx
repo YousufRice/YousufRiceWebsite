@@ -9,7 +9,6 @@ import {
   Package, 
   ShoppingBag, 
   Users, 
-  Settings, 
   LogOut, 
   ShieldCheck,
   Home
@@ -43,11 +42,6 @@ export function Sidebar() {
       name: 'Customers',
       href: '/admin/customers',
       icon: Users,
-    },
-    {
-      name: 'Settings',
-      href: '/admin/settings',
-      icon: Settings,
     },
     {
       name: 'Auth Test',
