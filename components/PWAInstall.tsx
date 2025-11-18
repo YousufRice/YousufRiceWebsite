@@ -63,9 +63,9 @@ export function PWAInstall() {
   // Show iOS installation instructions
   if (isIOS && showPrompt) {
     return (
-      <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm z-50 border border-gray-200">
+      <div className="fixed bottom-24 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm z-50 border border-[#27247b]/20">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-900">Install App</h3>
+          <h3 className="font-semibold text-[#27247b]">Install App</h3>
           <button
             onClick={handleDismiss}
             className="text-gray-400 hover:text-gray-600"
@@ -77,6 +77,7 @@ export function PWAInstall() {
           Tap the share button and select "Add to Home Screen" to install Yousuf
           Rice app.
         </p>
+        <div className="w-full h-2 bg-gradient-to-r from-[#27247b] to-[#ffff0b] rounded-full mb-3"></div>
       </div>
     );
   }
@@ -84,9 +85,9 @@ export function PWAInstall() {
   // Show install prompt for other browsers
   if (isInstallable && showPrompt && !isIOS) {
     return (
-      <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm z-50 border border-gray-200">
+      <div className="fixed bottom-24 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm z-50 border border-[#27247b]/20">
         <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-gray-900">Install Yousuf Rice</h3>
+          <h3 className="font-semibold text-[#27247b]">Install Yousuf Rice</h3>
           <button
             onClick={handleDismiss}
             className="text-gray-400 hover:text-gray-600"
@@ -99,9 +100,9 @@ export function PWAInstall() {
         </p>
         <button
           onClick={handleInstall}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          className="w-full bg-gradient-to-r from-[#27247b] to-[#ffff0b] text-white font-medium py-2.5 px-4 rounded-lg transition-all hover:opacity-90 shadow-md hover:shadow-lg"
         >
-          Install
+          Install Now
         </button>
       </div>
     );
