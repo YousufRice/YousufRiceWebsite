@@ -2,10 +2,10 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Yousuf Rice - Premium Quality Rice Delivery",
+    name: "Yousuf Rice",
     short_name: "Yousuf Rice",
     description:
-      "Order premium quality basmati and sella rice online with tier-based pricing, free delivery, and cash on delivery",
+      "Order premium quality basmati and sella rice online with big discounts on 10 kg and plus, free delivery, and cash on delivery",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
