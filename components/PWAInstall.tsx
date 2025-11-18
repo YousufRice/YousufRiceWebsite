@@ -77,7 +77,7 @@ export function PWAInstall() {
           Tap the share button and select "Add to Home Screen" to install Yousuf
           Rice app.
         </p>
-        <div className="w-full h-2 bg-gradient-to-r from-[#27247b] to-[#ffff0b] rounded-full mb-3"></div>
+        <div className="w-full h-2 bg-linear-to-r from-[#27247b] to-[#ffff0b] rounded-full mb-3"></div>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export function PWAInstall() {
         </p>
         <button
           onClick={handleInstall}
-          className="w-full bg-gradient-to-r from-[#27247b] to-[#ffff0b] text-white font-medium py-2.5 px-4 rounded-lg transition-all hover:opacity-90 shadow-md hover:shadow-lg"
+          className="w-full bg-linear-to-r from-[#27247b] to-[#ffff0b] text-white font-medium py-2.5 px-4 rounded-lg transition-all hover:opacity-90 shadow-md hover:shadow-lg"
         >
           Install Now
         </button>
