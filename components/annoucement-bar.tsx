@@ -1,4 +1,5 @@
-import { XIcon } from "lucide-react";
+import { XIcon } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AnnocementBar() {
   return (
@@ -27,8 +28,8 @@ export default function AnnocementBar() {
           className="aspect-577/310 w-144.25 bg-linear-to-r from-[#27247b] via-[#f9e97f] to-[#fff93d] opacity-40"
         />
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p className="text-sm/6 text-gray-900">
+      <div className="flex flex-nowrap items-center gap-x-2 sm:gap-x-4 gap-y-2">
+        <p className="text-xs sm:text-sm/6 text-gray-900">
           <strong className="font-semibold">
             Yousuf Rice 2025 - Now delivering premium rice with Free Delivery
           </strong>
@@ -41,12 +42,12 @@ export default function AnnocementBar() {
           </svg>
           across Karachi!
         </p>
-        <a
+        <Link
           href="/#products"
-          className="flex-none rounded-full bg-gray-900 px-3.5 py-1 text-sm font-semibold text-white shadow-xs hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+          className="flex-none rounded-full bg-gray-900 px-2 sm:px-3.5 py-1 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 whitespace-nowrap"
         >
           Order now <span aria-hidden="true">&rarr;</span>
-        </a>
+        </Link>
       </div>
       <div className="flex flex-1 justify-end">
         <button

@@ -7,16 +7,16 @@ import {
   CUSTOMERS_TABLE_ID,
   ADDRESSES_TABLE_ID,
   PRODUCTS_TABLE_ID,
-} from "../appwrite";
+} from "@/lib/appwrite";
 import {
   Order,
-  OrderItem,
   OrderWithDetails,
+  OrderItem,
   Customer,
   Address,
   Product,
-  CreateOrderRequest,
-} from "../types";
+} from "@/lib/types";
+import { CreateOrderRequest } from "../types";
 import {
   calculateTierPricing,
   calculateItemTotal,
@@ -218,7 +218,7 @@ export class OrderService {
       const itemsResponse = await databases.listDocuments(
         DATABASE_ID,
         ORDER_ITEMS_TABLE_ID,
-        [`order_id=${orderId}`]
+        [Query.equal("order_id", orderId)]
       );
       const items = itemsResponse.documents as unknown as OrderItem[];
 

@@ -31,16 +31,19 @@ export default function OrderDetailPage() {
   const [data, setData] = useState<OrderWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if coming from customer detail page
+  // Check if coming from customer detail page or admin
   const fromCustomer = searchParams.get("from") === "customer";
+  const fromAdmin = searchParams.get("from") === "admin";
   const customerId = searchParams.get("customerId");
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
+        console.log("Fetching order details for ID:", orderId);
         const orderWithDetails = await OrderService.getOrderWithDetails(
           orderId
         );
+        console.log("Order details fetched:", orderWithDetails);
         setData(orderWithDetails);
       } catch (error) {
         console.error("Error fetching order details:", error);
@@ -52,6 +55,9 @@ export default function OrderDetailPage() {
 
     if (orderId) {
       fetchOrderDetails();
+    } else {
+      console.error("No orderId provided");
+      setLoading(false);
     }
   }, [orderId]);
 
@@ -62,7 +68,7 @@ export default function OrderDetailPage() {
   if (fromCustomer && customerId) {
     backUrl = `/admin/customers/${customerId}`;
     backText = "Back to Customer Details";
-  } else if (isAdmin) {
+  } else if (fromAdmin || isAdmin) {
     backUrl = "/admin/orders";
     backText = "Back to Order Management";
   }
