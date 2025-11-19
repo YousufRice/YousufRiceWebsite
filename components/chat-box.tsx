@@ -48,20 +48,46 @@ export default function ChatBox({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  // Load messages from localStorage on mount
+  // Load messages from localStorage on mount (with 24-hour expiration)
   useEffect(() => {
-    const savedMessages = localStorage.getItem(`chat_messages_${userId}`);
-    if (savedMessages) {
+    const storageKey = `chat_messages_${userId}`;
+    const savedData = localStorage.getItem(storageKey);
+
+    if (savedData) {
       try {
-        const parsed = JSON.parse(savedMessages);
-        // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        }));
-        setMessages(messagesWithDates);
+        const parsed = JSON.parse(savedData);
+
+        // Check if the saved data has a timestamp and if it's older than 24 hours
+        if (parsed.savedAt) {
+          const savedAt = new Date(parsed.savedAt);
+          const now = new Date();
+          const hoursDiff =
+            (now.getTime() - savedAt.getTime()) / (1000 * 60 * 60);
+
+          if (hoursDiff > 24) {
+            // Clear expired messages
+            localStorage.removeItem(storageKey);
+            console.log("Chat history expired and cleared after 24 hours");
+          } else {
+            // Load valid messages
+            const messagesWithDates = parsed.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(messagesWithDates);
+          }
+        } else {
+          // Legacy format without timestamp - load messages but save in new format
+          const messagesWithDates = parsed.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp),
+          }));
+          setMessages(messagesWithDates);
+        }
       } catch (error) {
         console.error("Failed to load messages from localStorage:", error);
+        // Clear corrupted data
+        localStorage.removeItem(storageKey);
         // Fall back to welcome message
         if (welcomeMessage) {
           setMessages([
@@ -85,10 +111,15 @@ export default function ChatBox({
     }
   }, [userId, welcomeMessage]);
 
-  // Save messages to localStorage whenever they change
+  // Save messages to localStorage whenever they change (with timestamp for expiration)
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem(`chat_messages_${userId}`, JSON.stringify(messages));
+      const storageKey = `chat_messages_${userId}`;
+      const dataToSave = {
+        messages: messages,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
     }
   }, [messages, userId]);
 
