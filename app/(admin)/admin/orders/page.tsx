@@ -47,6 +47,7 @@ import {
   ShoppingBag,
   TrendingUp,
   CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 import { Query } from "appwrite";
 import toast from "react-hot-toast";
@@ -215,18 +216,27 @@ export default function AdminOrdersPage() {
         return <Truck className="w-5 h-5 text-purple-500" />;
       case "delivered":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case "returned":
+        return <RotateCcw className="w-5 h-5 text-red-500" />;
     }
   };
 
   const stats = {
     total: orders.length,
-    totalRevenue: orders.reduce((sum, order) => sum + order.total_price, 0),
+    totalRevenue: orders.reduce((sum, order) => {
+      // Exclude returned orders from revenue calculation
+      if (order.status === "returned") return sum;
+      return sum + order.total_price;
+    }, 0),
     pending: orders.filter((o) => o.status === "pending").length,
     delivered: orders.filter((o) => o.status === "delivered").length,
     avgOrderValue:
       orders.length > 0
-        ? orders.reduce((sum, order) => sum + order.total_price, 0) /
-          orders.length
+        ? orders.reduce((sum, order) => {
+            // Exclude returned orders from average calculation
+            if (order.status === "returned") return sum;
+            return sum + order.total_price;
+          }, 0) / orders.filter((o) => o.status !== "returned").length
         : 0,
   };
 
@@ -391,6 +401,14 @@ export default function AdminOrdersPage() {
                   <CheckCircle2 className="w-4 h-4 mr-1" />
                   Delivered
                 </Button>
+                <Button
+                  variant={filter === "returned" ? "primary" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("returned")}
+                >
+                  <RotateCcw className="w-4 h-4 mr-1" />
+                  Returned
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -434,7 +452,9 @@ export default function AdminOrdersPage() {
                             ? "info"
                             : order.status === "out_for_delivery"
                             ? "purple"
-                            : "success"
+                            : order.status === "delivered"
+                            ? "success"
+                            : "destructive"
                         }
                         className="mt-2"
                       >
@@ -528,6 +548,21 @@ export default function AdminOrdersPage() {
                           >
                             <CheckCircle2 className="w-4 h-4 mr-2" />
                             Mark Delivered
+                          </Button>
+                        </ReadOnlyGuard>
+                      )}
+
+                      {order.status === "delivered" && (
+                        <ReadOnlyGuard>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              updateOrderStatus(order.$id, "returned")
+                            }
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            <RotateCcw className="w-4 h-4 mr-2" />
+                            Mark as Returned
                           </Button>
                         </ReadOnlyGuard>
                       )}

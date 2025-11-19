@@ -137,18 +137,23 @@ export class AdminService {
 
       const orders = ordersResponse.documents as any[];
 
+      // Filter out returned orders for revenue calculations
+      const activeOrders = orders.filter(
+        (order) => order.status !== "returned"
+      );
+
       // Basic statistics
       const totalOrders = orders.length;
-      const totalRevenue = orders.reduce(
+      const totalRevenue = activeOrders.reduce(
         (sum, order) => sum + (order.total_price || 0),
         0
       );
-      const totalWeight = orders.reduce(
+      const totalWeight = activeOrders.reduce(
         (sum, order) => sum + (order.total_weight_kg || 0),
         0
       );
       const averageOrderValue =
-        totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        activeOrders.length > 0 ? totalRevenue / activeOrders.length : 0;
 
       // Status breakdown
       const statusBreakdown: Record<string, number> = {};
@@ -157,8 +162,8 @@ export class AdminService {
           (statusBreakdown[order.status] || 0) + 1;
       });
 
-      // Get all order items for product analysis
-      const allOrderIds = orders.map((order) => order.$id);
+      // Get all order items for product analysis (exclude returned orders)
+      const allOrderIds = activeOrders.map((order) => order.$id);
       const orderItemsQueries =
         allOrderIds.length > 0 ? allOrderIds.map((id) => `order_id=${id}`) : [];
 
@@ -204,10 +209,10 @@ export class AdminService {
         .sort((a, b) => b.total_revenue - a.total_revenue)
         .slice(0, 10);
 
-      // Revenue by day
+      // Revenue by day (exclude returned orders)
       const revenueByDay: Record<string, { revenue: number; orders: number }> =
         {};
-      orders.forEach((order) => {
+      activeOrders.forEach((order) => {
         const date = new Date(order.$createdAt).toISOString().split("T")[0];
         if (!revenueByDay[date]) {
           revenueByDay[date] = { revenue: 0, orders: 0 };
@@ -248,7 +253,12 @@ export class AdminService {
    */
   static async updateOrderStatus(
     orderId: string,
-    newStatus: "pending" | "accepted" | "out_for_delivery" | "delivered",
+    newStatus:
+      | "pending"
+      | "accepted"
+      | "out_for_delivery"
+      | "delivered"
+      | "returned",
     adminNotes?: string
   ): Promise<OrderWithDetails | null> {
     try {
@@ -263,7 +273,8 @@ export class AdminService {
         pending: ["accepted"],
         accepted: ["out_for_delivery"],
         out_for_delivery: ["delivered"],
-        delivered: [], // No further transitions
+        delivered: ["returned"], // Allow delivered orders to be returned
+        returned: [], // No further transitions after return
       };
 
       const currentStatus = currentOrder.status;
