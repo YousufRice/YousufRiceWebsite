@@ -6,7 +6,7 @@ import { Package, Globe, Award, TrendingUp, CheckCircle } from 'lucide-react';
 
 export default function AboutPage() {
   // Direct image URL for mill facility
-  const millImageUrl = 'https://syd.cloud.appwrite.io/v1/storage/buckets/690da96c001f8fa61cdb/files/690daa1500133c099156/view?project=68cb65a4000ab2fec182&mode=admin';
+  const millImageUrl = 'https://sgp.cloud.appwrite.io/v1/storage/buckets/691d585f003acdc55cc8/files/691d58e700252d9a5326/view?project=6915f70f003815538919&mode=admin';
 
   const stats = [
     { icon: Package, label: 'Export Capacity', value: '150+', subtitle: 'Containers per month' },
@@ -16,8 +16,8 @@ export default function AboutPage() {
   ];
 
   const varieties = [
-    { name: 'Sella 1121 Rice', description: 'Premium long grain basmati rice' },
-    { name: 'Long Grain 386 Basmati', description: 'Traditional aromatic basmati' },
+    { name: '1121 Sella Rice', description: 'Premium Long Grain Basmati Rice' },
+    { name: '1121 Steam Sella', description: 'High Quality Aromatic Basmati' },
     { name: 'Various Premium Varieties', description: 'Wide selection for all needs' },
   ];
 

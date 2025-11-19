@@ -122,8 +122,7 @@ export default function FloatingChatbox() {
                   Login Required
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">
-                  Please log in to chat with our AI assistant and get
-                  personalized support.
+                  Please log in to chat with our Customer Support.
                 </p>
                 <div className="space-y-2 w-full">
                   <Button

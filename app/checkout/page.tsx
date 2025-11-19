@@ -535,50 +535,35 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-4 mt-6">
-                    <label className="block text-sm font-bold text-[#27247b] mb-2">
-                      📍 Location (Recommended)
-                    </label>
-                    <div className="space-y-3">
-                      <div className="bg-[#27247b]/5 border-2 border-[#27247b]/20 rounded-xl p-4">
-                        <p className="text-sm text-[#27247b] font-bold mb-2">
-                          📍 For Best Delivery Experience (Optional but
-                          Recommended):
-                        </p>
-                        <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc">
-                          <li>
-                            <strong>Enable GPS</strong> in device settings (not
-                            just "Location")
-                          </li>
-                          <li>
-                            Use <strong>Wi-Fi + GPS</strong> mode (not cellular
-                            only)
-                          </li>
-                          <li>
-                            <strong>Go outdoors</strong> or stand near a window
-                          </li>
-                          <li>
-                            Allow <strong>precise location</strong> in browser
-                            permissions
-                          </li>
-                          <li>
-                            If GPS fails, use Google Maps to find your
-                            coordinates
-                          </li>
-                        </ul>
+                  <div className="space-y-2 mt-4">
+                    <div className="space-y-2">
+<div className="bg-linear-to-br from-[#27247b]/5 to-[#27247b]/10 border-2 border-[#27247b]/20 rounded-xl p-5"> 
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <label className="text-sm text-[#27247b] font-bold mb-2 block"> 
+                              📍 For Best Delivery Accuracy (Optional)
+                            </label> 
+                            <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc"> 
+                              <li>Turn on your phone's GPS/location</li>
+                              <li className="text-[#27247b]/60 italic">Optional but recommended</li>
+                            </ul>
+                          </div>
+                          <Button 
+                            type="button" 
+                            onClick={handleGetLocation} 
+                            disabled={gettingLocation} 
+                            className="bg-linear-to-r from-[#ffff03] to-[#ffed00] hover:from-[#ffff03]/90 hover:to-[#ffed00]/90 text-[#27247b] font-bold py-3 px-5 rounded-xl border-2 border-[#27247b]/30 shadow-lg hover:shadow-2xl hover:scale-[1.05] active:scale-[0.95] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 whitespace-nowrap" 
+                          > 
+                            <MapPin className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} /> 
+                            <span className="hidden sm:inline">
+                              {gettingLocation ? "Getting Location..." : "Get Location"}
+                            </span>
+                            <span className="sm:hidden">
+                              {gettingLocation ? "Getting..." : "GPS"}
+                            </span>
+                          </Button>
+                        </div> 
                       </div>
-
-                      <Button
-                        type="button"
-                        onClick={handleGetLocation}
-                        disabled={gettingLocation}
-                        className="w-full bg-[#ffff03] hover:bg-[#ffff03]/90 text-[#27247b] font-bold py-4 rounded-xl border-2 border-[#27247b]/20 shadow-lg hover:shadow-xl transition-all"
-                      >
-                        <MapPin className="w-5 h-5 mr-2" />
-                        {gettingLocation
-                          ? "Getting High-Accuracy Location..."
-                          : "Capture Current Location (GPS)"}
-                      </Button>
 
                       {/* Show location details only if actual coordinates are provided */}
                       {((formData.latitude !== 0 && formData.longitude !== 0) ||
@@ -590,8 +575,7 @@ export default function CheckoutPage() {
                             ✓ Location Captured Successfully
                           </p>
                           <p className="text-xs text-[#27247b]/80">
-                            Coordinates: {formData.latitude.toFixed(6)},{" "}
-                            {formData.longitude.toFixed(6)}
+                            Coordinates captured and ready for delivery
                           </p>
                           <a
                             href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
@@ -599,35 +583,23 @@ export default function CheckoutPage() {
                             rel="noopener noreferrer"
                             className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
                           >
-                            📍 View on Google Maps →
+                            View on Google Maps
                           </a>
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
-                        <p className="text-xs text-[#27247b] font-bold">
-                          💡 Manual Entry (Optional): If GPS doesn't work, get
-                          coordinates from Google Maps:
-                        </p>
-                        <ol className="text-xs text-gray-700 mt-1 ml-4 list-decimal space-y-0.5">
-                          <li>Open Google Maps on your phone/computer</li>
-                          <li>Long-press on your exact location</li>
-                          <li>Copy the coordinates (e.g., 24.9056, 67.0822)</li>
-                          <li>Paste them in the fields below</li>
-                        </ol>
-                      </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-bold text-[#27247b] mb-1">
+                          <label className="hidden text-xs font-bold text-[#27247b] mb-1">
                             Latitude
                           </label>
-                          <Input
-                            type="number"
+                          {/* Hidden latitude input - functionality preserved */}
+                          <input
+                            type="hidden"
                             step="any"
-                            placeholder="e.g., 24.9056"
                             value={formData.latitude || ""}
                             onChange={(e) =>
                               setFormData({
@@ -635,17 +607,16 @@ export default function CheckoutPage() {
                                 latitude: parseFloat(e.target.value) || 0,
                               })
                             }
-                            className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-2 text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-[#27247b] mb-1">
+                          <label className="hidden text-xs font-bold text-[#27247b] mb-1">
                             Longitude
                           </label>
-                          <Input
-                            type="number"
+                          {/* Hidden longitude input - functionality preserved */}
+                          <input
+                            type="hidden"
                             step="any"
-                            placeholder="e.g., 67.0822"
                             value={formData.longitude || ""}
                             onChange={(e) =>
                               setFormData({
@@ -653,7 +624,6 @@ export default function CheckoutPage() {
                                 longitude: parseFloat(e.target.value) || 0,
                               })
                             }
-                            className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-2 text-sm"
                           />
                         </div>
                       </div>
@@ -663,7 +633,7 @@ export default function CheckoutPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-linear-to-r from-[#27247b] to-[#27247b]/90 hover:from-[#27247b]/90 hover:to-[#27247b] text-white font-bold py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-[#ffff03] mt-6"
+                    className="w-full bg-linear-to-r from-[#27247b] to-[#27247b]/90 hover:from-[#27247b]/90 hover:to-[#27247b] text-white font-bold py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 border-2 border-[#ffff03]"
                     disabled={loading}
                   >
                     {loading
