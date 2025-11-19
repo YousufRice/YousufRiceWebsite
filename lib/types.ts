@@ -79,7 +79,12 @@ export interface Order {
   total_discount_amount?: number;
   total_price: number; // final total after all discounts
 
-  status: "pending" | "accepted" | "out_for_delivery" | "delivered";
+  status:
+    | "pending"
+    | "accepted"
+    | "out_for_delivery"
+    | "delivered"
+    | "returned";
   $createdAt: string;
 
   // Navigation properties (not stored in DB, populated by queries)
