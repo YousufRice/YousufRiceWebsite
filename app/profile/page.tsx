@@ -14,14 +14,20 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Query } from "appwrite";
 import toast from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Gift, Copy, Check } from "lucide-react";
 import Link from "next/link";
+import { DiscountService } from "@/lib/services/discount-service";
+import { LoyaltyDiscount } from "@/lib/services/loyalty-service";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, checkAuth } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [loyaltyDiscounts, setLoyaltyDiscounts] = useState<LoyaltyDiscount[]>(
+    []
+  );
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -50,6 +56,9 @@ export default function ProfilePage() {
             phone: customerData.phone || user.phone || "",
             email: customerData.email || user.email || "",
           });
+
+          // Fetch loyalty discounts for this customer
+          await fetchLoyaltyDiscounts(customerData.$id);
         } else {
           setFormData({
             full_name: user.name || "",
@@ -63,6 +72,17 @@ export default function ProfilePage() {
       }
     };
 
+    const fetchLoyaltyDiscounts = async (customerId: string) => {
+      try {
+        const discounts = await DiscountService.getCustomerActiveDiscountCodes(
+          customerId
+        );
+        setLoyaltyDiscounts(discounts);
+      } catch (error) {
+        console.error("Error fetching loyalty discounts:", error);
+      }
+    };
+
     fetchCustomerData();
   }, [user, router]);
 
@@ -72,6 +92,17 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const copyToClipboard = async (discountCode: string) => {
+    try {
+      await navigator.clipboard.writeText(discountCode);
+      setCopiedCode(discountCode);
+      toast.success("Discount code copied to clipboard!");
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (error) {
+      toast.error("Failed to copy discount code");
+    }
   };
 
   const handleSave = async () => {
@@ -276,6 +307,63 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Loyalty Discounts Section */}
+      {loyaltyDiscounts.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Gift className="w-5 h-5 text-[#27247b]" />
+              Your Loyalty Discounts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loyaltyDiscounts.map((discount) => (
+              <div
+                key={discount.$id}
+                className="border rounded-lg p-4 bg-gray-50"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-lg text-[#27247b]">
+                      {discount.discount_percentage}% OFF
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      One-time use discount code
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">
+                      Generated:{" "}
+                      {new Date(
+                        discount.code_generated_at
+                      ).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="flex-1 bg-white border rounded px-3 py-2 font-mono text-sm">
+                    {discount.discount_code}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(discount.discount_code)}
+                    className="flex items-center gap-1"
+                  >
+                    {copiedCode === discount.discount_code ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                    {copiedCode === discount.discount_code ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

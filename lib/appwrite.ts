@@ -1,4 +1,4 @@
-import { Client, Databases, Storage, Account } from "appwrite";
+import { Client, Databases, Storage, Account, ID, Query } from "appwrite";
 
 // Client for browser usage
 const client = new Client()
@@ -52,7 +52,9 @@ export const ADDRESSES_TABLE_ID =
   process.env.NEXT_PUBLIC_APPWRITE_ADDRESSES_TABLE_ID!;
 export const PRODUCT_IMAGES_TABLE_ID =
   process.env.NEXT_PUBLIC_APPWRITE_PRODUCT_IMAGES_TABLE_ID!;
+export const DISCOUNT_MANAGEMENT_TABLE_ID =
+  process.env.NEXT_PUBLIC_APPWRITE_DISCOUNT_MANAGEMENT_TABLE_ID!;
 export const STORAGE_BUCKET_ID =
   process.env.NEXT_PUBLIC_APPWRITE_STORAGE_BUCKET_ID!;
 
-export { client };
+export { client, ID, Query };

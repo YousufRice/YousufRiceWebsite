@@ -1,24 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ShoppingCart, Plus, Minus, Package, Sparkles, Zap, ArrowRight, TrendingDown, Award, Check } from 'lucide-react';
-import { Product } from '@/lib/types';
-import { Card, CardContent } from './ui/card';
-import { Button } from './ui/button';
-import { useCartStore } from '@/lib/store/cart-store';
-import { calculatePrice, formatCurrency, getPricePerKg } from '@/lib/utils';
-import { storage, STORAGE_BUCKET_ID } from '@/lib/appwrite';
-import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  ShoppingCart,
+  Plus,
+  Minus,
+  Package,
+  Sparkles,
+  Zap,
+  ArrowRight,
+  TrendingDown,
+  Award,
+  Check,
+} from "lucide-react";
+import { Product } from "@/lib/types";
+import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
+import { useCartStore } from "@/lib/store/cart-store";
+import { calculatePrice, formatCurrency, getPricePerKg } from "@/lib/utils";
+import { storage, STORAGE_BUCKET_ID } from "@/lib/appwrite";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface SpecialDealCardProps {
   product: Product;
   imageFileId?: string;
 }
 
-export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) {
+export function SpecialDealCard({
+  product,
+  imageFileId,
+}: SpecialDealCardProps) {
   const [bagCount, setBagCount] = useState(0);
   const addBag = useCartStore((state) => state.addBag);
   const removeBag = useCartStore((state) => state.removeBag);
@@ -33,22 +47,22 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
     : null;
 
   const handleAddBag = () => {
-    setBagCount(prev => prev + 1);
+    setBagCount((prev) => prev + 1);
     addBag(product, 25);
     toast.success(`Added 25kg bag of ${product.name} to cart!`, {
-      icon: '🎉',
+      icon: "🎉",
       style: {
-        borderRadius: '12px',
-        background: '#27247b',
-        color: '#ffff03',
-        fontWeight: 'bold',
+        borderRadius: "12px",
+        background: "#27247b",
+        color: "#ffff03",
+        fontWeight: "bold",
       },
     });
   };
 
   const handleRemoveBag = () => {
     if (bagCount > 0) {
-      setBagCount(prev => prev - 1);
+      setBagCount((prev) => prev - 1);
       removeBag(product.$id, 25);
       toast.success(`Removed 25kg bag from cart!`);
     }
@@ -56,19 +70,19 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
 
   const handleBuyNow = () => {
     if (bagCount === 0) {
-      toast.error('Please add at least one 25kg bag to continue!');
+      toast.error("Please add at least one 25kg bag to continue!");
       return;
     }
-    toast.success('Proceeding to checkout!', {
-      icon: '🚀',
+    toast.success("Proceeding to checkout!", {
+      icon: "🚀",
       style: {
-        borderRadius: '12px',
-        background: '#27247b',
-        color: '#ffff03',
-        fontWeight: 'bold',
+        borderRadius: "12px",
+        background: "#27247b",
+        color: "#ffff03",
+        fontWeight: "bold",
       },
     });
-    router.push('/checkout');
+    router.push("/checkout");
   };
 
   return (
@@ -97,17 +111,21 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
           ) : (
             <div className="text-center">
               <Package className="w-32 h-32 md:w-40 md:h-40 mx-auto mb-6 text-[#27247b]/20" />
-              <p className="text-lg md:text-xl text-gray-600 font-medium">Premium Rice Product</p>
+              <p className="text-lg md:text-xl text-gray-600 font-medium">
+                Premium Rice Product
+              </p>
             </div>
           )}
-          
+
           {!product.available && (
             <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
-              <span className="text-white font-bold text-2xl md:text-3xl bg-red-600 px-8 py-4 md:px-10 md:py-5 rounded-full shadow-2xl">Out of Stock</span>
+              <span className="text-white font-bold text-2xl md:text-3xl bg-red-600 px-8 py-4 md:px-10 md:py-5 rounded-full shadow-2xl">
+                Out of Stock
+              </span>
             </div>
           )}
         </div>
-        
+
         {/* View Details Button */}
         <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
           <Link href={`/products/${product.$id}`}>
@@ -127,7 +145,9 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
             {product.name}
           </h3>
           {product.description && (
-            <p className="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed">{product.description}</p>
+            <p className="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed">
+              {product.description}
+            </p>
           )}
         </div>
 
@@ -137,23 +157,33 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
           <div className="bg-linear-to-br from-[#27247b] via-[#2d2a85] to-[#1a1854] rounded-2xl p-5 md:p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute -top-8 -right-8 w-32 h-32 bg-[#ffff03] rounded-full blur-3xl opacity-20"></div>
             <div className="relative">
-              <p className="text-xs text-white/60 mb-1 font-semibold uppercase tracking-wider">Bulk Price</p>
+              <p className="text-xs text-white/60 mb-1 font-semibold uppercase tracking-wider">
+                Bulk Price
+              </p>
               <div className="flex items-baseline gap-2 mb-2">
                 <p className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#ffff03]">
                   {formatCurrency(pricePerKg * 25)}
                 </p>
-                <span className="text-white/80 text-sm md:text-base font-medium">/bag</span>
+                <span className="text-white/80 text-sm md:text-base font-medium">
+                  /bag
+                </span>
               </div>
               <p className="text-white/70 text-xs md:text-sm font-medium">
                 {formatCurrency(pricePerKg)}/kg × 25kg per bag
               </p>
-              
-              {product.has_tier_pricing && product.base_price_per_kg > pricePerKg && (
-                <div className="mt-3 md:mt-4 inline-flex items-center gap-1.5 bg-[#ffff03] text-[#27247b] px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-bold text-xs md:text-sm shadow-lg">
-                  <TrendingDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  <span>Save {formatCurrency((product.base_price_per_kg - pricePerKg) * 25)}</span>
-                </div>
-              )}
+
+              {product.has_tier_pricing &&
+                product.base_price_per_kg > pricePerKg && (
+                  <div className="mt-3 md:mt-4 inline-flex items-center gap-1.5 bg-[#ffff03] text-[#27247b] px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-bold text-xs md:text-sm shadow-lg">
+                    <TrendingDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    <span>
+                      Save{" "}
+                      {formatCurrency(
+                        (product.base_price_per_kg - pricePerKg) * 25
+                      )}
+                    </span>
+                  </div>
+                )}
             </div>
           </div>
 
@@ -165,7 +195,9 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
                   <span className="text-lg md:text-xl">💰</span>
                 </div>
                 <div>
-                  <p className="text-sm md:text-base font-bold text-[#27247b]">Volume Discounts</p>
+                  <p className="text-sm md:text-base font-bold text-[#27247b]">
+                    Volume Discounts
+                  </p>
                   <p className="text-xs text-gray-600">Buy more, save more</p>
                 </div>
               </div>
@@ -173,16 +205,24 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
                 {product.tier_2_4kg_price && (
                   <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs md:text-sm font-semibold text-gray-600">50-100kg</span>
-                      <span className="text-sm md:text-base font-bold text-[#27247b]">{formatCurrency(product.tier_2_4kg_price)}/kg</span>
+                      <span className="text-xs md:text-sm font-semibold text-gray-600">
+                        50-100kg
+                      </span>
+                      <span className="text-sm md:text-base font-bold text-[#27247b]">
+                        {formatCurrency(product.tier_2_4kg_price)}/kg
+                      </span>
                     </div>
                   </div>
                 )}
                 {product.tier_5_9kg_price && (
                   <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs md:text-sm font-semibold text-gray-600">125-225kg</span>
-                      <span className="text-sm md:text-base font-bold text-[#27247b]">{formatCurrency(product.tier_5_9kg_price)}/kg</span>
+                      <span className="text-xs md:text-sm font-semibold text-gray-600">
+                        125-225kg
+                      </span>
+                      <span className="text-sm md:text-base font-bold text-[#27247b]">
+                        {formatCurrency(product.tier_5_9kg_price)}/kg
+                      </span>
                     </div>
                   </div>
                 )}
@@ -192,7 +232,9 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
                       <span className="text-xs md:text-sm font-semibold text-[#27247b]/80 flex items-center gap-1">
                         250kg+ <Check className="w-3 h-3" />
                       </span>
-                      <span className="text-sm md:text-base font-bold text-[#27247b]">{formatCurrency(product.tier_10kg_up_price)}/kg</span>
+                      <span className="text-sm md:text-base font-bold text-[#27247b]">
+                        {formatCurrency(product.tier_10kg_up_price)}/kg
+                      </span>
                     </div>
                   </div>
                 )}
@@ -210,7 +252,9 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
                 <div className="bg-[#27247b] text-[#ffff03] rounded-lg px-3 py-1.5 md:px-4 md:py-2 font-bold text-sm md:text-base shadow-md">
                   25kg
                 </div>
-                <span className="text-gray-600 text-xs md:text-sm">per bag</span>
+                <span className="text-gray-600 text-xs md:text-sm">
+                  per bag
+                </span>
               </div>
             </div>
             <div className="text-right">
@@ -220,7 +264,7 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
               </p>
             </div>
           </div>
-          
+
           {/* Control Buttons */}
           <div className="grid grid-cols-2 gap-2.5 md:gap-3">
             <Button
@@ -228,13 +272,15 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
               disabled={!product.available || bagCount === 0}
               className="h-12 md:h-14 rounded-xl bg-white border-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02]"
               style={{
-                borderColor: bagCount === 0 ? '#e5e7eb' : '#ef4444',
-                color: bagCount === 0 ? '#9ca3af' : '#ef4444',
-                backgroundColor: bagCount === 0 ? '#f9fafb' : 'white'
+                borderColor: bagCount === 0 ? "#e5e7eb" : "#ef4444",
+                color: bagCount === 0 ? "#9ca3af" : "#ef4444",
+                backgroundColor: bagCount === 0 ? "#f9fafb" : "white",
               }}
             >
               <Minus className="w-5 h-5 md:w-6 md:h-6" />
-              <span className="ml-2 font-bold text-sm md:text-base">Remove</span>
+              <span className="ml-2 font-bold text-sm md:text-base">
+                Remove
+              </span>
             </Button>
             <Button
               onClick={handleAddBag}
@@ -250,20 +296,27 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
         {/* Order Summary - Shows when bags added */}
         {bagCount > 0 && (
           <div className="space-y-3 md:space-y-4 animate-in slide-in-from-bottom duration-300">
-{/* Total Card */}
-<div className="bg-linear-to-br from-[#ffff03]/10 via-white to-[#ffff03]/5 rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-[#ffff03] shadow-lg hover:shadow-xl transition-shadow duration-300">
-  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-    <div>
-      <p className="text-[10px] sm:text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">Weight</p>
-      <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#27247b]">{totalKg}kg</p>
-    </div>
-    <div className="text-right">
-      <p className="text-[10px] sm:text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">Total</p>
-      <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#27247b]">{formatCurrency(totalPrice)}</p>
-    </div>
-  </div>
-</div>
-
+            {/* Total Card */}
+            <div className="bg-linear-to-br from-[#ffff03]/10 via-white to-[#ffff03]/5 rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-[#ffff03] shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <p className="text-[10px] sm:text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">
+                    Weight
+                  </p>
+                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#27247b]">
+                    {totalKg}kg
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] sm:text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">
+                    Total
+                  </p>
+                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#27247b]">
+                    {formatCurrency(totalPrice)}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* Action Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 md:gap-3">
@@ -275,9 +328,12 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
                 <Zap className="w-5 h-5 md:w-6 md:h-6 mr-2 text-[#ffff03]" />
                 Buy Now
               </Button>
-              
+
               <Link href="/cart" className="order-1 sm:order-2">
-                <Button variant="outline" className="w-full h-14 md:h-16 lg:h-[72px] border-2 border-[#27247b] text-[#27247b] hover:bg-[#27247b] hover:text-white hover:border-[#27247b] font-bold text-base md:text-lg rounded-xl transition-all hover:scale-[1.02]">
+                <Button
+                  variant="outline"
+                  className="w-full h-14 md:h-16 lg:h-[72px] border-2 border-[#27247b] text-[#27247b] hover:bg-[#27247b] hover:text-white hover:border-[#27247b] font-bold text-base md:text-lg rounded-xl transition-all hover:scale-[1.02]"
+                >
                   <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 mr-2" />
                   Cart ({bagCount})
                 </Button>

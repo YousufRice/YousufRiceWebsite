@@ -8,6 +8,7 @@ import {
   ADDRESSES_TABLE_ID,
   PRODUCTS_TABLE_ID,
 } from "@/lib/appwrite";
+import { LoyaltyService } from "./loyalty-service";
 import {
   Order,
   OrderWithDetails,
@@ -66,11 +67,20 @@ export class OrderService {
             itemRequest.discount?.percentage || 0
           );
 
+          // Calculate tier discount amount (difference between base price and tier price)
+          const tierDiscountAmount = itemRequest.is_custom_price
+            ? 0 // No tier discount for custom prices
+            : tierPricing.discountAmount;
+
+          // Calculate additional percentage discount amount
+          const percentageDiscountAmount = itemTotal.discountAmount;
+
           // Update running totals
           totalItemsCount += 1;
           totalWeightKg += itemRequest.quantity_kg;
-          subtotalBeforeDiscount += itemTotal.subtotal;
-          totalDiscountAmount += itemTotal.discountAmount;
+          subtotalBeforeDiscount +=
+            product.base_price_per_kg * itemRequest.quantity_kg;
+          totalDiscountAmount += tierDiscountAmount + percentageDiscountAmount;
 
           return {
             itemRequest,
@@ -78,6 +88,8 @@ export class OrderService {
             tierPricing,
             pricePerKg,
             itemTotal,
+            tierDiscountAmount,
+            percentageDiscountAmount,
           };
         })
       );
@@ -130,8 +142,15 @@ export class OrderService {
       // Create order items
       const orderItems: OrderItem[] = [];
       for (const processedItem of processedItems) {
-        const { itemRequest, product, tierPricing, pricePerKg, itemTotal } =
-          processedItem;
+        const {
+          itemRequest,
+          product,
+          tierPricing,
+          pricePerKg,
+          itemTotal,
+          tierDiscountAmount,
+          percentageDiscountAmount,
+        } = processedItem;
 
         const orderItemId = ID.unique();
         const orderItem = (await databases.createDocument(
@@ -163,11 +182,14 @@ export class OrderService {
 
             // Discount
             discount_percentage: itemRequest.discount?.percentage || 0,
-            discount_amount: itemTotal.discountAmount,
+            discount_amount: tierDiscountAmount + percentageDiscountAmount,
+            tier_discount_amount: tierDiscountAmount,
+            percentage_discount_amount: percentageDiscountAmount,
             discount_reason: itemRequest.discount?.reason || "",
 
             // Totals
-            subtotal_before_discount: itemTotal.subtotal,
+            subtotal_before_discount:
+              product.base_price_per_kg * itemRequest.quantity_kg,
             total_after_discount: itemTotal.total,
 
             // Metadata
@@ -185,6 +207,20 @@ export class OrderService {
         CUSTOMERS_TABLE_ID,
         orderRequest.customer_id
       )) as unknown as Customer;
+
+      // Process loyalty discount after order creation
+      try {
+        const productNames = processedItems.map((item) => item.product.name);
+        await LoyaltyService.processLoyaltyDiscount(
+          orderRequest.customer_id,
+          customer.full_name || "",
+          totalPrice,
+          productNames
+        );
+      } catch (loyaltyError) {
+        console.error("Error processing loyalty discount:", loyaltyError);
+        // Don't fail the order if loyalty processing fails
+      }
 
       // Return complete order with details
       return {
