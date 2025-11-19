@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Plus, Minus, Package, Sparkles, Zap } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Package, Sparkles, Zap, ArrowRight, TrendingDown, Award, Check } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -72,211 +72,220 @@ export function SpecialDealCard({ product, imageFileId }: SpecialDealCardProps) 
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 border-transparent hover:border-[#ffff03] bg-linear-to-br from-white via-white to-[#ffff03]/5 group relative">
-      {/* Premium Badge */}
-      <div className="absolute top-4 right-4 z-10 bg-linear-to-r from-[#ffff03] to-[#e6e600] text-[#27247b] px-4 py-2 rounded-full font-bold text-sm shadow-lg transform rotate-3 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500 flex items-center gap-2">
-        <Sparkles className="w-4 h-4" />
-        <span>Bulk Deal</span>
-      </div>
+    <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 border-none bg-white shadow-xl rounded-3xl group">
+      {/* Hero Section: Image */}
+      <div className="relative bg-linear-to-br from-[#fafafa] via-white to-[#ffff03]/5 overflow-hidden">
+        {/* Premium Badge */}
+        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 bg-linear-to-r from-[#ffff03] via-[#ffed4e] to-[#e6e600] text-[#27247b] px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-2xl flex items-center gap-2">
+          <Award className="w-4 h-4 md:w-5 md:h-5" />
+          <span>Bulk Deal</span>
+        </div>
 
-      <div className="flex flex-col lg:flex-row">
-        {/* Image Section */}
-        <Link href={`/products/${product.$id}`} className="lg:w-2/5 relative group/image cursor-pointer">
-          <div className="relative h-72 lg:h-[450px] bg-linear-to-br from-[#27247b]/5 via-[#ffff03]/10 to-[#27247b]/5 group-hover/image:from-[#27247b]/10 group-hover/image:to-[#ffff03]/20 transition-all duration-700 overflow-hidden">
-            {imageUrl ? (
+        {/* Image Container */}
+        <div className="h-[400px] md:h-[500px] lg:h-[550px] relative flex items-center justify-center p-8 md:p-12 pb-20 md:pb-24">
+          {imageUrl ? (
+            <div className="relative w-full h-full">
               <Image
                 src={imageUrl}
                 alt={product.name}
                 fill
-                className="object-contain p-6 group-hover/image:scale-110 transition-transform duration-1000 ease-out"
-                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="object-contain group-hover:scale-105 transition-transform duration-700 drop-shadow-2xl"
+                sizes="100vw"
                 priority
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Package className="w-24 h-24 mx-auto mb-4 text-[#27247b]/20 animate-pulse" />
-                  <p className="text-sm text-gray-600 font-medium">Premium Rice</p>
-                </div>
-              </div>
-            )}
-            
-            {!product.available && (
-              <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center backdrop-blur-sm">
-                <span className="text-white font-bold text-2xl bg-red-600 px-8 py-4 rounded-full shadow-2xl">Out of Stock</span>
-              </div>
-            )}
-            
-            {/* Animated Border Glow */}
-            <div className="absolute inset-0 border-4 border-transparent group-hover/image:border-[#ffff03]/60 transition-all duration-500 pointer-events-none rounded-lg"></div>
-            
-            {/* View Details Button */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 group-hover/image:scale-110 transition-all duration-500">
-              <div className="flex items-center gap-3 bg-linear-to-r from-[#27247b] via-[#27247b] to-[#1a1854] px-6 py-3 rounded-full shadow-2xl group-hover/image:shadow-[#ffff03]/50 border-2 border-[#ffff03]">
-                <span className="text-base font-bold text-white">View Full Details</span>
-                <svg className="w-5 h-5 text-[#ffff03] transform group-hover/image:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
             </div>
-          </div>
-        </Link>
-
-        {/* Content Section */}
-        <CardContent className="lg:w-3/5 p-6 lg:p-8 flex flex-col justify-between">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="text-2xl lg:text-3xl font-bold text-[#27247b] mb-3 group-hover:text-[#1a1854] transition-colors leading-tight">
-                  {product.name}
-                </h3>
-                {product.description && (
-                  <p className="text-base text-gray-600 leading-relaxed mb-4">{product.description}</p>
-                )}
-              </div>
+          ) : (
+            <div className="text-center">
+              <Package className="w-32 h-32 md:w-40 md:h-40 mx-auto mb-6 text-[#27247b]/20" />
+              <p className="text-lg md:text-xl text-gray-600 font-medium">Premium Rice Product</p>
             </div>
-
-            {/* Bulk Pricing Highlight */}
-            <div className="bg-linear-to-r from-[#27247b] via-[#27247b] to-[#1a1854] rounded-2xl p-6 relative overflow-hidden shadow-xl mb-6">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffff03] rounded-full blur-3xl opacity-20 animate-pulse"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-sm text-white/70 mb-1 uppercase tracking-wider font-semibold">Bulk Price (25kg)</p>
-                    <p className="text-4xl font-bold text-[#ffff03]">
-                      {formatCurrency(pricePerKg)}
-                      <span className="text-lg text-white/90 ml-2">/kg</span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-white/70 mb-1">Per Bag</p>
-                    <p className="text-2xl font-bold text-white">{formatCurrency(pricePerKg * 25)}</p>
-                  </div>
-                </div>
-                
-                {/* Savings Badge */}
-                {product.has_tier_pricing && product.base_price_per_kg > pricePerKg && (
-                  <div className="bg-[#ffff03] text-[#27247b] px-4 py-2 rounded-lg font-bold text-sm inline-flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Save {formatCurrency((product.base_price_per_kg - pricePerKg) * 25)} per bag!
-                  </div>
-                )}
-              </div>
+          )}
+          
+          {!product.available && (
+            <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
+              <span className="text-white font-bold text-2xl md:text-3xl bg-red-600 px-8 py-4 md:px-10 md:py-5 rounded-full shadow-2xl">Out of Stock</span>
             </div>
-
-            {/* Tier Pricing Info */}
-            {product.has_tier_pricing && (
-              <div className="bg-linear-to-br from-[#ffff03]/15 via-[#ffff03]/10 to-transparent rounded-xl p-5 border-2 border-[#ffff03]/40 shadow-lg">
-                <p className="text-sm font-bold text-[#27247b] mb-3 flex items-center gap-2">
-                  <span className="text-xl">💰</span> 
-                  <span>Volume Discounts Available</span>
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {product.tier_2_4kg_price && (
-                    <div className="bg-white rounded-lg p-3 shadow-md border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1 font-semibold">50-100kg</div>
-                      <div className="text-sm font-bold text-gray-900">{formatCurrency(product.tier_2_4kg_price)}/kg</div>
-                    </div>
-                  )}
-                  {product.tier_5_9kg_price && (
-                    <div className="bg-white rounded-lg p-3 shadow-md border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1 font-semibold">125-225kg</div>
-                      <div className="text-sm font-bold text-gray-900">{formatCurrency(product.tier_5_9kg_price)}/kg</div>
-                    </div>
-                  )}
-                  {product.tier_10kg_up_price && (
-                    <div className="bg-linear-to-br from-[#ffff03] to-[#e6e600] rounded-lg p-3 shadow-lg border-2 border-[#ffff03]">
-                      <div className="text-xs text-[#27247b]/80 mb-1 font-semibold">250kg+</div>
-                      <div className="text-sm font-bold text-[#27247b]">{formatCurrency(product.tier_10kg_up_price)}/kg</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Order Section */}
-          <div className="space-y-4">
-            {/* Current Order Summary */}
-            <div className="bg-linear-to-r from-gray-50 to-gray-100 rounded-xl p-5 border-2 border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1 font-semibold">Total Weight</p>
-                  <p className="text-3xl font-bold text-[#27247b]">{totalKg}kg</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600 mb-1 font-semibold">Total Price</p>
-                  <p className="text-3xl font-bold text-[#27247b]">{formatCurrency(totalPrice)}</p>
-                </div>
-              </div>
-              
-              {/* Bag Counter */}
-              <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-md border-2 border-[#ffff03]/30">
-                <div className="flex items-center gap-4">
-                  <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-[#ffff03] rounded-xl px-5 py-3 text-lg font-bold shadow-lg">
-                    25kg Bags
-                  </div>
-                  <span className="text-lg text-gray-700 font-semibold">
-                    {bagCount > 0 ? `${bagCount} bag${bagCount > 1 ? 's' : ''}` : 'No bags selected'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={handleRemoveBag}
-                    disabled={!product.available || bagCount === 0}
-                    className="h-12 w-12 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300"
-                  >
-                    <Minus className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    size="lg"
-                    onClick={handleAddBag}
-                    disabled={!product.available}
-                    className="h-12 px-8 bg-linear-to-r from-[#ffff03] to-[#e6e600] hover:from-[#e6e600] hover:to-[#ffff03] text-[#27247b] font-bold border-2 border-[#ffff03] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add Bag
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Add to Cart */}
-            {bagCount > 0 && (
-              <div className="bg-linear-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-4 flex items-center justify-between animate-in slide-in-from-bottom duration-500">
-                <div className="flex items-center gap-3">
-                  <ShoppingCart className="w-6 h-6 text-green-600" />
-                  <span className="text-sm font-semibold text-green-800">
-                    {bagCount} bag{bagCount > 1 ? 's' : ''} added to cart
-                  </span>
-                </div>
-                <Link href="/cart">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white font-bold">
-                    View Cart
-                  </Button>
-                </Link>
-              </div>
-            )}
-
-            {/* Buy Now Button */}
-            {bagCount > 0 && (
-              <div className="mt-3 animate-in slide-in-from-bottom duration-500">
-                <Button
-                  onClick={handleBuyNow}
-                  disabled={!product.available}
-                  className="w-full h-14 bg-linear-to-r from-[#27247b] to-[#1a1854] hover:from-[#1a1854] hover:to-[#27247b] text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2 border-[#ffff03]"
-                >
-                  <Zap className="w-6 h-6 mr-2 text-[#ffff03] animate-pulse" />
-                  Buy Now - {formatCurrency(totalPrice)}
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
+          )}
+        </div>
+        
+        {/* View Details Button */}
+        <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
+          <Link href={`/products/${product.$id}`}>
+            <Button className="w-full h-12 md:h-14 lg:h-16 bg-[#27247b] hover:bg-[#1a1854] text-white font-bold text-sm md:text-base lg:text-lg shadow-2xl hover:shadow-[#ffff03]/30 transition-all duration-300 hover:scale-[1.02] rounded-xl border-2 border-[#ffff03] group/btn">
+              <span>View Full Details</span>
+              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2 text-[#ffff03] group-hover/btn:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Content Section */}
+      <CardContent className="p-5 md:p-6 lg:p-8">
+        {/* Product Header */}
+        <div className="mb-5 md:mb-6">
+          <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#27247b] mb-2 md:mb-3 leading-tight">
+            {product.name}
+          </h3>
+          {product.description && (
+            <p className="text-sm md:text-base lg:text-lg text-gray-600 leading-relaxed">{product.description}</p>
+          )}
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="grid gap-4 md:gap-5 mb-5 md:mb-6 lg:grid-cols-2">
+          {/* Main Price Card */}
+          <div className="bg-linear-to-br from-[#27247b] via-[#2d2a85] to-[#1a1854] rounded-2xl p-5 md:p-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-8 -right-8 w-32 h-32 bg-[#ffff03] rounded-full blur-3xl opacity-20"></div>
+            <div className="relative">
+              <p className="text-xs text-white/60 mb-1 font-semibold uppercase tracking-wider">Bulk Price</p>
+              <div className="flex items-baseline gap-2 mb-2">
+                <p className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#ffff03]">
+                  {formatCurrency(pricePerKg * 25)}
+                </p>
+                <span className="text-white/80 text-sm md:text-base font-medium">/bag</span>
+              </div>
+              <p className="text-white/70 text-xs md:text-sm font-medium">
+                {formatCurrency(pricePerKg)}/kg × 25kg per bag
+              </p>
+              
+              {product.has_tier_pricing && product.base_price_per_kg > pricePerKg && (
+                <div className="mt-3 md:mt-4 inline-flex items-center gap-1.5 bg-[#ffff03] text-[#27247b] px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-bold text-xs md:text-sm shadow-lg">
+                  <TrendingDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  <span>Save {formatCurrency((product.base_price_per_kg - pricePerKg) * 25)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Volume Discounts */}
+          {product.has_tier_pricing && (
+            <div className="bg-linear-to-br from-[#ffff03]/10 via-[#ffff03]/5 to-transparent rounded-2xl p-5 md:p-6 border-2 border-[#ffff03]/30 shadow-lg">
+              <div className="flex items-center gap-2.5 md:gap-3 mb-3 md:mb-4">
+                <div className="w-9 h-9 md:w-10 md:h-10 bg-linear-to-br from-[#27247b] to-[#1a1854] rounded-lg flex items-center justify-center shadow-lg shrink-0">
+                  <span className="text-lg md:text-xl">💰</span>
+                </div>
+                <div>
+                  <p className="text-sm md:text-base font-bold text-[#27247b]">Volume Discounts</p>
+                  <p className="text-xs text-gray-600">Buy more, save more</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {product.tier_2_4kg_price && (
+                  <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs md:text-sm font-semibold text-gray-600">50-100kg</span>
+                      <span className="text-sm md:text-base font-bold text-[#27247b]">{formatCurrency(product.tier_2_4kg_price)}/kg</span>
+                    </div>
+                  </div>
+                )}
+                {product.tier_5_9kg_price && (
+                  <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs md:text-sm font-semibold text-gray-600">125-225kg</span>
+                      <span className="text-sm md:text-base font-bold text-[#27247b]">{formatCurrency(product.tier_5_9kg_price)}/kg</span>
+                    </div>
+                  </div>
+                )}
+                {product.tier_10kg_up_price && (
+                  <div className="bg-linear-to-br from-[#ffff03] to-[#e6e600] rounded-lg p-3 shadow-lg border-2 border-[#ffff03]/50 hover:shadow-xl transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs md:text-sm font-semibold text-[#27247b]/80 flex items-center gap-1">
+                        250kg+ <Check className="w-3 h-3" />
+                      </span>
+                      <span className="text-sm md:text-base font-bold text-[#27247b]">{formatCurrency(product.tier_10kg_up_price)}/kg</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Quantity Selector - Modern Design */}
+        <div className="bg-linear-to-br from-white to-gray-50 rounded-2xl p-4 md:p-5 border-2 border-gray-200 shadow-sm mb-5 md:mb-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div>
+              <p className="text-xs text-gray-500 font-medium mb-1">Bag Size</p>
+              <div className="flex items-center gap-2">
+                <div className="bg-[#27247b] text-[#ffff03] rounded-lg px-3 py-1.5 md:px-4 md:py-2 font-bold text-sm md:text-base shadow-md">
+                  25kg
+                </div>
+                <span className="text-gray-600 text-xs md:text-sm">per bag</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500 font-medium mb-1">Selected</p>
+              <p className="text-3xl md:text-4xl font-bold text-[#27247b]">
+                {bagCount}
+              </p>
+            </div>
+          </div>
+          
+          {/* Control Buttons */}
+          <div className="grid grid-cols-2 gap-2.5 md:gap-3">
+            <Button
+              onClick={handleRemoveBag}
+              disabled={!product.available || bagCount === 0}
+              className="h-12 md:h-14 rounded-xl bg-white border-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02]"
+              style={{
+                borderColor: bagCount === 0 ? '#e5e7eb' : '#ef4444',
+                color: bagCount === 0 ? '#9ca3af' : '#ef4444',
+                backgroundColor: bagCount === 0 ? '#f9fafb' : 'white'
+              }}
+            >
+              <Minus className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="ml-2 font-bold text-sm md:text-base">Remove</span>
+            </Button>
+            <Button
+              onClick={handleAddBag}
+              disabled={!product.available}
+              className="h-12 md:h-14 rounded-xl bg-linear-to-r from-[#ffff03] via-[#ffed4e] to-[#e6e600] hover:from-[#e6e600] hover:to-[#ffff03] text-[#27247b] font-bold text-sm md:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 border-2 border-[#ffff03]"
+            >
+              <Plus className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="ml-2">Add Bag</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Order Summary - Shows when bags added */}
+        {bagCount > 0 && (
+          <div className="space-y-3 md:space-y-4 animate-in slide-in-from-bottom duration-300">
+{/* Total Card */}
+<div className="bg-linear-to-br from-[#ffff03]/10 via-white to-[#ffff03]/5 rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-[#ffff03] shadow-lg hover:shadow-xl transition-shadow duration-300">
+  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+    <div>
+      <p className="text-[10px] sm:text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">Weight</p>
+      <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#27247b]">{totalKg}kg</p>
+    </div>
+    <div className="text-right">
+      <p className="text-[10px] sm:text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">Total</p>
+      <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#27247b]">{formatCurrency(totalPrice)}</p>
+    </div>
+  </div>
+</div>
+
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 md:gap-3">
+              <Button
+                onClick={handleBuyNow}
+                disabled={!product.available}
+                className="h-14 md:h-16 lg:h-[72px] bg-linear-to-r from-[#27247b] via-[#2d2a85] to-[#1a1854] hover:from-[#1a1854] hover:to-[#27247b] text-white font-bold text-base md:text-lg rounded-xl shadow-2xl hover:shadow-[#ffff03]/50 transition-all duration-300 hover:scale-[1.02] border-2 border-[#ffff03] order-2 sm:order-1"
+              >
+                <Zap className="w-5 h-5 md:w-6 md:h-6 mr-2 text-[#ffff03]" />
+                Buy Now
+              </Button>
+              
+              <Link href="/cart" className="order-1 sm:order-2">
+                <Button variant="outline" className="w-full h-14 md:h-16 lg:h-[72px] border-2 border-[#27247b] text-[#27247b] hover:bg-[#27247b] hover:text-white hover:border-[#27247b] font-bold text-base md:text-lg rounded-xl transition-all hover:scale-[1.02]">
+                  <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+                  Cart ({bagCount})
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }
