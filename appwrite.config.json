@@ -68,7 +68,11 @@
         {
             "$id": "6916ac06002cba46aaa9",
             "$permissions": [
-                "read(\"any\")"
+                "read(\"any\")",
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Products",
@@ -168,7 +172,11 @@
         {
             "$id": "6916ac06002cd4ccd508",
             "$permissions": [
-                "read(\"any\")"
+                "read(\"any\")",
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Product Images",
@@ -314,7 +322,8 @@
                         "pending",
                         "accepted",
                         "out_for_delivery",
-                        "delivered"
+                        "delivered",
+                        "returned"
                     ],
                     "format": "enum",
                     "default": null
@@ -674,6 +683,241 @@
                     "status": "available",
                     "columns": [
                         "order_id",
+                        "product_id"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "discount_management",
+            "$permissions": [
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")",
+                "read(\"users\")"
+            ],
+            "databaseId": "6915ff74001aa13f6189",
+            "name": "Discount Management",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "type",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customer_id",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customer_name",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "card_status",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "total_purchases",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "total_purchase_amount",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "eligible_for_extra_discount",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                },
+                {
+                    "key": "extra_discount_percentage",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "rule_name",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "product_id",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "min_weight_kg",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "discount_percentage",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "min": 0,
+                    "max": 1.7976931348623157e+308,
+                    "default": null
+                },
+                {
+                    "key": "rule_active",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                },
+                {
+                    "key": "discount_code",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "code_status",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "used_in_order_id",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "code_generated_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "code_used_at",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "notes",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "is_enabled",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "type_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "type"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "customer_id_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "customer_id"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "discount_code_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "discount_code"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "code_status_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "code_status"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "product_id_idx",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
                         "product_id"
                     ],
                     "orders": []
