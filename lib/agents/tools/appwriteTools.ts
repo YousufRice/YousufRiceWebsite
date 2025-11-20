@@ -15,6 +15,7 @@ import {
   trackAgentPurchase,
   trackAgentInitiateCheckout,
 } from "@/lib/meta-agent-tracking";
+import { LoyaltyService } from "@/lib/services/loyalty-service";
 
 /**
  * Helper function to build price tiers from product data
@@ -798,8 +799,13 @@ export const calculateOrderPriceTool = tool({
         })
       )
       .describe("Array of items with productId and quantity"),
+    discountCode: z
+      .string()
+      .nullable()
+      .default(null)
+      .describe("Optional loyalty discount code to apply"),
   }),
-  async execute({ items }) {
+  async execute({ items, discountCode }) {
     try {
       // Validate items array
       if (!items || items.length === 0) {
@@ -922,7 +928,29 @@ export const calculateOrderPriceTool = tool({
 
       // Free delivery on all orders
       const deliveryFee = 0;
-      const grandTotal = totalPrice;
+      let grandTotal = totalPrice;
+      let discountAmount = 0;
+      let appliedDiscountCode = null;
+      let discountPercentage = 0;
+
+      // Apply discount code if provided
+      if (discountCode) {
+        try {
+          const loyaltyDiscount = await LoyaltyService.findLoyaltyDiscountByCode(
+            discountCode
+          );
+          
+          if (loyaltyDiscount && loyaltyDiscount.code_status === "active") {
+            discountPercentage = loyaltyDiscount.extra_discount_percentage || 3;
+            discountAmount = Math.round((grandTotal * discountPercentage) / 100);
+            grandTotal = Math.round(grandTotal - discountAmount);
+            appliedDiscountCode = discountCode;
+          }
+        } catch (e) {
+          console.error("Error applying discount code:", e);
+          // Continue without discount if invalid
+        }
+      }
 
       // Note: Meta InitiateCheckout tracking removed from price calculation
       // because it requires customer information which is not available at this stage.
@@ -935,9 +963,16 @@ export const calculateOrderPriceTool = tool({
           items: itemsBreakdown,
           subtotal: totalPrice,
           deliveryFee,
+          discountAmount,
+          discountCode: appliedDiscountCode,
+          discountPercentage,
           grandTotal,
         },
-        message: `Total: PKR ${grandTotal.toFixed(2)} (Free delivery!)`,
+        message: `Total: PKR ${grandTotal.toFixed(2)} (Free delivery!)${
+          appliedDiscountCode
+            ? ` - Includes ${discountPercentage}% loyalty discount`
+            : ""
+        }`,
       };
     } catch (error: any) {
       console.error("calculateOrderPriceTool error:", error);
@@ -994,6 +1029,11 @@ export const createOrderTool = tool({
       .describe(
         "Optional Appwrite auth user ID. If provided, will be stored in user_id for the customer; otherwise 'guest' will be used."
       ),
+    discountCode: z
+      .string()
+      .nullable()
+      .default(null)
+      .describe("Optional loyalty discount code to redeem"),
   }),
   async execute({
     customerName,
@@ -1005,6 +1045,7 @@ export const createOrderTool = tool({
     latitude,
     longitude,
     userId,
+    discountCode,
   }) {
     try {
       // Validate customer name
@@ -1256,8 +1297,43 @@ export const createOrderTool = tool({
           order_items: orderItemsCSV,
           total_price: totalAmount,
           status: "pending",
+          total_discount_amount: 0, // Will update if discount applied
         }
       );
+
+      // Process loyalty discount if provided
+      let discountApplied = false;
+      if (discountCode) {
+        try {
+          // Verify and use the discount code
+          // This marks it as used in the DB
+          await LoyaltyService.validateAndUseDiscountCode(discountCode, orderId);
+          
+          // We need to calculate the discount amount to store it
+          // Assuming the totalAmount passed in is ALREADY discounted (as per calculate_order_price)
+          // But we need to store the discount amount for records.
+          // Let's fetch the discount details again to get the percentage
+          const discountRecord = await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
+          if (discountRecord) {
+             // Reverse calculate or just use the percentage on the subtotal?
+             // The totalAmount passed here is the FINAL amount.
+             // So Original = Final / (1 - rate)
+             // Discount = Original - Final
+             const rate = (discountRecord.extra_discount_percentage || 3) / 100;
+             const originalTotal = Math.round(totalAmount / (1 - rate));
+             const discountAmount = originalTotal - totalAmount;
+             
+             await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
+               total_discount_amount: discountAmount
+             });
+             discountApplied = true;
+          }
+        } catch (e) {
+          console.error("Error processing loyalty discount in create_order:", e);
+          // Don't fail the order, just log it. 
+          // The user might have already used it or it's invalid.
+        }
+      }
 
       // Create order items (full normalization)
       for (const item of items) {

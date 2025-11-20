@@ -478,7 +478,7 @@ export default function ChatBox({
 
         {/* Loading indicator */}
         {isStreaming && !streamingContent && (
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0">
               <User2 className="w-5 h-5 text-white" />
             </div>
@@ -487,8 +487,13 @@ export default function ChatBox({
               <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
               <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></span>
             </div>
+            {/* Animated text */}
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium animate-pulse">
+              typing
+            </span>
           </div>
         )}
+
 
         <div ref={messagesEndRef} />
       </div>
