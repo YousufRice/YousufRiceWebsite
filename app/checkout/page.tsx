@@ -24,7 +24,8 @@ import {
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
-import { MapPin } from "lucide-react";
+import { MapPin, Gift, Check, X } from "lucide-react";
+import { LoyaltyService, LoyaltyDiscount } from "@/lib/services/loyalty-service";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -42,6 +43,14 @@ export default function CheckoutPage() {
     latitude: 0,
     longitude: 0,
   });
+
+  // Discount state
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<LoyaltyDiscount | null>(
+    null
+  );
+  const [discountError, setDiscountError] = useState("");
+  const [validatingDiscount, setValidatingDiscount] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -220,6 +229,57 @@ export default function CheckoutPage() {
     );
   };
 
+  const handleApplyDiscount = async () => {
+    if (!discountCode.trim()) {
+      setDiscountError("Please enter a discount code");
+      return;
+    }
+
+    setValidatingDiscount(true);
+    setDiscountError("");
+
+    try {
+      const discount = await LoyaltyService.findLoyaltyDiscountByCode(
+        discountCode.trim()
+      );
+
+      if (!discount) {
+        setDiscountError("Invalid discount code");
+        setAppliedDiscount(null);
+        return;
+      }
+
+      if (discount.code_status !== "active") {
+        setDiscountError("This discount code has already been used or is inactive");
+        setAppliedDiscount(null);
+        return;
+      }
+
+      // Check if customer matches (optional, but good for security)
+      // if (customer && discount.customer_id !== customer.$id) {
+      //   setDiscountError("This discount code belongs to another customer");
+      //   setAppliedDiscount(null);
+      //   return;
+      // }
+
+      setAppliedDiscount(discount);
+      toast.success("Discount code applied successfully!");
+    } catch (error) {
+      console.error("Error validating discount:", error);
+      setDiscountError("Failed to validate discount code");
+      setAppliedDiscount(null);
+    } finally {
+      setValidatingDiscount(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode("");
+    setDiscountError("");
+    toast.success("Discount removed");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -283,11 +343,23 @@ export default function CheckoutPage() {
         }))
       );
 
+      // Calculate totals with discount
+      const currentTotal = getTotalPrice();
+      let finalTotal = currentTotal;
+      let discountAmount = 0;
+
+      if (appliedDiscount) {
+        const discountPercent = appliedDiscount.extra_discount_percentage || 3;
+        discountAmount = Math.round((currentTotal * discountPercent) / 100);
+        finalTotal = Math.round(currentTotal - discountAmount);
+      }
+
       await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
         customer_id: customerId,
         address_id: "", // Will be updated after address creation
         order_items: orderItems,
-        total_price: getTotalPrice(),
+        total_price: finalTotal,
+        total_discount_amount: discountAmount, // Store the discount amount
         status: "pending",
       });
 
@@ -415,6 +487,33 @@ export default function CheckoutPage() {
           console.error("Failed to send order confirmation email:", emailError);
           // Continue with order completion even if email fails
         }
+      }
+
+      // Mark discount code as used if applied
+      if (appliedDiscount) {
+        try {
+          await LoyaltyService.validateAndUseDiscountCode(
+            appliedDiscount.discount_code,
+            orderId
+          );
+        } catch (discountError) {
+          console.error("Error marking discount as used:", discountError);
+          // Don't fail the order, but log it for admin attention
+        }
+      }
+
+      // Process loyalty discount (for NEXT order)
+      try {
+        const productNames = items.map((item) => item.product.name);
+        await LoyaltyService.processLoyaltyDiscount(
+          customerId,
+          formData.fullName,
+          getTotalPrice(),
+          productNames
+        );
+      } catch (loyaltyError) {
+        console.error("Error processing loyalty discount:", loyaltyError);
+        // Don't block the flow if loyalty processing fails
       }
 
       toast.success("Order placed successfully!");
@@ -640,7 +739,75 @@ export default function CheckoutPage() {
             </Card>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Discount Code Section */}
+            <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
+                <CardTitle className="text-xl font-bold text-white flex items-center">
+                  <Gift className="w-5 h-5 mr-2 text-[#ffff03]" />
+                  Discount Code
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {!appliedDiscount ? (
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter code (e.g. LOYALTY...)"
+                        value={discountCode}
+                        onChange={(e) => {
+                          setDiscountCode(e.target.value.toUpperCase());
+                          setDiscountError("");
+                        }}
+                        className="uppercase"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleApplyDiscount}
+                        disabled={validatingDiscount || !discountCode}
+                        className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold"
+                      >
+                        {validatingDiscount ? "..." : "Apply"}
+                      </Button>
+                    </div>
+                    {discountError && (
+                      <p className="text-red-500 text-sm flex items-center">
+                        <X className="w-4 h-4 mr-1" />
+                        {discountError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="text-green-800 font-bold flex items-center">
+                          <Check className="w-4 h-4 mr-1" />
+                          Code Applied!
+                        </p>
+                        <p className="text-sm text-green-600 font-mono mt-1">
+                          {appliedDiscount.discount_code}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveDiscount}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto p-1"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      {appliedDiscount.extra_discount_percentage}% discount will be
+                      applied to your total.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="sticky top-20 border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader className="bg-linear-to-r from-[#ffff03] to-[#ffff03]/90 p-6">
                 <CardTitle className="text-2xl font-bold text-[#27247b] flex items-center">
@@ -705,12 +872,31 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                   <div className="border-t-2 border-[#ffff03] pt-4 bg-[#ffff03]/10 -mx-6 px-6 py-4">
+                    {appliedDiscount && (
+                      <div className="flex justify-between items-center mb-2 text-green-700">
+                        <span className="font-semibold">Loyalty Discount ({appliedDiscount.extra_discount_percentage}%)</span>
+                        <span className="font-bold">
+                          -
+                          {formatCurrency(
+                            (totalPrice * appliedDiscount.extra_discount_percentage) /
+                            100
+                          )}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="text-xl font-bold text-[#27247b]">
                         Total
                       </span>
                       <span className="text-3xl font-bold text-[#27247b]">
-                        {formatCurrency(totalPrice)}
+                        {formatCurrency(
+                          appliedDiscount
+                            ? totalPrice -
+                            (totalPrice *
+                              appliedDiscount.extra_discount_percentage) /
+                            100
+                            : totalPrice
+                        )}
                       </span>
                     </div>
                   </div>
@@ -730,6 +916,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

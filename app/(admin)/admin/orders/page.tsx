@@ -124,8 +124,12 @@ export default function AdminOrdersPage() {
     try {
       const queries =
         filter === "all"
-          ? [Query.orderDesc("$createdAt")]
-          : [Query.equal("status", filter), Query.orderDesc("$createdAt")];
+          ? [Query.orderDesc("$createdAt"), Query.limit(5000)]
+          : [
+            Query.equal("status", filter),
+            Query.orderDesc("$createdAt"),
+            Query.limit(5000),
+          ];
 
       const ordersResponse = await databases.listDocuments(
         DATABASE_ID,
@@ -233,10 +237,10 @@ export default function AdminOrdersPage() {
     avgOrderValue:
       orders.length > 0
         ? orders.reduce((sum, order) => {
-            // Exclude returned orders from average calculation
-            if (order.status === "returned") return sum;
-            return sum + order.total_price;
-          }, 0) / orders.filter((o) => o.status !== "returned").length
+          // Exclude returned orders from average calculation
+          if (order.status === "returned") return sum;
+          return sum + order.total_price;
+        }, 0) / orders.filter((o) => o.status !== "returned").length
         : 0,
   };
 
@@ -449,12 +453,12 @@ export default function AdminOrdersPage() {
                           order.status === "pending"
                             ? "warning"
                             : order.status === "accepted"
-                            ? "info"
-                            : order.status === "out_for_delivery"
-                            ? "purple"
-                            : order.status === "delivered"
-                            ? "success"
-                            : "destructive"
+                              ? "info"
+                              : order.status === "out_for_delivery"
+                                ? "purple"
+                                : order.status === "delivered"
+                                  ? "success"
+                                  : "destructive"
                         }
                         className="mt-2"
                       >
