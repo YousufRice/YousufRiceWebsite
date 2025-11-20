@@ -97,7 +97,7 @@ export default function CheckoutPage() {
     ) {
       toast.error(
         "⚠️ Geolocation requires HTTPS! Current URL is not secure. " +
-          "Please access via HTTPS or localhost.",
+        "Please access via HTTPS or localhost.",
         { duration: 8000 }
       );
       console.error(
@@ -121,15 +121,11 @@ export default function CheckoutPage() {
         // Check if accuracy is reasonable
         if (accuracy > 1000) {
           // Very poor accuracy (>1km) - likely using cell towers only
-          toast.error(
-            `⚠️ Very poor accuracy (${Math.round(
-              accuracy
-            )}m)! GPS is not working. Please:\n` +
-              `1. Enable GPS/Location Services on your device\n` +
-              `2. Go outdoors or near a window\n` +
-              `3. Or enter coordinates manually`,
+          toast(
+            `Low GPS accuracy (${Math.round(accuracy)}m). Please enable location, move outside.`,
             { duration: 8000 }
           );
+
           console.warn("Very low accuracy - GPS not available:", {
             latitude,
             longitude,
@@ -140,14 +136,13 @@ export default function CheckoutPage() {
           return;
         } else if (accuracy > 100) {
           // Moderate accuracy - warn but allow
-          toast.error(
-            `⚠️ Low accuracy (${Math.round(
+          toast(
+            `Low accuracy (${Math.round(
               accuracy
-            )}m). For better results:\n` +
-              `• Go outdoors\n` +
-              `• Enable GPS\n` +
-              `• Or try again`,
-            { duration: 6000 }
+            )}m). • Go outdoors\n` +
+            `• Enable GPS\n` +
+            `• Or try again`,
+            { duration: 4000 }
           );
           console.warn("Low accuracy location:", {
             latitude,
@@ -319,10 +314,10 @@ export default function CheckoutPage() {
               ? item.quantity >= 10
                 ? "10kg+"
                 : item.quantity >= 5
-                ? "5-9kg"
-                : item.quantity >= 2
-                ? "2-4kg"
-                : "base"
+                  ? "5-9kg"
+                  : item.quantity >= 2
+                    ? "2-4kg"
+                    : "base"
               : "base",
             tier_price_at_order: product.base_price_per_kg,
             discount_percentage: 0,
@@ -537,24 +532,24 @@ export default function CheckoutPage() {
 
                   <div className="space-y-2 mt-4">
                     <div className="space-y-2">
-<div className="bg-linear-to-br from-[#27247b]/5 to-[#27247b]/10 border-2 border-[#27247b]/20 rounded-xl p-5"> 
+                      <div className="bg-linear-to-br from-[#27247b]/5 to-[#27247b]/10 border-2 border-[#27247b]/20 rounded-xl p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <label className="text-sm text-[#27247b] font-bold mb-2 block"> 
+                            <label className="text-sm text-[#27247b] font-bold mb-2 block">
                               📍 For Best Delivery Accuracy (Optional)
-                            </label> 
-                            <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc"> 
+                            </label>
+                            <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc">
                               <li>Turn on your phone's GPS/location</li>
                               <li className="text-[#27247b]/60 italic">Optional but recommended</li>
                             </ul>
                           </div>
-                          <Button 
-                            type="button" 
-                            onClick={handleGetLocation} 
-                            disabled={gettingLocation} 
-                            className="bg-linear-to-r from-[#ffff03] to-[#ffed00] hover:from-[#ffff03]/90 hover:to-[#ffed00]/90 text-[#27247b] font-bold py-3 px-5 rounded-xl border-2 border-[#27247b]/30 shadow-lg hover:shadow-2xl hover:scale-[1.05] active:scale-[0.95] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 whitespace-nowrap" 
-                          > 
-                            <MapPin className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} /> 
+                          <Button
+                            type="button"
+                            onClick={handleGetLocation}
+                            disabled={gettingLocation}
+                            className="bg-linear-to-r from-[#ffff03] to-[#ffed00] hover:from-[#ffff03]/90 hover:to-[#ffed00]/90 text-[#27247b] font-bold py-3 px-5 rounded-xl border-2 border-[#27247b]/30 shadow-lg hover:shadow-2xl hover:scale-[1.05] active:scale-[0.95] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 whitespace-nowrap"
+                          >
+                            <MapPin className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} />
                             <span className="hidden sm:inline">
                               {gettingLocation ? "Getting Location..." : "Get Location"}
                             </span>
@@ -562,7 +557,7 @@ export default function CheckoutPage() {
                               {gettingLocation ? "Getting..." : "GPS"}
                             </span>
                           </Button>
-                        </div> 
+                        </div>
                       </div>
 
                       {/* Show location details only if actual coordinates are provided */}
@@ -570,23 +565,23 @@ export default function CheckoutPage() {
                         (formData.latitude !== 0 && formData.longitude === 0) ||
                         (formData.latitude === 0 &&
                           formData.longitude !== 0)) && (
-                        <div className="bg-[#ffff03]/20 border-2 border-[#ffff03] rounded-xl p-4">
-                          <p className="text-sm font-bold text-[#27247b] mb-1">
-                            ✓ Location Captured Successfully
-                          </p>
-                          <p className="text-xs text-[#27247b]/80">
-                            Coordinates captured and ready for delivery
-                          </p>
-                          <a
-                            href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
-                          >
-                            View on Google Maps
-                          </a>
-                        </div>
-                      )}
+                          <div className="bg-[#ffff03]/20 border-2 border-[#ffff03] rounded-xl p-4">
+                            <p className="text-sm font-bold text-[#27247b] mb-1">
+                              ✓ Location Captured Successfully
+                            </p>
+                            <p className="text-xs text-[#27247b]/80">
+                              Coordinates captured and ready for delivery
+                            </p>
+                            <a
+                              href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
+                            >
+                              View on Google Maps
+                            </a>
+                          </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">
