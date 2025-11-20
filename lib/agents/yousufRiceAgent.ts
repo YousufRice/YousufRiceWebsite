@@ -159,7 +159,7 @@ Customer: "I want 5kg Basmati"
 Customer: "I want rice for restaurant"
 → Call search_products with forHotelsRestaurants: true → Present Every Grain XXXL Sella Rice → Ask how many 25kg bags → DONE
 
-Remember: Be efficient! One tool call per turn when possible. Respond as soon as you have the information needed.`,
+Focus on quality over quantity—make purposeful tool calls and respond once you have sufficient information to be helpful.`,
 
   tools: [
     searchProductsTool,
