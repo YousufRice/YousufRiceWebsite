@@ -84,7 +84,9 @@ export default function AdminDashboard() {
           recentOrdersRes,
           lastMonthOrdersRes,
         ] = await Promise.all([
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID),
+          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
+            Query.limit(5000),
+          ]),
           databases.listDocuments(DATABASE_ID, PRODUCTS_TABLE_ID),
           databases.listDocuments(DATABASE_ID, CUSTOMERS_TABLE_ID),
           databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
@@ -468,15 +470,14 @@ export default function AdminDashboard() {
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-2 h-2 rounded-full ${
-                            order.status === "pending"
+                          className={`w-2 h-2 rounded-full ${order.status === "pending"
                               ? "bg-yellow-500"
                               : order.status === "accepted"
-                              ? "bg-blue-500"
-                              : order.status === "out_for_delivery"
-                              ? "bg-purple-500"
-                              : "bg-green-500"
-                          }`}
+                                ? "bg-blue-500"
+                                : order.status === "out_for_delivery"
+                                  ? "bg-purple-500"
+                                  : "bg-green-500"
+                            }`}
                         />
                         <div>
                           <p className="font-medium text-sm">

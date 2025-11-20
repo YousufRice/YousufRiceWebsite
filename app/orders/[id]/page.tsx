@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { OrderService } from "@/lib/services/order-service";
+import { LoyaltyService, LoyaltyDiscount } from "@/lib/services/loyalty-service";
 import {
   MapPin,
   Package,
@@ -15,6 +16,8 @@ import {
   CheckCircle,
   ExternalLink,
   ArrowLeft,
+  Gift,
+  Copy,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -29,6 +32,7 @@ export default function OrderDetailPage() {
   const { isAdmin } = useAuthStore();
 
   const [data, setData] = useState<OrderWithDetails | null>(null);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState<LoyaltyDiscount | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Check if coming from customer detail page or admin
@@ -45,6 +49,18 @@ export default function OrderDetailPage() {
         );
         console.log("Order details fetched:", orderWithDetails);
         setData(orderWithDetails);
+
+        // Fetch loyalty info if we have a customer ID
+        if (orderWithDetails?.customer_id) {
+          try {
+            const discount = await LoyaltyService.getCustomerLoyaltyInfo(
+              orderWithDetails.customer_id
+            );
+            setLoyaltyDiscount(discount);
+          } catch (err) {
+            console.error("Error fetching loyalty info:", err);
+          }
+        }
       } catch (error) {
         console.error("Error fetching order details:", error);
         setData(null);
@@ -177,47 +193,43 @@ export default function OrderDetailPage() {
             {/* Status Timeline */}
             <div className="mt-6 space-y-3">
               <div
-                className={`flex items-center space-x-3 ${
-                  data.status === "pending" ||
+                className={`flex items-center space-x-3 ${data.status === "pending" ||
                   data.status === "accepted" ||
                   data.status === "out_for_delivery" ||
                   data.status === "delivered"
-                    ? "text-green-600"
-                    : "text-gray-400"
-                }`}
+                  ? "text-green-600"
+                  : "text-gray-400"
+                  }`}
               >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Order Placed</span>
               </div>
               <div
-                className={`flex items-center space-x-3 ${
-                  data.status === "accepted" ||
+                className={`flex items-center space-x-3 ${data.status === "accepted" ||
                   data.status === "out_for_delivery" ||
                   data.status === "delivered"
-                    ? "text-green-600"
-                    : "text-gray-400"
-                }`}
+                  ? "text-green-600"
+                  : "text-gray-400"
+                  }`}
               >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Order Accepted</span>
               </div>
               <div
-                className={`flex items-center space-x-3 ${
-                  data.status === "out_for_delivery" ||
+                className={`flex items-center space-x-3 ${data.status === "out_for_delivery" ||
                   data.status === "delivered"
-                    ? "text-green-600"
-                    : "text-gray-400"
-                }`}
+                  ? "text-green-600"
+                  : "text-gray-400"
+                  }`}
               >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Out for Delivery</span>
               </div>
               <div
-                className={`flex items-center space-x-3 ${
-                  data.status === "delivered"
-                    ? "text-green-600"
-                    : "text-gray-400"
-                }`}
+                className={`flex items-center space-x-3 ${data.status === "delivered"
+                  ? "text-green-600"
+                  : "text-gray-400"
+                  }`}
               >
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Delivered</span>
@@ -225,6 +237,62 @@ export default function OrderDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+
+
+        {/* Loyalty Reward Section */}
+        {loyaltyDiscount &&
+          loyaltyDiscount.code_status === "active" &&
+          loyaltyDiscount.discount_code && (
+            <Card className="border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Gift className="w-32 h-32" />
+              </div>
+              <CardHeader>
+                <CardTitle className="flex items-center text-[#ffff03]">
+                  <Gift className="w-6 h-6 mr-2" />
+                  Loyalty Reward Unlocked!
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="space-y-4">
+                  <p className="text-white/90">
+                    Congratulations! You've earned a special discount for your
+                    next purchase.
+                  </p>
+                  <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
+                    <p className="text-sm text-[#ffff03] font-bold mb-1">
+                      YOUR DISCOUNT CODE
+                    </p>
+                    <div className="flex items-center justify-between gap-4">
+                      <code className="text-2xl font-mono font-bold tracking-wider">
+                        {loyaltyDiscount.discount_code}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            loyaltyDiscount.discount_code
+                          );
+                          alert("Code copied to clipboard!");
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Code
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-white/60">
+                    * Use this code on your next order to get{" "}
+                    {loyaltyDiscount.extra_discount_percentage}% off. Valid for
+                    one-time use only.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Order Items */}
         <Card>
@@ -299,6 +367,6 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   );
 }
