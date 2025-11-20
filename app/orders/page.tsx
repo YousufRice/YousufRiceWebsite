@@ -49,10 +49,14 @@ export default function OrdersPage() {
       );
 
       setOrders(ordersResponse.documents as unknown as Order[]);
-      
+
       if (ordersResponse.documents.length > 0) {
-        toast.success(`Found ${ordersResponse.documents.length} order(s)`);
+        toast.success(`Found ${ordersResponse.documents.length} order(s)`, {
+          id: 'orders-found',
+        });
       }
+
+
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to fetch orders');
