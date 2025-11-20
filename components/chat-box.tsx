@@ -453,7 +453,9 @@ export default function ChatBox({
                 {message.timestamp.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
+                  hour12: true,
                 })}
+
               </span>
             </div>
           </div>
@@ -480,8 +482,10 @@ export default function ChatBox({
             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0">
               <User2 className="w-5 h-5 text-white" />
             </div>
-            <div className="rounded-lg px-4 py-2 bg-gray-100">
-              <Loader2 className="w-5 h-5 text-gray-600 animate-spin" />
+            <div className="bg-gray-200 rounded-full px-4 py-2 inline-flex items-center gap-1 shadow">
+              <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></span>
             </div>
           </div>
         )}
