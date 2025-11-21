@@ -197,3 +197,21 @@ export function calculateQuantityFromBags(bags: {
 }): number {
   return bags.kg1 * 1 + bags.kg5 * 5 + bags.kg10 * 10 + bags.kg25 * 25;
 }
+
+export function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, "");
+
+  // If starts with 92, add +
+  if (digits.startsWith("92")) {
+    return "+" + digits;
+  }
+
+  // If starts with 0, replace with +92
+  if (digits.startsWith("0")) {
+    return "+92" + digits.substring(1);
+  }
+
+  // Otherwise assume it's missing country code
+  return "+92" + digits;
+}

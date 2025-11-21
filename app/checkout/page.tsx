@@ -22,6 +22,7 @@ import {
   calculateSavings,
   calculateTierPricing,
   calculateItemTotal,
+  formatPhoneNumber,
 } from "@/lib/utils";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { ID, Query } from "appwrite";
@@ -296,28 +297,46 @@ export default function CheckoutPage() {
 
     try {
       // Use phone number as customer identifier
+      // Format phone number first
+      const formattedPhone = formatPhoneNumber(formData.phone);
+
       // Check if a customer with this phone number already exists
       const existingCustomerByPhone = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formData.phone)]
+        [Query.equal("phone", formattedPhone)]
       );
 
       let customerId: string;
 
       if (existingCustomerByPhone.documents.length > 0) {
         // Use existing customer with this phone number
-        customerId = existingCustomerByPhone.documents[0].$id;
+        const existingCustomer = existingCustomerByPhone.documents[0];
+        customerId = existingCustomer.$id;
 
-        // Update customer info (name, email, and link user_id if logged in)
+        // Determine correct user_id to save
+        // If user is logged in, they claim this record (or update it)
+        // If user is guest, we MUST preserve the existing user_id if it's a real ID
+        let userIdToSave = "guest";
+        if (user?.$id) {
+          userIdToSave = user.$id;
+        } else {
+          // Guest checkout: keep existing ID if it's not "guest"
+          userIdToSave = existingCustomer.user_id && existingCustomer.user_id !== "guest"
+            ? existingCustomer.user_id
+            : "guest";
+        }
+
+        // Update customer info
         await databases.updateDocument(
           DATABASE_ID,
           CUSTOMERS_TABLE_ID,
           customerId,
           {
-            user_id: user?.$id || "guest",
+            user_id: userIdToSave,
             full_name: formData.fullName,
             email: formData.email || null,
+            phone: formattedPhone, // Ensure phone is formatted
           }
         );
       } else {
@@ -330,7 +349,7 @@ export default function CheckoutPage() {
           {
             user_id: user?.$id || "guest",
             full_name: formData.fullName,
-            phone: formData.phone,
+            phone: formattedPhone,
             email: formData.email || null,
           }
         );
@@ -489,7 +508,7 @@ export default function CheckoutPage() {
         })),
         userData: {
           email: formData.email || undefined,
-          phone: formData.phone,
+          phone: formattedPhone,
           firstName: formData.fullName.split(" ")[0],
           lastName: formData.fullName.split(" ").slice(1).join(" "),
         },
@@ -507,7 +526,7 @@ export default function CheckoutPage() {
               orderId,
               customerName: formData.fullName,
               customerEmail: formData.email,
-              customerPhone: formData.phone,
+              customerPhone: formattedPhone,
               deliveryAddress: formData.addressLine,
               mapsUrl,
               items: items.map((item) => {
