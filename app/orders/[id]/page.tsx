@@ -321,12 +321,37 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="mt-6 pt-6 border-t">
-              <div className="flex justify-between items-center">
-                <span className="text-xl font-bold">Total</span>
-                <span className="text-2xl font-bold text-green-600">
-                  {formatCurrency(data.total_price)}
-                </span>
-              </div>
+              {(() => {
+                // Calculate total from items to see if there's a discrepancy (discount)
+                const itemsTotal = data.items.reduce(
+                  (sum, item) => sum + item.total_after_discount,
+                  0
+                );
+                const discountAmount = itemsTotal - data.total_price;
+                
+                return (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-gray-600">
+                      <span>Subtotal</span>
+                      <span>{formatCurrency(itemsTotal)}</span>
+                    </div>
+                    
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between items-center text-green-600">
+                        <span>Discount</span>
+                        <span>-{formatCurrency(discountAmount)}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center pt-2 border-t mt-2">
+                      <span className="text-xl font-bold">Total</span>
+                      <span className="text-2xl font-bold text-green-600">
+                        {formatCurrency(data.total_price)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
               <p className="text-sm text-gray-500 mt-2">
                 Payment: Cash on Delivery
               </p>

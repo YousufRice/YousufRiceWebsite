@@ -9,6 +9,7 @@ import {
   ADDRESSES_TABLE_ID,
   ORDER_ITEMS_TABLE_ID,
 } from "@/lib/appwrite";
+import { calculateBagsFromQuantity } from "@/lib/utils";
 import { Query, ID } from "appwrite";
 import { sendOrderConfirmation } from "@/lib/email";
 import {
@@ -1181,7 +1182,15 @@ export const createOrderTool = tool({
         }
       }
 
-      // Verify all products are available
+      // --- PRE-CALCULATION & VALIDATION ---
+      // We need to fetch all products to calculate accurate totals and discounts
+      // This ensures data integrity regardless of what was passed in 'totalAmount' or 'price'
+      let totalItemsCount = 0;
+      let totalWeightKg = 0;
+      let subtotalBeforeDiscount = 0;
+      let totalTierDiscountAmount = 0;
+      const enrichedItems: any[] = [];
+
       for (const item of items) {
         const product = await databases.getDocument(
           DATABASE_ID,
@@ -1197,10 +1206,70 @@ export const createOrderTool = tool({
             message: `Sorry, ${product.name} is out of stock. Please remove it from your order.`,
           };
         }
+
+        // Calculate pricing for this item
+        const basePrice = product.base_price_per_kg;
+        const tierPrice = getPricePerKg(product, item.quantity);
+        
+        const itemBaseSubtotal = basePrice * item.quantity;
+        const itemTierSubtotal = tierPrice * item.quantity;
+        const itemTierDiscount = itemBaseSubtotal - itemTierSubtotal;
+
+        // Update order-level totals
+        totalItemsCount += 1;
+        totalWeightKg += item.quantity;
+        subtotalBeforeDiscount += itemBaseSubtotal;
+        totalTierDiscountAmount += itemTierDiscount;
+
+        enrichedItems.push({
+          ...item,
+          product,
+          basePrice,
+          tierPrice,
+          itemBaseSubtotal,
+          itemTierSubtotal,
+          itemTierDiscount,
+          tierApplied: product.has_tier_pricing
+            ? item.quantity >= 10
+              ? "10kg+"
+              : item.quantity >= 5
+              ? "5-9kg"
+              : item.quantity >= 2
+              ? "2-4kg"
+              : "base"
+            : "base",
+          bags: calculateBagsFromQuantity(item.quantity),
+        });
       }
 
+      // --- LOYALTY DISCOUNT CALCULATION ---
+      let extraDiscountAmount = 0;
+      let extraDiscountPercentage = 0;
+      let loyaltyRecord = null;
+
+      if (discountCode) {
+        try {
+          // Just check validity first, don't use it yet
+          loyaltyRecord = await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
+          
+          if (loyaltyRecord && loyaltyRecord.code_status === "active") {
+            extraDiscountPercentage = loyaltyRecord.extra_discount_percentage || 3;
+            // Calculate extra discount on the TIERED subtotal (price after tier discount)
+            // totalTierSubtotal = subtotalBeforeDiscount - totalTierDiscountAmount
+            const totalTierSubtotal = subtotalBeforeDiscount - totalTierDiscountAmount;
+            extraDiscountAmount = Math.round((totalTierSubtotal * extraDiscountPercentage) / 100);
+          }
+        } catch (e) {
+          console.error("Error validating discount code:", e);
+          // Continue without extra discount
+        }
+      }
+
+      const totalDiscountAmount = totalTierDiscountAmount + extraDiscountAmount;
+      const finalTotalPrice = subtotalBeforeDiscount - totalDiscountAmount;
+
+      // --- CUSTOMER MANAGEMENT ---
       // Find or create customer
-      // Create or find customer by phone number (reusing manageCustomerTool logic)
       const customerResponse = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
@@ -1245,8 +1314,8 @@ export const createOrderTool = tool({
         .map((item) => `${item.productId}:${item.quantity}kg`)
         .join(",");
 
+      // --- TRACKING ---
       // Track Meta InitiateCheckout event before creating order (non-blocking)
-      // Now we have customer information required by Meta API
       console.log(
         `[DEBUG] Starting Meta InitiateCheckout tracking for customer ${customerName.trim()}`
       );
@@ -1254,7 +1323,7 @@ export const createOrderTool = tool({
         customerName: customerName.trim(),
         customerEmail: validatedEmail || undefined,
         customerPhone: formattedPhone,
-        totalAmount,
+        totalAmount: finalTotalPrice,
         currency: "PKR",
         items: items.map((item) => ({
           productId: item.productId,
@@ -1263,18 +1332,9 @@ export const createOrderTool = tool({
         })),
       })
         .then((result) => {
-          console.log(
-            `[DEBUG] Meta InitiateCheckout tracking completed:`,
-            result
-          );
           if (result.success) {
             console.log(
               `✅ Meta InitiateCheckout event tracked for agent order with event ID: ${result.eventId}`
-            );
-          } else {
-            console.error(
-              `❌ Failed to track Meta InitiateCheckout event:`,
-              result.error
             );
           }
         })
@@ -1285,7 +1345,7 @@ export const createOrderTool = tool({
           );
         });
 
-      // Create order (without address_id first)
+      // --- ORDER CREATION ---
       const orderId = ID.unique();
       const order = await databases.createDocument(
         DATABASE_ID,
@@ -1295,56 +1355,40 @@ export const createOrderTool = tool({
           customer_id: customerId,
           address_id: "", // Will be updated after address creation
           order_items: orderItemsCSV,
-          total_price: totalAmount,
+          total_price: finalTotalPrice,
           status: "pending",
-          total_discount_amount: 0, // Will update if discount applied
+          total_items_count: totalItemsCount,
+          total_weight_kg: totalWeightKg,
+          subtotal_before_discount: subtotalBeforeDiscount,
+          total_discount_amount: totalDiscountAmount,
         }
       );
 
-      // Process loyalty discount if provided
-      let discountApplied = false;
-      if (discountCode) {
+      // Mark discount code as used if applicable
+      if (discountCode && loyaltyRecord) {
         try {
-          // Verify and use the discount code
-          // This marks it as used in the DB
-          await LoyaltyService.validateAndUseDiscountCode(discountCode, orderId);
-          
-          // We need to calculate the discount amount to store it
-          // Assuming the totalAmount passed in is ALREADY discounted (as per calculate_order_price)
-          // But we need to store the discount amount for records.
-          // Let's fetch the discount details again to get the percentage
-          const discountRecord = await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
-          if (discountRecord) {
-             // Reverse calculate or just use the percentage on the subtotal?
-             // The totalAmount passed here is the FINAL amount.
-             // So Original = Final / (1 - rate)
-             // Discount = Original - Final
-             const rate = (discountRecord.extra_discount_percentage || 3) / 100;
-             const originalTotal = Math.round(totalAmount / (1 - rate));
-             const discountAmount = originalTotal - totalAmount;
-             
-             await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
-               total_discount_amount: discountAmount
-             });
-             discountApplied = true;
-          }
+           await LoyaltyService.validateAndUseDiscountCode(discountCode, orderId);
         } catch (e) {
-          console.error("Error processing loyalty discount in create_order:", e);
-          // Don't fail the order, just log it. 
-          // The user might have already used it or it's invalid.
+           console.error("Error marking discount code as used:", e);
         }
       }
 
-      // Create order items (full normalization)
-      for (const item of items) {
-        // Fetch product snapshot
-        const product = await databases.getDocument(
-          DATABASE_ID,
-          PRODUCTS_TABLE_ID,
-          item.productId
-        );
+      // --- ORDER ITEMS CREATION ---
+      for (const item of enrichedItems) {
+        // Calculate this item's share of the extra discount
+        // Proportional to its tiered subtotal
+        let itemExtraDiscount = 0;
+        if (extraDiscountAmount > 0) {
+           const totalTierSubtotal = subtotalBeforeDiscount - totalTierDiscountAmount;
+           if (totalTierSubtotal > 0) {
+             const itemShare = item.itemTierSubtotal / totalTierSubtotal;
+             itemExtraDiscount = itemShare * extraDiscountAmount;
+           }
+        }
 
-        // Bag breakdown is not available in agent flow, so set as 0
+        const totalItemDiscount = item.itemTierDiscount + itemExtraDiscount;
+        const itemTotalAfterDiscount = item.itemBaseSubtotal - totalItemDiscount;
+
         await databases.createDocument(
           DATABASE_ID,
           ORDER_ITEMS_TABLE_ID,
@@ -1352,39 +1396,27 @@ export const createOrderTool = tool({
           {
             order_id: orderId,
             product_id: item.productId,
-            product_name: product.name,
-            product_description: product.description || "",
+            product_name: item.product.name,
+            product_description: item.product.description || "",
             quantity_kg: item.quantity,
-            bags_1kg: 0,
-            bags_5kg: 0,
-            bags_10kg: 0,
-            bags_25kg: 0,
-            price_per_kg_at_order: item.price,
-            base_price_per_kg_at_order: product.base_price_per_kg,
-            tier_applied: product.has_tier_pricing
-              ? item.quantity >= 10
-                ? "10kg+"
-                : item.quantity >= 5
-                ? "5-9kg"
-                : item.quantity >= 2
-                ? "2-4kg"
-                : "base"
-              : "base",
-            tier_price_at_order: item.price,
-            discount_percentage: 0,
-            discount_amount: 0,
-            discount_reason: "",
-            subtotal_before_discount: item.price * item.quantity,
-            total_after_discount: item.price * item.quantity,
+            bags_1kg: item.bags?.kg1 || 0,
+            bags_5kg: item.bags?.kg5 || 0,
+            bags_10kg: item.bags?.kg10 || 0,
+            bags_25kg: item.bags?.kg25 || 0,
+            price_per_kg_at_order: item.tierPrice, // Store the tier price as the effective unit price
+            base_price_per_kg: item.basePrice,
+            tier_applied: item.tierApplied,
+            discount_percentage: extraDiscountPercentage, // Only the extra percentage
+            discount_amount: totalItemDiscount, // Total discount (tier + extra)
+            subtotal_before_discount: item.itemBaseSubtotal, // Base price * quantity
+            total_after_discount: itemTotalAfterDiscount,
             notes: "",
-            is_custom_price: false,
           }
         );
       }
 
-      // Create address with GPS coordinates if available
+      // Create address
       const addressId = ID.unique();
-      // Consider coordinates valid if they're not null (zero is valid)
       const hasCoordinates = latitude !== null && longitude !== null;
       const mapsUrl = hasCoordinates
         ? `https://www.google.com/maps?q=${latitude},${longitude}`
@@ -1409,8 +1441,7 @@ export const createOrderTool = tool({
         address_id: addressId,
       });
 
-      // Send order confirmation email if customer provided email (non-blocking)
-      // Fire and forget - don't wait for email to complete
+      // Send order confirmation email
       if (validatedEmail && validatedEmail.length > 0) {
         sendOrderConfirmation({
           orderId,
@@ -1426,9 +1457,9 @@ export const createOrderTool = tool({
           items: items.map((item) => ({
             productName: item.productName,
             quantity: item.quantity,
-            price: item.price * item.quantity,
+            price: item.price * item.quantity, // This is just for email display
           })),
-          totalPrice: totalAmount,
+          totalPrice: finalTotalPrice,
         })
           .then(() => {
             console.log(
@@ -1444,8 +1475,7 @@ export const createOrderTool = tool({
           });
       }
 
-      // Track Meta Purchase event for agent order (non-blocking)
-      // Fire and forget - don't wait for tracking to complete
+      // Track Meta Purchase event
       console.log(
         `[DEBUG] Starting Meta Purchase tracking for order ${orderId}`
       );
@@ -1454,7 +1484,7 @@ export const createOrderTool = tool({
         customerName: customerName.trim(),
         customerEmail: validatedEmail || undefined,
         customerPhone: formattedPhone,
-        totalAmount,
+        totalAmount: finalTotalPrice,
         currency: "PKR",
         items: items.map((item) => ({
           productId: item.productId,
@@ -1465,18 +1495,9 @@ export const createOrderTool = tool({
         deliveryAddress: deliveryAddress.trim(),
       })
         .then((result) => {
-          console.log(
-            `[DEBUG] Meta Purchase tracking completed for order ${orderId}:`,
-            result
-          );
           if (result.success) {
             console.log(
               `✅ Meta Purchase event tracked for agent order ${orderId} with event ID: ${result.eventId}`
-            );
-          } else {
-            console.error(
-              `❌ Failed to track Meta Purchase event for agent order ${orderId}:`,
-              result.error
             );
           }
         })
@@ -1495,7 +1516,7 @@ export const createOrderTool = tool({
           phoneNumber: formattedPhone,
           deliveryAddress: deliveryAddress.trim(),
           items,
-          totalAmount,
+          totalAmount: finalTotalPrice,
           status: "pending",
         },
         message: `Order ${orderId} created successfully! We'll deliver in 2-3 business days. You'll receive a confirmation call shortly.${

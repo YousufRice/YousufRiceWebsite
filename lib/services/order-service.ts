@@ -176,17 +176,12 @@ export class OrderService {
 
             // Pricing snapshot
             price_per_kg_at_order: pricePerKg,
-            base_price_per_kg_at_order: product.base_price_per_kg,
+            base_price_per_kg: product.base_price_per_kg,
             tier_applied: tierPricing.tierApplied,
-            tier_price_at_order: tierPricing.pricePerKg,
 
             // Discount
             discount_percentage: itemRequest.discount?.percentage || 0,
             discount_amount: tierDiscountAmount + percentageDiscountAmount,
-            tier_discount_amount: tierDiscountAmount,
-            percentage_discount_amount: percentageDiscountAmount,
-            discount_reason: itemRequest.discount?.reason || "",
-
             // Totals
             subtotal_before_discount:
               product.base_price_per_kg * itemRequest.quantity_kg,
@@ -194,7 +189,6 @@ export class OrderService {
 
             // Metadata
             notes: itemRequest.notes || "",
-            is_custom_price: itemRequest.is_custom_price || false,
           }
         )) as unknown as OrderItem;
 
