@@ -434,7 +434,12 @@ export default function CheckoutPage() {
             tier_applied: tierPricing.tierApplied,
 
             // Discount info
-            discount_percentage: appliedDiscount?.extra_discount_percentage || 0,
+            discount_percentage:
+              product.base_price_per_kg * item.quantity > 0
+                ? (totalItemDiscount /
+                  (product.base_price_per_kg * item.quantity)) *
+                100
+                : 0,
             discount_amount: totalItemDiscount, // Includes tier + loyalty discount
 
             // Totals

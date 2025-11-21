@@ -180,7 +180,12 @@ export class OrderService {
             tier_applied: tierPricing.tierApplied,
 
             // Discount
-            discount_percentage: itemRequest.discount?.percentage || 0,
+            discount_percentage:
+              product.base_price_per_kg * itemRequest.quantity_kg > 0
+                ? ((tierDiscountAmount + percentageDiscountAmount) /
+                    (product.base_price_per_kg * itemRequest.quantity_kg)) *
+                  100
+                : 0,
             discount_amount: tierDiscountAmount + percentageDiscountAmount,
             // Totals
             subtotal_before_discount:
