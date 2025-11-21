@@ -37,7 +37,10 @@ try {
 }
 
 export const metadata: Metadata = {
-  metadataBase: metadataBaseUrl,
+  metadataBase: new URL("https://yousufrice.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default:
       "Yousuf Rice - Premium Quality Rice With Free Delivery | Best Prices in Pakistan",
