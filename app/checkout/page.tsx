@@ -20,6 +20,8 @@ import {
   formatOrderItems,
   generateMapsUrl,
   calculateSavings,
+  calculateTierPricing,
+  calculateItemTotal,
 } from "@/lib/utils";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { ID, Query } from "appwrite";
@@ -343,29 +345,70 @@ export default function CheckoutPage() {
         }))
       );
 
-      // Calculate totals with discount
-      const currentTotal = getTotalPrice();
-      let finalTotal = currentTotal;
-      let discountAmount = 0;
+      // Calculate totals from items
+      let totalItemsCount = 0;
+      let totalWeightKg = 0;
+      let subtotalBeforeDiscount = 0;
+      let totalDiscountAmount = 0;
+      let finalTotalPrice = 0;
 
-      if (appliedDiscount) {
-        const discountPercent = appliedDiscount.extra_discount_percentage || 3;
-        discountAmount = Math.round((currentTotal * discountPercent) / 100);
-        finalTotal = Math.round(currentTotal - discountAmount);
-      }
+      // Prepare item data with calculations
+      const processedItems = items.map((item) => {
+        const product = item.product;
 
+        // Calculate tier pricing
+        const tierPricing = calculateTierPricing(product, item.quantity);
+
+        // Calculate item totals with loyalty discount if applicable
+        const loyaltyDiscountPercent = appliedDiscount?.extra_discount_percentage || 0;
+        const itemCalculations = calculateItemTotal(
+          tierPricing.pricePerKg,
+          item.quantity,
+          loyaltyDiscountPercent
+        );
+
+        // Calculate total discount for this item (Tier Discount + Loyalty Discount)
+        // Tier Discount = (Base Price - Tier Price) * Quantity
+        // Loyalty Discount = itemCalculations.discountAmount
+        const tierDiscountAmount = tierPricing.discountAmount;
+        const totalItemDiscount = tierDiscountAmount + itemCalculations.discountAmount;
+
+        // Update order-level totals
+        totalItemsCount += 1;
+        totalWeightKg += item.quantity;
+        subtotalBeforeDiscount += product.base_price_per_kg * item.quantity;
+        totalDiscountAmount += totalItemDiscount;
+        finalTotalPrice += itemCalculations.total;
+
+        return {
+          item,
+          product,
+          tierPricing,
+          itemCalculations,
+          totalItemDiscount,
+        };
+      });
+
+      // Create order with accurate calculated totals
       await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
         customer_id: customerId,
         address_id: "", // Will be updated after address creation
         order_items: orderItems,
-        total_price: finalTotal,
-        total_discount_amount: discountAmount, // Store the discount amount
+
+        // Summary fields
+        total_items_count: totalItemsCount,
+        total_weight_kg: totalWeightKg,
+        subtotal_before_discount: subtotalBeforeDiscount,
+        total_discount_amount: totalDiscountAmount,
+        total_price: finalTotalPrice,
+
         status: "pending",
       });
 
       // Create order items (full normalization)
-      for (const item of items) {
-        const product = item.product;
+      for (const processed of processedItems) {
+        const { item, product, tierPricing, itemCalculations, totalItemDiscount } = processed;
+
         await databases.createDocument(
           DATABASE_ID,
           ORDER_ITEMS_TABLE_ID,
@@ -375,30 +418,31 @@ export default function CheckoutPage() {
             product_id: product.$id,
             product_name: product.name,
             product_description: product.description || "",
+
+            // Quantity info
             quantity_kg: item.quantity,
             bags_1kg: item.bags?.kg1 || 0,
             bags_5kg: item.bags?.kg5 || 0,
             bags_10kg: item.bags?.kg10 || 0,
             bags_25kg: item.bags?.kg25 || 0,
-            price_per_kg_at_order: product.base_price_per_kg,
-            base_price_per_kg_at_order: product.base_price_per_kg,
-            tier_applied: product.has_tier_pricing
-              ? item.quantity >= 10
-                ? "10kg+"
-                : item.quantity >= 5
-                  ? "5-9kg"
-                  : item.quantity >= 2
-                    ? "2-4kg"
-                    : "base"
-              : "base",
-            tier_price_at_order: product.base_price_per_kg,
-            discount_percentage: 0,
-            discount_amount: 0,
-            discount_reason: "",
+
+            // Price info
+            price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
+            base_price_per_kg: product.base_price_per_kg, // Original base price
+
+            // Tier info
+            tier_applied: tierPricing.tierApplied,
+
+            // Discount info
+            discount_percentage: appliedDiscount?.extra_discount_percentage || 0,
+            discount_amount: totalItemDiscount, // Includes tier + loyalty discount
+
+            // Totals
             subtotal_before_discount: product.base_price_per_kg * item.quantity,
-            total_after_discount: product.base_price_per_kg * item.quantity,
+            total_after_discount: itemCalculations.total,
+
+            // Metadata
             notes: "",
-            is_custom_price: false,
           }
         );
       }

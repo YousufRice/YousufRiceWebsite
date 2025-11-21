@@ -50,7 +50,7 @@
             "installCommand": "pnpm i",
             "buildCommand": "pnpm build",
             "outputDirectory": "./.next",
-            "specification": "s-0.5vcpu-512mb",
+            "specification": "s-2vcpu-2gb",
             "buildRuntime": "node-22",
             "adapter": "ssr",
             "fallbackFile": "",
@@ -570,7 +570,7 @@
                     "default": null
                 },
                 {
-                    "key": "base_price_per_kg_at_order",
+                    "key": "base_price_per_kg",
                     "type": "double",
                     "required": true,
                     "array": false,
@@ -586,15 +586,6 @@
                     "size": 50,
                     "default": null,
                     "encrypt": false
-                },
-                {
-                    "key": "tier_price_at_order",
-                    "type": "double",
-                    "required": false,
-                    "array": false,
-                    "min": -1.7976931348623157e+308,
-                    "max": 1.7976931348623157e+308,
-                    "default": null
                 },
                 {
                     "key": "discount_percentage",
@@ -613,15 +604,6 @@
                     "min": 0,
                     "max": 1.7976931348623157e+308,
                     "default": null
-                },
-                {
-                    "key": "discount_reason",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 255,
-                    "default": null,
-                    "encrypt": false
                 },
                 {
                     "key": "subtotal_before_discount",
@@ -649,13 +631,6 @@
                     "size": 500,
                     "default": null,
                     "encrypt": false
-                },
-                {
-                    "key": "is_custom_price",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
                 }
             ],
             "indexes": [
@@ -692,11 +667,10 @@
         {
             "$id": "discount_management",
             "$permissions": [
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")",
-                "read(\"users\")"
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Discount Management",
@@ -971,6 +945,18 @@
             "compression": "none",
             "encryption": true,
             "antivirus": false
+        },
+        {
+            "$id": "691d585f003acdc55cc8",
+            "$permissions": [],
+            "fileSecurity": false,
+            "name": "MillImageId",
+            "enabled": true,
+            "maximumFileSize": 5000000000,
+            "allowedFileExtensions": [],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": true
         }
     ]
 }

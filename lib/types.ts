@@ -41,16 +41,14 @@ export interface OrderItem {
 
   // Price information at time of order (CRITICAL for price integrity)
   price_per_kg_at_order: number;
-  base_price_per_kg_at_order: number;
+  base_price_per_kg: number;
 
   // Tier pricing snapshot
   tier_applied?: string; // 'base', '2-4kg', '5-9kg', '10kg+'
-  tier_price_at_order?: number;
 
   // Discount information
   discount_percentage: number;
   discount_amount: number;
-  discount_reason?: string; // 'bulk_discount', 'promo_code', 'manual'
 
   // Calculated totals
   subtotal_before_discount: number;
@@ -58,7 +56,6 @@ export interface OrderItem {
 
   // Additional metadata
   notes?: string;
-  is_custom_price: boolean;
 
   $createdAt: string;
 }
