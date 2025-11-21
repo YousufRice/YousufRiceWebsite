@@ -1406,7 +1406,10 @@ export const createOrderTool = tool({
             price_per_kg_at_order: item.tierPrice, // Store the tier price as the effective unit price
             base_price_per_kg: item.basePrice,
             tier_applied: item.tierApplied,
-            discount_percentage: extraDiscountPercentage, // Only the extra percentage
+            discount_percentage:
+              item.itemBaseSubtotal > 0
+                ? (totalItemDiscount / item.itemBaseSubtotal) * 100
+                : 0,
             discount_amount: totalItemDiscount, // Total discount (tier + extra)
             subtotal_before_discount: item.itemBaseSubtotal, // Base price * quantity
             total_after_discount: itemTotalAfterDiscount,
