@@ -433,6 +433,20 @@ export const trackOrdersTool = tool({
           }
         }
 
+        // Fetch actual order items
+        const orderItemsResponse = await databases.listDocuments(
+          DATABASE_ID,
+          ORDER_ITEMS_TABLE_ID,
+          [Query.equal("order_id", order.$id)]
+        );
+
+        const items = orderItemsResponse.documents.map((item: any) => ({
+          productName: item.product_name,
+          quantity: item.quantity_kg,
+          price: item.total_after_discount,
+          pricePerKg: item.price_per_kg_at_order,
+        }));
+
         return {
           success: true,
           orders: [
@@ -440,7 +454,7 @@ export const trackOrdersTool = tool({
               id: order.$id,
               status: order.status,
               totalAmount: order.total_price,
-              items: order.order_items, // CSV format
+              items: items, // Structured items
               deliveryAddress: addressLine,
               phoneNumber,
               customerName,
@@ -491,7 +505,7 @@ export const trackOrdersTool = tool({
           };
         }
 
-        // Fetch addresses for each order
+        // Fetch addresses and items for each order
         const ordersWithDetails = await Promise.all(
           orderResponse.documents.map(async (order) => {
             let addressLine = "Address not available";
@@ -508,11 +522,25 @@ export const trackOrdersTool = tool({
               }
             }
 
+            // Fetch actual order items
+            const orderItemsResponse = await databases.listDocuments(
+              DATABASE_ID,
+              ORDER_ITEMS_TABLE_ID,
+              [Query.equal("order_id", order.$id)]
+            );
+
+            const items = orderItemsResponse.documents.map((item: any) => ({
+              productName: item.product_name,
+              quantity: item.quantity_kg,
+              price: item.total_after_discount,
+              pricePerKg: item.price_per_kg_at_order,
+            }));
+
             return {
               id: order.$id,
               status: order.status,
               totalAmount: order.total_price,
-              items: order.order_items, // CSV format
+              items: items, // Structured items
               deliveryAddress: addressLine,
               phoneNumber: customer.phone,
               customerName: customer.full_name,

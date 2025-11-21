@@ -8,6 +8,7 @@ import {
   databases,
   DATABASE_ID,
   ORDERS_TABLE_ID,
+  ORDER_ITEMS_TABLE_ID,
   PRODUCTS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
 } from "@/lib/appwrite";
@@ -83,6 +84,7 @@ export default function AdminDashboard() {
           deliveredRes,
           recentOrdersRes,
           lastMonthOrdersRes,
+          orderItemsRes,
         ] = await Promise.all([
           databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
             Query.limit(5000),
@@ -107,6 +109,9 @@ export default function AdminDashboard() {
           ]),
           databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
             Query.greaterThan("$createdAt", thirtyDaysAgo.toISOString()),
+          ]),
+          databases.listDocuments(DATABASE_ID, ORDER_ITEMS_TABLE_ID, [
+            Query.limit(5000),
           ]),
         ]);
 
@@ -166,32 +171,29 @@ export default function AdminDashboard() {
         });
 
         // Calculate top products from orders
+        // Calculate top products from ACTUAL order items table (Robust way)
         const productCounts: {
           [key: string]: { count: number; revenue: number; name: string };
         } = {};
-        ordersRes.documents.forEach((order: any) => {
-          const items = order.order_items.split(",");
-          const orderTotal = order.total_price || 0;
-          const itemCount = items.length;
 
-          items.forEach((item: string) => {
-            const [productId, quantity] = item.split(":");
-            const qty = parseInt(quantity) || 0;
+        orderItemsRes.documents.forEach((item: any) => {
+          const productId = item.product_id;
+          const quantity = item.quantity_kg || 0;
+          const total = item.total_after_discount || 0;
 
-            if (!productCounts[productId]) {
-              productCounts[productId] = {
-                count: 0,
-                revenue: 0,
-                name:
-                  productLookup[productId] ||
-                  `Product ${productId.slice(0, 8)}`,
-              };
-            }
+          if (!productCounts[productId]) {
+            productCounts[productId] = {
+              count: 0,
+              revenue: 0,
+              name:
+                productLookup[productId] ||
+                item.product_name ||
+                `Product ${productId.slice(0, 8)}`,
+            };
+          }
 
-            productCounts[productId].count += qty;
-            // Approximate revenue per product (order total divided by number of items)
-            productCounts[productId].revenue += orderTotal / itemCount;
-          });
+          productCounts[productId].count += quantity;
+          productCounts[productId].revenue += total;
         });
 
         const topProductsArray = Object.entries(productCounts)
@@ -471,12 +473,12 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-2 h-2 rounded-full ${order.status === "pending"
-                              ? "bg-yellow-500"
-                              : order.status === "accepted"
-                                ? "bg-blue-500"
-                                : order.status === "out_for_delivery"
-                                  ? "bg-purple-500"
-                                  : "bg-green-500"
+                            ? "bg-yellow-500"
+                            : order.status === "accepted"
+                              ? "bg-blue-500"
+                              : order.status === "out_for_delivery"
+                                ? "bg-purple-500"
+                                : "bg-green-500"
                             }`}
                         />
                         <div>
