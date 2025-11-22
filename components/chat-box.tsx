@@ -504,7 +504,7 @@ export default function ChatBox({
         {showLocationButton && (
           <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-sm text-gray-700 mb-2">
-              📍 Share your location for accurate delivery
+              📍 Share location for accurate delivery (optional)
             </p>
             <button
               onClick={shareLocation}
