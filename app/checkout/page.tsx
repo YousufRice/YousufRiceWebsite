@@ -23,6 +23,8 @@ import {
   calculateTierPricing,
   calculateItemTotal,
   formatPhoneNumber,
+  formatPhoneNumberForDisplay,
+  validatePakistaniPhoneNumber,
 } from "@/lib/utils";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { ID, Query } from "appwrite";
@@ -43,6 +45,7 @@ export default function CheckoutPage() {
     phone: "",
     email: "",
     addressLine: "",
+    notes: "",
     latitude: 0,
     longitude: 0,
   });
@@ -65,7 +68,7 @@ export default function CheckoutPage() {
       setFormData((prev) => ({
         ...prev,
         fullName: customer.full_name || prev.fullName,
-        phone: customer.phone || prev.phone,
+        phone: customer.phone ? formatPhoneNumberForDisplay(customer.phone) : prev.phone,
         email: customer.email || prev.email,
       }));
     }
@@ -291,6 +294,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    const phoneValidation = validatePakistaniPhoneNumber(formData.phone);
+    if (!phoneValidation.isValid) {
+      toast.error(phoneValidation.error);
+      return;
+    }
+
     // Coordinates are now optional for manual checkout
 
     setLoading(true);
@@ -466,7 +475,7 @@ export default function CheckoutPage() {
             total_after_discount: itemCalculations.total,
 
             // Metadata
-            notes: "",
+            notes: formData.notes || "",
           }
         );
       }
@@ -693,6 +702,23 @@ export default function CheckoutPage() {
                         required
                         className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
                         placeholder="House #, Street, Area, City"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-[#27247b] mb-2">
+                        Order Notes (Optional)
+                      </label>
+                      <textarea
+                        value={formData.notes}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            notes: e.target.value,
+                          })
+                        }
+                        className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base min-h-[100px]"
+                        placeholder="Any special instructions for delivery..."
                       />
                     </div>
                   </div>

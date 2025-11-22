@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { databases, DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { databases, DATABASE_ID, ORDERS_TABLE_ID, ORDER_ITEMS_TABLE_ID, Query } from "@/lib/appwrite";
 import { Order } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
@@ -40,11 +40,29 @@ export default function EditOrderDialog({
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<Order["status"]>("pending");
     const [totalPrice, setTotalPrice] = useState<string>("");
+    const [notes, setNotes] = useState<string>("");
 
     useEffect(() => {
         if (order) {
             setStatus(order.status);
             setTotalPrice(order.total_price.toString());
+
+            // Fetch existing notes from the first order item
+            const fetchNotes = async () => {
+                try {
+                    const items = await databases.listDocuments(
+                        DATABASE_ID,
+                        ORDER_ITEMS_TABLE_ID,
+                        [Query.equal("order_id", order.$id), Query.limit(1)]
+                    );
+                    if (items.documents.length > 0) {
+                        setNotes(items.documents[0].notes || "");
+                    }
+                } catch (error) {
+                    console.error("Error fetching notes:", error);
+                }
+            };
+            fetchNotes();
         }
     }, [order]);
 
@@ -64,6 +82,24 @@ export default function EditOrderDialog({
                 status: status,
                 total_price: price,
             });
+
+            // Update notes for all order items
+            const items = await databases.listDocuments(
+                DATABASE_ID,
+                ORDER_ITEMS_TABLE_ID,
+                [Query.equal("order_id", order.$id)]
+            );
+
+            await Promise.all(
+                items.documents.map((item) =>
+                    databases.updateDocument(
+                        DATABASE_ID,
+                        ORDER_ITEMS_TABLE_ID,
+                        item.$id,
+                        { notes: notes }
+                    )
+                )
+            );
 
             toast.success("Order updated successfully");
             onSuccess();
@@ -92,7 +128,7 @@ export default function EditOrderDialog({
                         </Label>
                         <Select
                             value={status}
-                            onValueChange={(value: Order["status"]) => setStatus(value)}
+                            onValueChange={(value: string) => setStatus(value as Order["status"])}
                         >
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Select status" />
@@ -116,6 +152,18 @@ export default function EditOrderDialog({
                             value={totalPrice}
                             onChange={(e) => setTotalPrice(e.target.value)}
                             className="col-span-3"
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="notes" className="text-right">
+                            Notes
+                        </Label>
+                        <textarea
+                            id="notes"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="col-span-3 flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Order notes..."
                         />
                     </div>
                 </div>

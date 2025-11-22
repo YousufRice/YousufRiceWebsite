@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import toast from 'react-hot-toast';
 import { Query } from 'appwrite';
+import { formatPhoneNumber, validatePakistaniPhoneNumber } from '@/lib/utils';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -27,17 +28,17 @@ export default function LoginForm() {
     if (message === 'password-reset') {
       const tempEmail = sessionStorage.getItem('temp_email');
       const tempPassword = sessionStorage.getItem('temp_new_password');
-      
+
       if (tempEmail && tempPassword) {
         setFormData({
           emailOrPhone: tempEmail,
           password: tempPassword
         });
-        
+
         // Clear temp data
         sessionStorage.removeItem('temp_email');
         sessionStorage.removeItem('temp_new_password');
-        
+
         toast.success('Please login with your new password');
       }
     }
@@ -49,19 +50,29 @@ export default function LoginForm() {
 
     try {
       const { emailOrPhone, password } = formData;
-      
+
       // Check if input is email or phone
       const isEmail = emailOrPhone.includes('@');
-      
+
       if (isEmail) {
         // Direct email login
         await account.createEmailPasswordSession(emailOrPhone, password);
       } else {
+        // Validate phone number
+        const validation = validatePakistaniPhoneNumber(emailOrPhone);
+        if (!validation.isValid) {
+          toast.error(validation.error);
+          setLoading(false);
+          return;
+        }
+
+        const formattedPhone = formatPhoneNumber(emailOrPhone);
+
         // Phone login - find customer by phone, then login with their email
         const customerResponse = await databases.listDocuments(
           DATABASE_ID,
           CUSTOMERS_TABLE_ID,
-          [Query.equal('phone', emailOrPhone.trim())]
+          [Query.equal('phone', formattedPhone)]
         );
 
         if (customerResponse.documents.length === 0) {
@@ -80,10 +91,10 @@ export default function LoginForm() {
         // Login with the customer's email
         await account.createEmailPasswordSession(customer.email, password);
       }
-      
+
       await checkAuth();
       toast.success('Logged in successfully!');
-      
+
       // Redirect to the page they came from or home
       const redirectTo = searchParams.get('redirect') || '/';
       router.push(redirectTo);

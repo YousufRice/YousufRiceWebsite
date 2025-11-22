@@ -193,7 +193,7 @@ export class OrderService {
             total_after_discount: itemTotal.total,
 
             // Metadata
-            notes: itemRequest.notes || "",
+            notes: itemRequest.notes || orderRequest.notes || "",
           }
         )) as unknown as OrderItem;
 
