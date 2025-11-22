@@ -296,7 +296,7 @@ export default function CheckoutPage() {
 
     const phoneValidation = validatePakistaniPhoneNumber(formData.phone);
     if (!phoneValidation.isValid) {
-      toast.error(phoneValidation.error);
+      toast.error(phoneValidation.error!);
       return;
     }
 
@@ -586,7 +586,8 @@ export default function CheckoutPage() {
           customerId,
           formData.fullName,
           getTotalPrice(),
-          productNames
+          productNames,
+          orderId
         );
       } catch (loyaltyError) {
         console.error("Error processing loyalty discount:", loyaltyError);
