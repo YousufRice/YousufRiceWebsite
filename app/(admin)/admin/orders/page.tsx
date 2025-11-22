@@ -48,9 +48,13 @@ import {
   TrendingUp,
   CheckCircle2,
   RotateCcw,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Query } from "appwrite";
 import toast from "react-hot-toast";
+import DeleteOrderDialog from "@/components/admin/DeleteOrderDialog";
+import EditOrderDialog from "@/components/admin/EditOrderDialog";
 
 interface OrderWithCustomer extends Order {
   customer?: Customer;
@@ -68,6 +72,13 @@ export default function AdminOrdersPage() {
     "all" | "today" | "week" | "month"
   >("all");
   const [sortBy, setSortBy] = useState<"date" | "amount">("date");
+
+  // Dialog states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<OrderWithCustomer | null>(
+    null
+  );
 
   useEffect(() => {
     fetchOrders();
@@ -242,6 +253,16 @@ export default function AdminOrdersPage() {
           return sum + order.total_price;
         }, 0) / orders.filter((o) => o.status !== "returned").length
         : 0,
+  };
+
+  const handleEditClick = (order: OrderWithCustomer) => {
+    setSelectedOrder(order);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (order: OrderWithCustomer) => {
+    setSelectedOrder(order);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -490,6 +511,25 @@ export default function AdminOrdersPage() {
                       </p>
                     </div>
                     <div className="flex items-center justify-end gap-2">
+                      <ReadOnlyGuard>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(order)}
+                          title="Edit Order"
+                        >
+                          <Pencil className="w-4 h-4 text-gray-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteClick(order)}
+                          title="Delete Order"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </ReadOnlyGuard>
                       <Link href={`/orders/${order.$id}?from=admin`}>
                         <Button variant="outline" size="sm">
                           <ExternalLink className="w-4 h-4 mr-2" />
@@ -577,6 +617,20 @@ export default function AdminOrdersPage() {
             ))}
           </div>
         )}
+
+        <DeleteOrderDialog
+          orderId={selectedOrder?.$id || ""}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onSuccess={fetchOrders}
+        />
+
+        <EditOrderDialog
+          order={selectedOrder}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={fetchOrders}
+        />
       </div>
     </AdminAuthGuard>
   );

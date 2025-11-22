@@ -14,10 +14,10 @@ const DialogContext = React.createContext<{
   onOpenChange: (open: boolean) => void
 }>({
   open: false,
-  onOpenChange: () => {},
+  onOpenChange: () => { },
 })
 
-export function Dialog({ open = false, onOpenChange = () => {}, children }: DialogProps) {
+export function Dialog({ open = false, onOpenChange = () => { }, children }: DialogProps) {
   return (
     <DialogContext.Provider value={{ open, onOpenChange }}>
       {children}
@@ -83,6 +83,19 @@ interface DialogHeaderProps {
 export function DialogHeader({ children, className }: DialogHeaderProps) {
   return (
     <div className={`flex flex-col space-y-1.5 text-center sm:text-left ${className || ''}`}>
+      {children}
+    </div>
+  )
+}
+
+interface DialogFooterProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function DialogFooter({ children, className }: DialogFooterProps) {
+  return (
+    <div className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 ${className || ''}`}>
       {children}
     </div>
   )
