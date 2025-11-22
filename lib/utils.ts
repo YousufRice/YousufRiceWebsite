@@ -198,20 +198,86 @@ export function calculateQuantityFromBags(bags: {
   return bags.kg1 * 1 + bags.kg5 * 5 + bags.kg10 * 10 + bags.kg25 * 25;
 }
 
+export function validatePakistaniPhoneNumber(phone: string): {
+  isValid: boolean;
+  error?: string;
+} {
+  // Check for spaces or dashes
+  if (/[\s-]/.test(phone)) {
+    return {
+      isValid: false,
+      error: "Please enter number without spaces or dashes.",
+    };
+  }
+
+  // Check if starts with +92
+  if (phone.startsWith("+92")) {
+    return {
+      isValid: false,
+      error: "Please enter number starting with 0, not +92.",
+    };
+  }
+
+  // Check if contains non-digits (already covered by spaces/dashes check partly, but good to be thorough)
+  if (/\D/.test(phone)) {
+    return {
+      isValid: false,
+      error: "Phone number must contain only digits.",
+    };
+  }
+
+  // Check length and starting digit
+  if (phone.length !== 11 || !phone.startsWith("0")) {
+    return {
+      isValid: false,
+      error: "Number must be 11 digits starting with 0 (e.g. 03001234567).",
+    };
+  }
+
+  return { isValid: true };
+}
+
 export function formatPhoneNumber(phone: string): string {
+  // This function assumes the input has been validated or is at least close to valid
+  // But we'll keep it robust just in case
+  
   // Remove all non-digit characters
   const digits = phone.replace(/\D/g, "");
 
-  // If starts with 92, add +
-  if (digits.startsWith("92")) {
-    return "+" + digits;
-  }
-
   // If starts with 0, replace with +92
-  if (digits.startsWith("0")) {
+  if (digits.startsWith("0") && digits.length === 11) {
     return "+92" + digits.substring(1);
   }
 
-  // Otherwise assume it's missing country code
+  // Fallback for existing data or other formats (though validation should prevent this for new input)
+  if (digits.startsWith("92")) {
+    return "+" + digits;
+  }
+  
   return "+92" + digits;
+}
+
+export function formatPhoneNumberForDisplay(phone: string): string {
+  if (!phone) return "";
+  
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, "");
+  
+  // If starts with 92 (e.g. 923001234567), replace 92 with 0
+  if (digits.startsWith("92") && digits.length === 12) {
+    return "0" + digits.substring(2);
+  }
+  
+  // If it's already in 03 format (11 digits starting with 0), return as is
+  if (digits.startsWith("0") && digits.length === 11) {
+    return digits;
+  }
+  
+  // If it's just the local part (10 digits), add 0
+  if (digits.length === 10) {
+    return "0" + digits;
+  }
+  
+  // Fallback: return original
+  return phone;
 }

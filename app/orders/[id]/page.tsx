@@ -420,6 +420,20 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Order Notes */}
+        {data.items.length > 0 && data.items[0].notes && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {data.items[0].notes}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Delivery Address */}
         <Card>
           <CardHeader>

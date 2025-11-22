@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
 import OTPInput from "@/components/otp-input";
+import { formatPhoneNumber, validatePakistaniPhoneNumber } from "@/lib/utils";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -34,28 +35,7 @@ export default function RegisterForm() {
     confirmPassword: "",
   });
 
-  // Format phone number with country code for Appwrite Auth
-  const formatPhoneForAuth = (phone: string): string => {
-    let trimmed = phone.trim();
 
-    // If already in correct format (+92XXXXXXXXXX), return as is
-    if (trimmed.startsWith("+92") && trimmed.length === 13) {
-      return trimmed;
-    }
-
-    // If starts with +, but not +92, return as is (user provided different country code)
-    if (trimmed.startsWith("+")) {
-      return trimmed;
-    }
-
-    // Remove leading 0 if present
-    if (trimmed.startsWith("0")) {
-      trimmed = trimmed.substring(1);
-    }
-
-    // Add Pakistan country code
-    return `+92${trimmed}`;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,14 +55,22 @@ export default function RegisterForm() {
       return;
     }
 
+    const validation = validatePakistaniPhoneNumber(formData.phone);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const formattedPhone = formatPhoneNumber(formData.phone);
+
       // Check if phone number already exists
       const existingCustomer = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formData.phone.trim())]
+        [Query.equal("phone", formattedPhone)]
       );
 
       if (existingCustomer.documents.length > 0) {
@@ -183,7 +171,7 @@ export default function RegisterForm() {
         {
           user_id: user.$id,
           full_name: formData.name,
-          phone: formatPhoneForAuth(formData.phone),
+          phone: formatPhoneNumber(formData.phone),
           email: formData.email,
         }
       );
@@ -196,7 +184,7 @@ export default function RegisterForm() {
 
       // Update phone number in Appwrite Auth (after session is established)
       await account.updatePhone(
-        formatPhoneForAuth(formData.phone),
+        formatPhoneNumber(formData.phone),
         formData.password
       );
 

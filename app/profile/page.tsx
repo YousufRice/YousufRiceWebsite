@@ -18,6 +18,7 @@ import { ArrowLeft, Gift, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { DiscountService } from "@/lib/services/discount-service";
 import { LoyaltyDiscount } from "@/lib/services/loyalty-service";
+import { formatPhoneNumberForDisplay } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function ProfilePage() {
           const customerData = response.documents[0];
           setFormData({
             full_name: customerData.full_name || user.name || "",
-            phone: customerData.phone || user.phone || "",
+            phone: customerData.phone ? formatPhoneNumberForDisplay(customerData.phone) : (user.phone ? formatPhoneNumberForDisplay(user.phone) : ""),
             email: customerData.email || user.email || "",
           });
 
@@ -62,7 +63,7 @@ export default function ProfilePage() {
         } else {
           setFormData({
             full_name: user.name || "",
-            phone: user.phone || "",
+            phone: user.phone ? formatPhoneNumberForDisplay(user.phone) : "",
             email: user.email || "",
           });
         }
