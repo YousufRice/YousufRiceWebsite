@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { account, databases, DATABASE_ID, CUSTOMERS_TABLE_ID } from '@/lib/appwrite';
+import { account } from '@/lib/appwrite';
+import { getUserEmailByPhone } from '@/app/actions/auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import toast from 'react-hot-toast';
-import { Query } from 'appwrite';
+
 import { formatPhoneNumber, validatePakistaniPhoneNumber } from '@/lib/utils';
 
 export default function LoginForm() {
@@ -61,35 +62,24 @@ export default function LoginForm() {
         // Validate phone number
         const validation = validatePakistaniPhoneNumber(emailOrPhone);
         if (!validation.isValid) {
-          toast.error(validation.error);
+          toast.error(validation.error!);
           setLoading(false);
           return;
         }
 
         const formattedPhone = formatPhoneNumber(emailOrPhone);
 
-        // Phone login - find customer by phone, then login with their email
-        const customerResponse = await databases.listDocuments(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          [Query.equal('phone', formattedPhone)]
-        );
+        // Phone login - find user email directly from Auth system
+        const email = await getUserEmailByPhone(formattedPhone);
 
-        if (customerResponse.documents.length === 0) {
+        if (!email) {
           toast.error('No account found with this phone number');
           setLoading(false);
           return;
         }
 
-        const customer = customerResponse.documents[0];
-        if (!customer.email) {
-          toast.error('This account does not have an email associated. Please contact support.');
-          setLoading(false);
-          return;
-        }
-
-        // Login with the customer's email
-        await account.createEmailPasswordSession(customer.email, password);
+        // Login with the retrieved email
+        await account.createEmailPasswordSession(email, password);
       }
 
       await checkAuth();
