@@ -328,21 +328,21 @@ export default function OrderDetailPage() {
                   0
                 );
                 const discountAmount = itemsTotal - data.total_price;
-                
+
                 return (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-gray-600">
                       <span>Subtotal</span>
                       <span>{formatCurrency(itemsTotal)}</span>
                     </div>
-                    
+
                     {discountAmount > 0 && (
                       <div className="flex justify-between items-center text-green-600">
                         <span>Discount</span>
                         <span>-{formatCurrency(discountAmount)}</span>
                       </div>
                     )}
-                    
+
                     <div className="flex justify-between items-center pt-2 border-t mt-2">
                       <span className="text-xl font-bold">Total</span>
                       <span className="text-2xl font-bold text-green-600">
@@ -355,6 +355,67 @@ export default function OrderDetailPage() {
               <p className="text-sm text-gray-500 mt-2">
                 Payment: Cash on Delivery
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Customer Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gray-100 p-2 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-gray-600"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {data.customer.full_name}
+                  </p>
+                  <p className="text-sm text-gray-500">Customer Name</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <div className="bg-gray-100 p-2 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-gray-600"
+                  >
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .57 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.81.57A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {data.customer.phone}
+                  </p>
+                  <p className="text-sm text-gray-500">Phone Number</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
