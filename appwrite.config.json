@@ -667,10 +667,10 @@
         {
             "$id": "discount_management",
             "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Discount Management",
@@ -757,24 +757,6 @@
                     "encrypt": false
                 },
                 {
-                    "key": "product_id",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 255,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "min_weight_kg",
-                    "type": "double",
-                    "required": false,
-                    "array": false,
-                    "min": 0,
-                    "max": 1.7976931348623157e+308,
-                    "default": null
-                },
-                {
                     "key": "discount_percentage",
                     "type": "double",
                     "required": false,
@@ -834,20 +816,20 @@
                     "default": null
                 },
                 {
-                    "key": "notes",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 1000,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
                     "key": "is_enabled",
                     "type": "boolean",
                     "required": false,
                     "array": false,
                     "default": true
+                },
+                {
+                    "key": "order_id",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
                 }
             ],
             "indexes": [
@@ -888,13 +870,15 @@
                     "orders": []
                 },
                 {
-                    "key": "product_id_idx",
+                    "key": "order_id_idx",
                     "type": "key",
                     "status": "available",
                     "columns": [
-                        "product_id"
+                        "order_id"
                     ],
-                    "orders": []
+                    "orders": [
+                        "ASC"
+                    ]
                 }
             ]
         }

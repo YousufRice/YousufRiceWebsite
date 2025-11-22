@@ -1539,6 +1539,21 @@ export const createOrderTool = tool({
           );
         });
 
+      // Process loyalty discount (for NEXT order)
+      try {
+        const productNames = enrichedItems.map((item) => item.product.name);
+        await LoyaltyService.processLoyaltyDiscount(
+          customerId,
+          customerName.trim(),
+          finalTotalPrice,
+          productNames,
+          orderId
+        );
+      } catch (loyaltyError) {
+        console.error("Error processing loyalty discount:", loyaltyError);
+        // Don't block the flow if loyalty processing fails
+      }
+
       return {
         success: true,
         order: {

@@ -214,7 +214,8 @@ export class OrderService {
           orderRequest.customer_id,
           customer.full_name || "",
           totalPrice,
-          productNames
+          productNames,
+          orderId
         );
       } catch (loyaltyError) {
         console.error("Error processing loyalty discount:", loyaltyError);
