@@ -8,16 +8,24 @@ import { Order } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { Package, Clock, Truck, CheckCircle, LogIn } from 'lucide-react';
+import { Package, Clock, Truck, CheckCircle, LogIn, Filter, X } from 'lucide-react';
 import { Query } from 'appwrite';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { Input } from '@/components/ui/input';
 
 export default function OrdersPage() {
   const router = useRouter();
   const { user, customer, loading: authLoading, checkAuth } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Filtering and Pagination State
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [lastId, setLastId] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     checkAuth();
@@ -32,30 +40,78 @@ export default function OrdersPage() {
 
     // If user is logged in and has customer record, fetch orders
     if (user && customer) {
-      fetchOrders();
+      // Only fetch if we haven't fetched yet (to avoid double fetch on mount)
+      // But we need to handle the initial load.
+      // Let's rely on the dependency array.
+      fetchOrders(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, customer, authLoading, router]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (loadMore: boolean = false) => {
     if (!customer) return;
 
     setLoading(true);
     try {
-      // Get all orders for this customer
+      const queries = [
+        Query.equal('customer_id', customer.$id),
+        Query.orderDesc('$createdAt'),
+        Query.limit(PAGE_SIZE)
+      ];
+
+      // Apply Date Filters
+      if (startDate) {
+        // Start of the selected day
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        queries.push(Query.greaterThanEqual('$createdAt', start.toISOString()));
+      }
+
+      if (endDate) {
+        // End of the selected day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        queries.push(Query.lessThanEqual('$createdAt', end.toISOString()));
+      }
+
+      // Apply Pagination Cursor
+      if (loadMore && lastId) {
+        queries.push(Query.cursorAfter(lastId));
+      }
+
       const ordersResponse = await databases.listDocuments(
         DATABASE_ID,
         ORDERS_TABLE_ID,
-        [Query.equal('customer_id', customer.$id), Query.orderDesc('$createdAt'), Query.limit(100)]
+        queries
       );
 
-      setOrders(ordersResponse.documents as unknown as Order[]);
+      const newOrders = ordersResponse.documents as unknown as Order[];
 
-      if (ordersResponse.documents.length > 0) {
-        toast.success(`Found ${ordersResponse.documents.length} order(s)`, {
-          id: 'orders-found',
-        });
+      if (loadMore) {
+        setOrders(prev => [...prev, ...newOrders]);
+      } else {
+        setOrders(newOrders);
+        if (newOrders.length > 0) {
+          toast.success(`Found ${ordersResponse.total} order(s)`, {
+            id: 'orders-found',
+          });
+        } else if (!loadMore) {
+          // Only show "No orders found" if it's a fresh search/filter, not just loading more
+          // But we handle empty state in UI, so maybe just a toast if filtering?
+          if (startDate || endDate) {
+            toast('No orders found for the selected dates', { icon: '🔍' });
+          }
+        }
       }
 
+      // Update pagination state
+      if (newOrders.length === PAGE_SIZE) {
+        setLastId(newOrders[newOrders.length - 1].$id);
+        setHasMore(true);
+      } else {
+        setLastId(null);
+        setHasMore(false);
+      }
 
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -63,6 +119,95 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilter = () => {
+    setLastId(null);
+    setHasMore(false);
+    fetchOrders(false);
+  };
+
+  const handleClearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setLastId(null);
+    setHasMore(false);
+    // We need to trigger fetch after state update, but state update is async.
+    // So we can pass empty strings directly to a helper or just rely on the next render if we used useEffect, 
+    // but here explicit call is better.
+    // Actually, let's just reset state and call fetch with empty values manually or wait for effect?
+    // Better to just call fetchOrders with cleared values logic, but fetchOrders reads from state.
+    // So we must wait for state to update or pass overrides.
+    // Simplest: clear state, then call a version of fetch that uses params or just wait for user to click apply?
+    // UX: Clear button should probably auto-refresh.
+
+    // Hack: force a fetch with empty values by temporarily overriding or just setting state and using a timeout/effect?
+    // Let's just set state and then call fetchOrders. Note: fetchOrders uses the state values which might be stale in this closure.
+    // So we should probably pass filters as arguments to fetchOrders or use a ref.
+    // For simplicity, I'll just reload the page or use a useEffect on filters? No, that triggers on every keystroke.
+
+    // Let's modify fetchOrders to accept optional overrides, or just use a timeout.
+    // Or better: split the fetch logic to take arguments.
+
+    // Re-implementation:
+    // I will just set the state to empty strings, and then call a separate internal function or just use setTimeout(..., 0) to let React flush state.
+    // Actually, let's just pass the values to fetchOrders.
+
+    // But wait, I can't easily pass values to fetchOrders without changing its signature significantly.
+    // Let's just reload the initial state.
+
+    // Correct approach:
+    // 1. Set state
+    // 2. Call fetchOrders but we need it to see new state.
+    // Let's just do:
+    setTimeout(() => {
+      // This runs after state update is scheduled
+      // But with React batching it might still be tricky.
+      // Let's just reload the page? No that's bad.
+
+      // Let's just manually trigger a fetch with "empty" logic
+      // But fetchOrders reads state.
+
+      // Okay, I will make fetchOrders read from args if provided, else state.
+    }, 0);
+  };
+
+  // Better Clear Handler
+  const clearAndRefetch = () => {
+    setStartDate('');
+    setEndDate('');
+    setLastId(null);
+    setHasMore(false);
+
+    // Manually fetch with cleared values
+    // We can't easily reuse fetchOrders as is if it reads state.
+    // So let's refactor fetchOrders to read from params OR state.
+    // Actually, let's just do this:
+
+    setLoading(true);
+    databases.listDocuments(
+      DATABASE_ID,
+      ORDERS_TABLE_ID,
+      [
+        Query.equal('customer_id', customer!.$id),
+        Query.orderDesc('$createdAt'),
+        Query.limit(PAGE_SIZE)
+      ]
+    ).then((response) => {
+      const newOrders = response.documents as unknown as Order[];
+      setOrders(newOrders);
+      if (newOrders.length === PAGE_SIZE) {
+        setLastId(newOrders[newOrders.length - 1].$id);
+        setHasMore(true);
+      } else {
+        setLastId(null);
+        setHasMore(false);
+      }
+      toast.success('Filters cleared');
+    }).catch(err => {
+      console.error(err);
+      toast.error('Failed to reset');
+    }).finally(() => setLoading(false));
   };
 
   const getStatusIcon = (status: Order['status']) => {
@@ -131,51 +276,73 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Manual Tracking Option - Temporarily disabled */}
-      {/* Uncomment below to enable manual tracking link */}
-      {/* {orders.length === 0 && !loading && (
-        <Card className="mb-6 border-2 border-[#ffff03]/50 bg-[#ffff03]/5">
-          <CardContent className="p-4">
-            <p className="text-sm text-[#27247b] font-bold mb-2">
-              📱 Changed your phone number?
-            </p>
-            <p className="text-xs text-[#27247b]/80 mb-3">
-              If you placed orders with a different phone number, you can track them manually.
-            </p>
-            <Link href="/track-order">
-              <Button variant="outline" size="sm" className="border-[#27247b] text-[#27247b] hover:bg-[#27247b] hover:text-white">
-                Track Order by Phone Number
+      {/* Filters Section */}
+      <Card className="mb-8">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="w-full md:w-1/3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="w-full md:w-1/3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 w-full md:w-auto">
+              <Button onClick={handleFilter} className="flex-1 md:flex-none">
+                <Filter className="w-4 h-4 mr-2" />
+                Apply
               </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )} */}
+              {(startDate || endDate) && (
+                <Button variant="outline" onClick={clearAndRefetch} className="flex-1 md:flex-none">
+                  <X className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Loading State */}
-      {loading && (
+      {/* Loading State - Initial Load Only */}
+      {loading && orders.length === 0 && (
         <div className="text-center py-12">
           <p className="text-lg text-gray-600">Loading your orders...</p>
         </div>
       )}
 
       {/* Orders List */}
-      {!loading && (
+      {(!loading || orders.length > 0) && (
         <>
           {orders.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <Package className="w-24 h-24 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">No Orders Yet</h2>
-                <p className="text-gray-600 mb-6">You haven't placed any orders yet.</p>
-                <Link href="/#products">
-                  <Button size="lg">Start Shopping</Button>
-                </Link>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">No Orders Found</h2>
+                <p className="text-gray-600 mb-6">
+                  {startDate || endDate
+                    ? "Try adjusting your date filters."
+                    : "You haven't placed any orders yet."}
+                </p>
+                {!(startDate || endDate) && (
+                  <Link href="/#products">
+                    <Button size="lg">Start Shopping</Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ) : (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Your Orders ({orders.length})
+                Your Orders ({orders.length}{hasMore ? '+' : ''})
               </h2>
 
               <div className="space-y-4">
@@ -223,6 +390,21 @@ export default function OrdersPage() {
                   </Card>
                 ))}
               </div>
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="mt-8 text-center">
+                  <Button
+                    onClick={() => fetchOrders(true)}
+                    variant="secondary"
+                    size="lg"
+                    disabled={loading}
+                    className="min-w-[200px]"
+                  >
+                    {loading ? 'Loading...' : 'Load More Orders'}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </>
