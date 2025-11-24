@@ -730,11 +730,11 @@ export default function CheckoutPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <label className="text-sm text-[#27247b] font-bold mb-2 block">
-                              📍 For Best Delivery Accuracy (Optional)
+                              📍 For Fast & Accurate Delivery (Optional)
                             </label>
                             <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc">
                               <li>Turn on your phone's GPS/location</li>
-                              <li className="text-[#27247b]/60 italic">Optional but recommended</li>
+                              <li className="text-[#27247b]/60 italic">Recommended</li>
                             </ul>
                           </div>
                           <Button
@@ -745,7 +745,7 @@ export default function CheckoutPage() {
                           >
                             <MapPin className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} />
                             <span className="hidden sm:inline">
-                              {gettingLocation ? "Getting Location..." : "Get Location"}
+                              {gettingLocation ? "Please Wait…" : "Enable Location"}
                             </span>
                             <span className="sm:hidden">
                               {gettingLocation ? "Getting..." : "GPS"}
