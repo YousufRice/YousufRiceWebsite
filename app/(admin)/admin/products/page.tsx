@@ -326,7 +326,7 @@ export default function AdminProductsPage() {
     avgPrice:
       products.length > 0
         ? products.reduce((sum, p) => sum + p.base_price_per_kg, 0) /
-          products.length
+        products.length
         : 0,
   };
 
@@ -452,14 +452,14 @@ export default function AdminProductsPage() {
                 </Select>
                 <div className="flex gap-2">
                   <Button
-                    variant={viewMode === "grid" ? "primary" : "outline"}
+                    variant={viewMode === "grid" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setViewMode("grid")}
                   >
                     <Grid3x3 className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant={viewMode === "table" ? "primary" : "outline"}
+                    variant={viewMode === "table" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setViewMode("table")}
                   >
@@ -650,8 +650,8 @@ export default function AdminProductsPage() {
                     {loading
                       ? "Saving..."
                       : editingId
-                      ? "Update Product"
-                      : "Create Product"}
+                        ? "Update Product"
+                        : "Create Product"}
                   </Button>
                   <Button type="button" variant="outline" onClick={resetForm}>
                     Cancel
