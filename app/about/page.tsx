@@ -81,8 +81,8 @@ export default function AboutPage() {
                 preferred choice for major hypermarkets, including <strong>Union Coop</strong> in the UAE.
               </p>
               <p>
-                Operating under <strong>S.S.I Foodstuff Trading</strong>, we are renowned for our expertise in Sella 1121 rice 
-                and long grain 386 Basmati. Our flexible packaging options range from convenient 2kg bags to bulk 35kg and 40kg 
+                Operating under <strong>S.S.I Foodstuff Trading</strong>, we are renowned for our expertise in 1121 Sella Rice 
+                and long grain 1121 Steam Basmati. Our flexible packaging options range from convenient 2kg bags to bulk 35kg and 40kg 
                 master bags, catering to diverse customer needs.
               </p>
             </div>
