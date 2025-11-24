@@ -74,9 +74,15 @@ export default function RegisterForm() {
       );
 
       if (existingCustomer.documents.length > 0) {
-        toast.error("An account with this phone number already exists");
-        setLoading(false);
-        return;
+        const customer = existingCustomer.documents[0];
+        // If customer exists and has a real user_id (not guest), then it's a duplicate
+        if (customer.user_id && customer.user_id !== "guest") {
+          toast.error("An account with this phone number already exists");
+          setLoading(false);
+          return;
+        }
+        // If user_id is "guest" or missing, we allow registration to proceed
+        // so they can claim this customer record
       }
 
       // Check if email already exists
@@ -87,9 +93,13 @@ export default function RegisterForm() {
       );
 
       if (existingEmail.documents.length > 0) {
-        toast.error("An account with this email already exists");
-        setLoading(false);
-        return;
+        const customer = existingEmail.documents[0];
+        // If customer exists and has a real user_id (not guest), then it's a duplicate
+        if (customer.user_id && customer.user_id !== "guest") {
+          toast.error("An account with this email already exists");
+          setLoading(false);
+          return;
+        }
       }
 
       // Send OTP for email verification
@@ -163,18 +173,40 @@ export default function RegisterForm() {
         formData.name
       );
 
-      // Create customer record
-      await databases.createDocument(
+      // Check if customer record exists to link
+      const existingCustomerList = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
-        ID.unique(),
-        {
-          user_id: user.$id,
-          full_name: formData.name,
-          phone: formatPhoneNumber(formData.phone),
-          email: formData.email,
-        }
+        [Query.equal("phone", formatPhoneNumber(formData.phone))]
       );
+
+      if (existingCustomerList.documents.length > 0) {
+        // Update existing customer
+        const customerToUpdate = existingCustomerList.documents[0];
+        await databases.updateDocument(
+          DATABASE_ID,
+          CUSTOMERS_TABLE_ID,
+          customerToUpdate.$id,
+          {
+            user_id: user.$id,
+            full_name: formData.name,
+            email: formData.email,
+          }
+        );
+      } else {
+        // Create customer record
+        await databases.createDocument(
+          DATABASE_ID,
+          CUSTOMERS_TABLE_ID,
+          ID.unique(),
+          {
+            user_id: user.$id,
+            full_name: formData.name,
+            phone: formatPhoneNumber(formData.phone),
+            email: formData.email,
+          }
+        );
+      }
 
       // Login the user
       await account.createEmailPasswordSession(
