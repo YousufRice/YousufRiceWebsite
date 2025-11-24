@@ -386,14 +386,14 @@ export default function AdminOrdersPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant={filter === "all" ? "primary" : "outline"}
+                  variant={filter === "all" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("all")}
                 >
                   All Orders
                 </Button>
                 <Button
-                  variant={filter === "pending" ? "primary" : "outline"}
+                  variant={filter === "pending" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("pending")}
                 >
@@ -401,7 +401,7 @@ export default function AdminOrdersPage() {
                   Pending
                 </Button>
                 <Button
-                  variant={filter === "accepted" ? "primary" : "outline"}
+                  variant={filter === "accepted" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("accepted")}
                 >
@@ -410,7 +410,7 @@ export default function AdminOrdersPage() {
                 </Button>
                 <Button
                   variant={
-                    filter === "out_for_delivery" ? "primary" : "outline"
+                    filter === "out_for_delivery" ? "default" : "outline"
                   }
                   size="sm"
                   onClick={() => setFilter("out_for_delivery")}
@@ -419,7 +419,7 @@ export default function AdminOrdersPage() {
                   Out for Delivery
                 </Button>
                 <Button
-                  variant={filter === "delivered" ? "primary" : "outline"}
+                  variant={filter === "delivered" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("delivered")}
                 >
@@ -427,7 +427,7 @@ export default function AdminOrdersPage() {
                   Delivered
                 </Button>
                 <Button
-                  variant={filter === "returned" ? "primary" : "outline"}
+                  variant={filter === "returned" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("returned")}
                 >

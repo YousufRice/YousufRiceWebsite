@@ -30,7 +30,7 @@ export default function AdminTestPage() {
     <AdminAuthGuard>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold mb-6">Admin Authentication Test</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
@@ -53,13 +53,12 @@ export default function AdminTestPage() {
                   <p className="text-sm text-gray-500">Labels</p>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {user?.labels?.map((label: string) => (
-                      <span 
+                      <span
                         key={label}
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          label === 'admin' ? 'bg-green-100 text-green-800' :
-                          label === 'readonly' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${label === 'admin' ? 'bg-green-100 text-green-800' :
+                            label === 'readonly' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                          }`}
                       >
                         {label}
                       </span>
@@ -91,13 +90,13 @@ export default function AdminTestPage() {
                   <div>
                     <p className="font-medium">
                       {adminPermission === AdminPermission.FULL_ACCESS ? 'Full Admin Access' :
-                       adminPermission === AdminPermission.READ_ONLY ? 'Read-Only Access' :
-                       'No Admin Access'}
+                        adminPermission === AdminPermission.READ_ONLY ? 'Read-Only Access' :
+                          'No Admin Access'}
                     </p>
                     <p className="text-sm text-gray-500">
                       {adminPermission === AdminPermission.FULL_ACCESS ? 'You can view and modify all admin data' :
-                       adminPermission === AdminPermission.READ_ONLY ? 'You can view but not modify admin data' :
-                       'You cannot access admin data'}
+                        adminPermission === AdminPermission.READ_ONLY ? 'You can view but not modify admin data' :
+                          'You cannot access admin data'}
                     </p>
                   </div>
                 </div>
@@ -133,7 +132,7 @@ export default function AdminTestPage() {
                 <Button onClick={fetchApiData} disabled={loading || !hasReadPermission()}>
                   {loading ? 'Loading...' : 'Fetch Admin Stats'}
                 </Button>
-                
+
                 {apiData && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
                     <pre className="text-sm overflow-auto">
@@ -147,7 +146,7 @@ export default function AdminTestPage() {
                 <h3 className="text-lg font-medium mb-2">Write Action</h3>
                 <p className="text-gray-600 mb-3">This action requires full admin access (admin label)</p>
                 <ReadOnlyGuard>
-                  <Button variant="danger">
+                  <Button variant="destructive">
                     Delete Something (Simulated)
                   </Button>
                 </ReadOnlyGuard>

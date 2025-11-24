@@ -57,7 +57,7 @@ export default function RegisterForm() {
 
     const validation = validatePakistaniPhoneNumber(formData.phone);
     if (!validation.isValid) {
-      toast.error(validation.error);
+      toast.error(validation.error || "Invalid phone number");
       return;
     }
 
