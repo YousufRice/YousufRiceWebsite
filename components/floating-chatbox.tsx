@@ -55,7 +55,7 @@ export default function FloatingChatbox() {
           aria-label="Open chat"
         >
           <MessageCircle className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
 
           {/* Tooltip */}
           <span className="absolute right-full mr-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
@@ -102,15 +102,14 @@ export default function FloatingChatbox() {
             {user ? (
               <ChatBox
                 userId={user.email}
-                welcomeMessage={`Assalam o Alaikum${
-                  customer?.full_name ? ", " + customer.full_name : ""
-                }! Welcome to Yousuf Rice. How can I assist you today?`}
+                welcomeMessage={`Assalam o Alaikum${user.name ? ", " + user.name : ""
+                  }! Welcome to Yousuf Rice. How can I assist you today?`}
                 placeholder="Type your message..."
                 className="h-full border-0 rounded-none rounded-b-lg shadow-none"
                 userContext={{
-                  name: customer?.full_name || user.name,
-                  email: customer?.email || user.email,
-                  phone: customer?.phone,
+                  name: user.name,
+                  email: user.email,
+                  phone: user.phone,
                 }}
               />
             ) : (

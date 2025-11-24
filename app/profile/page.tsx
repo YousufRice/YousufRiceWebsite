@@ -44,6 +44,14 @@ export default function ProfilePage() {
 
     const fetchCustomerData = async () => {
       try {
+        // Always prioritize Appwrite Auth User details
+        setFormData({
+          full_name: user.name || "",
+          phone: user.phone ? formatPhoneNumberForDisplay(user.phone) : "",
+          email: user.email || "",
+        });
+
+        // Fetch loyalty discounts for this customer
         const response = await databases.listDocuments(
           DATABASE_ID,
           CUSTOMERS_TABLE_ID,
@@ -52,20 +60,7 @@ export default function ProfilePage() {
 
         if (response.documents.length > 0) {
           const customerData = response.documents[0];
-          setFormData({
-            full_name: customerData.full_name || user.name || "",
-            phone: customerData.phone ? formatPhoneNumberForDisplay(customerData.phone) : (user.phone ? formatPhoneNumberForDisplay(user.phone) : ""),
-            email: customerData.email || user.email || "",
-          });
-
-          // Fetch loyalty discounts for this customer
           await fetchLoyaltyDiscounts(customerData.$id);
-        } else {
-          setFormData({
-            full_name: user.name || "",
-            phone: user.phone ? formatPhoneNumberForDisplay(user.phone) : "",
-            email: user.email || "",
-          });
         }
       } catch (error) {
         console.error("Error fetching customer data:", error);
