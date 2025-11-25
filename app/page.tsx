@@ -36,7 +36,7 @@ export default function Home() {
       </Suspense>
 
       {/* Products Section - Suspense for dynamic product data */}
-      <section className="container mx-auto px-4 py-16">
+      <section id="products" className="container mx-auto px-4 py-16 scroll-mt-28">
         <Suspense fallback={<ProductsGridSkeleton />}>
           <AsyncProductsList />
         </Suspense>
