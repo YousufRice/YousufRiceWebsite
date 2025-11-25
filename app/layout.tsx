@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/navbar";
@@ -36,8 +36,12 @@ try {
   metadataBaseUrl = new URL("https://yourdomain.com");
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  viewport: "width=device-width, initial-scale=1.0",
   metadataBase: new URL("https://yousufrice.com"),
   alternates: {
     canonical: "/",
