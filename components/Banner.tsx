@@ -9,10 +9,10 @@ interface BannerProps {
   projectId?: string;
 }
 
-const Banner: React.FC<BannerProps> = ({ 
-  images, 
-  bucketId = '68f1dbf20008177d3acb', 
-  projectId = '68cb65a4000ab2fec182' 
+const Banner: React.FC<BannerProps> = ({
+  images,
+  bucketId = '68f1dbf20008177d3acb',
+  projectId = '68cb65a4000ab2fec182'
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -51,7 +51,7 @@ const Banner: React.FC<BannerProps> = ({
     if (imageId.startsWith('http')) {
       return imageId;
     }
-    return `https://syd.cloud.appwrite.io/v1/storage/buckets/${bucketId}/files/${imageId}/view?project=${projectId}`;
+    return `https://sgp.cloud.appwrite.io/v1/storage/buckets/${bucketId}/files/${imageId}/view?project=${projectId}`;
   };
 
   if (!images || images.length === 0) {
@@ -63,8 +63,8 @@ const Banner: React.FC<BannerProps> = ({
   }
 
   return (
-    <div 
-      className="relative w-full overflow-hidden shadow-lg" 
+    <div
+      className="relative w-full overflow-hidden shadow-lg"
       style={{ aspectRatio: '3/1' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -72,7 +72,7 @@ const Banner: React.FC<BannerProps> = ({
       onTouchEnd={() => setIsPaused(false)}
     >
       {/* Image Container */}
-      <div 
+      <div
         className="flex transition-transform duration-500 ease-in-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
@@ -117,11 +117,10 @@ const Banner: React.FC<BannerProps> = ({
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 active:scale-110 ${
-              index === currentIndex
+            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 active:scale-110 ${index === currentIndex
                 ? 'bg-[#27247b] scale-110 sm:scale-125'
                 : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-            }`}
+              }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
@@ -129,12 +128,29 @@ const Banner: React.FC<BannerProps> = ({
 
       {/* Progress Bar */}
       <div className="absolute bottom-0 left-0 w-full h-0.5 sm:h-1 bg-black bg-opacity-20">
+        {/* Completed portion */}
         <div
-          className={`h-full bg-white ${isTransitioning ? '' : 'transition-all duration-3000 ease-linear'}`}
+          className="absolute top-0 left-0 h-full bg-white transition-all duration-300 ease-out"
           style={{
-            width: `${((currentIndex + 1) / images.length) * 100}%`,
+            width: `${(currentIndex / images.length) * 100}%`
           }}
         />
+        {/* Current animating portion */}
+        <div
+          className="absolute top-0 h-full"
+          style={{
+            left: `${(currentIndex / images.length) * 100}%`,
+            width: `${(1 / images.length) * 100}%`
+          }}
+        >
+          <div
+            key={currentIndex}
+            className="h-full bg-white animate-progress origin-left"
+            style={{
+              animationPlayState: isPaused ? 'paused' : 'running'
+            }}
+          />
+        </div>
       </div>
     </div>
   );

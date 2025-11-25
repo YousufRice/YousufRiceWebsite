@@ -9,7 +9,7 @@ import { PWAInstall } from "@/components/PWAInstall";
 import "./globals.css";
 import AnnocementBar from "@/components/annoucement-bar";
 import { Suspense } from "react";
-// Transition components removed
+import { ImageProtection } from "@/components/image-protection";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -149,6 +149,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <PWAInstall />
         </Suspense>
+        <ImageProtection />
       </body>
     </html>
   );
