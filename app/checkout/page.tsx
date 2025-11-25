@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/store/cart-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -58,26 +58,30 @@ export default function CheckoutPage() {
   const [discountError, setDiscountError] = useState("");
   const [validatingDiscount, setValidatingDiscount] = useState(false);
 
+  // Ref to track if order has been placed to prevent redirect to cart
+  const isOrderPlacedRef = useRef(false);
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
   // Auto-fill customer information if logged in
   useEffect(() => {
-    if (customer) {
+    if (user) {
       setFormData((prev) => ({
         ...prev,
-        fullName: customer.full_name || prev.fullName,
-        phone: customer.phone ? formatPhoneNumberForDisplay(customer.phone) : prev.phone,
-        email: customer.email || prev.email,
+        fullName: user.name || prev.fullName,
+        phone: user.phone ? formatPhoneNumberForDisplay(user.phone) : prev.phone,
+        email: user.email || prev.email,
       }));
     }
-  }, [customer]);
+  }, [user]);
 
   useEffect(() => {
-    if (items.length === 0) {
+    // Only redirect if items are empty AND order hasn't been placed
+    if (items.length === 0 && !isOrderPlacedRef.current) {
       router.push("/cart");
-    } else {
+    } else if (items.length > 0) {
       // Track InitiateCheckout when user lands on checkout page
       trackInitiateCheckout({
         value: getTotalPrice(),
@@ -595,8 +599,12 @@ export default function CheckoutPage() {
       }
 
       toast.success("Order placed successfully!");
+
+      // Set flag to prevent redirect to cart when items are cleared
+      isOrderPlacedRef.current = true;
+
       clearCart();
-      router.push(`/orders/${orderId}`);
+      router.push(`/checkout/success?orderId=${orderId}`);
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error("Failed to place order. Please try again.");
