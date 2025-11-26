@@ -334,4 +334,37 @@ export class OrderService {
       return [];
     }
   }
+  /**
+   * Delete an order and all its related items
+   */
+  static async deleteOrder(orderId: string): Promise<void> {
+    try {
+      // 1. Get all order items for this order
+      const itemsResponse = await databases.listDocuments(
+        DATABASE_ID,
+        ORDER_ITEMS_TABLE_ID,
+        [Query.equal("order_id", orderId)]
+      );
+
+      // 2. Delete all order items
+      const deleteItemPromises = itemsResponse.documents.map((item) =>
+        databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, item.$id)
+      );
+      await Promise.all(deleteItemPromises);
+
+      // 3. Delete loyalty discount if exists
+      try {
+        await LoyaltyService.deleteLoyaltyDiscountByOrderId(orderId);
+      } catch (loyaltyError) {
+        console.error("Error deleting loyalty discount:", loyaltyError);
+        // Continue with order deletion
+      }
+
+      // 4. Delete the order itself
+      await databases.deleteDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId);
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      throw error;
+    }
+  }
 }
