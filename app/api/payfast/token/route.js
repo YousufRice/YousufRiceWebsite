@@ -10,6 +10,13 @@ export async function POST(req) {
     formData.append("TXNAMT", body.amount);
     formData.append("CURRENCY_CODE", "PKR");
 
+    console.log("📤 PayFast Token Request:", {
+      merchantId: body.merchantId,
+      basketId: body.basketId,
+      amount: body.amount,
+      hasSecuredKey: !!process.env.PAYFAST_SECURED_KEY
+    });
+
     const res = await fetch(
       "https://ipguat.apps.net.pk/Ecommerce/api/Transaction/GetAccessToken",
       {
@@ -22,10 +29,15 @@ export async function POST(req) {
       }
     );
 
+    console.log("📥 PayFast Response Status:", res.status, res.statusText);
+
     const data = await res.json();
+    
+    console.log("📥 PayFast Response Data:", data);
 
     return Response.json(data);
   } catch (error) {
+    console.error("❌ PayFast Token Error:", error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
