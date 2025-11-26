@@ -96,6 +96,9 @@ export class OrderService {
 
       const totalPrice = subtotalBeforeDiscount - totalDiscountAmount;
 
+      // Determine payment status based on payment method
+      const onlinePaymentStatus = orderRequest.paymentMethod === 'payfast' ? 'unpaid' : null;
+
       // Create the order
       const order = (await databases.createDocument(
         DATABASE_ID,
@@ -110,6 +113,7 @@ export class OrderService {
           total_discount_amount: totalDiscountAmount,
           total_price: totalPrice,
           status: "pending",
+          online_payment_status: onlinePaymentStatus,
         }
       )) as unknown as Order;
 

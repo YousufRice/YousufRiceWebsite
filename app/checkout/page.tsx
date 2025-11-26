@@ -50,6 +50,8 @@ export default function CheckoutPage() {
     longitude: 0,
   });
 
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "payfast">("cod");
+
   // Discount state
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<LoyaltyDiscount | null>(
@@ -435,6 +437,7 @@ export default function CheckoutPage() {
         total_price: finalTotalPrice,
 
         status: "pending",
+        online_payment_status: paymentMethod === 'payfast' ? 'unpaid' : null,
       });
 
       // Create order items (full normalization)
@@ -603,8 +606,78 @@ export default function CheckoutPage() {
       // Set flag to prevent redirect to cart when items are cleared
       isOrderPlacedRef.current = true;
 
-      clearCart();
-      router.push(`/checkout/success?orderId=${orderId}`);
+      if (paymentMethod === "payfast") {
+        // Trigger PayFast flow
+        try {
+          // 1. Get Access Token
+          const tokenRes = await fetch("/api/payfast/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              merchantId: process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_ID,
+              basketId: orderId,
+              amount: finalTotalPrice, // Use calculated total
+            }),
+          });
+
+          if (!tokenRes.ok) throw new Error("Failed to get payment token");
+
+          const tokenData = await tokenRes.json();
+
+          if (!tokenData.ACCESS_TOKEN) {
+            console.error("Token Error:", tokenData);
+            throw new Error("Invalid token response from PayFast");
+          }
+
+          // 2. Request Redirect Form
+          const redirectRes = await fetch("/api/payfast/redirect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              merchantId: process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_ID,
+              merchantName: "Yousuf Rice",
+              token: tokenData.ACCESS_TOKEN,
+              amount: finalTotalPrice,
+              email: formData.email || "no-email@yousufrice.com", // PayFast might require email
+              phone: formattedPhone,
+              basketId: orderId,
+              signature: "SOME_RANDOM_STRING",
+              orderDate: new Date().toISOString().slice(0, 10),
+              description: `Order #${orderId}`,
+              successUrl: `${window.location.origin}/checkout/success?orderId=${orderId}`,
+              failureUrl: `${window.location.origin}/checkout/failed`,
+              checkoutUrl: `${window.location.origin}/api/payfast/ipn`,
+              userAgent: navigator.userAgent,
+            }),
+          });
+
+          if (!redirectRes.ok) throw new Error("Failed to generate payment form");
+
+          // 3. Submit Form (Redirect)
+          const html = await redirectRes.text();
+
+          // Clear cart before redirecting
+          clearCart();
+
+          // Open in same window
+          document.open();
+          document.write(html);
+          document.close();
+        } catch (payfastError) {
+          console.error("PayFast Error:", payfastError);
+          toast.error("Payment initialization failed. Order placed as Pending.");
+          // Redirect to success anyway, but maybe with a warning? 
+          // Or redirect to a "Pay Now" page?
+          // For now, let's redirect to success page where they might see "Pending Payment" status
+          clearCart();
+          router.push(`/checkout/success?orderId=${orderId}`);
+        }
+      } else {
+        // Cash on Delivery
+        clearCart();
+        router.push(`/checkout/success?orderId=${orderId}`);
+      }
+
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error("Failed to place order. Please try again.");
@@ -827,6 +900,51 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  <div className="space-y-4 pt-4 border-t-2 border-gray-100">
+                    <label className="block text-lg font-bold text-[#27247b] mb-2">
+                      Payment Method
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        onClick={() => setPaymentMethod("cod")}
+                        className={`cursor-pointer border-2 rounded-xl p-4 flex items-center transition-all ${paymentMethod === "cod"
+                          ? "border-[#ffff03] bg-[#ffff03]/10 ring-2 ring-[#ffff03]/20"
+                          : "border-gray-200 hover:border-[#27247b]/30"
+                          }`}
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${paymentMethod === "cod" ? "border-[#27247b]" : "border-gray-300"
+                          }`}>
+                          {paymentMethod === "cod" && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#27247b]" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#27247b]">Cash on Delivery</p>
+                          <p className="text-xs text-gray-500">Pay when you receive</p>
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => setPaymentMethod("payfast")}
+                        className={`cursor-pointer border-2 rounded-xl p-4 flex items-center transition-all ${paymentMethod === "payfast"
+                          ? "border-[#e40000] bg-[#e40000]/5 ring-2 ring-[#e40000]/20"
+                          : "border-gray-200 hover:border-[#e40000]/30"
+                          }`}
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${paymentMethod === "payfast" ? "border-[#e40000]" : "border-gray-300"
+                          }`}>
+                          {paymentMethod === "payfast" && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#e40000]" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#e40000]">PayFast</p>
+                          <p className="text-xs text-gray-500">Credit/Debit Card, Bank</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <Button
                     type="submit"
                     size="lg"
@@ -835,7 +953,9 @@ export default function CheckoutPage() {
                   >
                     {loading
                       ? "⏳ Placing Order..."
-                      : "🛒 Place Order (Cash on Delivery)"}
+                      : paymentMethod === "payfast"
+                        ? "💳 Pay Now with PayFast"
+                        : "🛒 Place Order (Cash on Delivery)"}
                   </Button>
                 </form>
               </CardContent>
@@ -1005,13 +1125,15 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 bg-[#27247b] rounded-xl">
+                <div className={`mt-6 p-4 rounded-xl ${paymentMethod === "payfast" ? "bg-[#e40000]" : "bg-[#27247b]"}`}>
                   <p className="text-sm text-white font-bold flex items-center">
-                    <span className="text-xl mr-2">💰</span>
-                    Cash on Delivery
+                    <span className="text-xl mr-2">{paymentMethod === "payfast" ? "💳" : "💰"}</span>
+                    {paymentMethod === "payfast" ? "Pay Securely with PayFast" : "Cash on Delivery"}
                   </p>
                   <p className="text-xs text-white/90 mt-1">
-                    Pay when you receive your order
+                    {paymentMethod === "payfast"
+                      ? "You will be redirected to PayFast to complete your payment."
+                      : "Pay when you receive your order"}
                   </p>
                 </div>
               </CardContent>

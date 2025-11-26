@@ -82,6 +82,11 @@ export interface Order {
     | "out_for_delivery"
     | "delivered"
     | "returned";
+  
+  // PayFast payment tracking
+  online_payment_status?: string | null; // null for COD, 'unpaid'/'paid'/'failed' for PayFast
+  transaction_id?: string | null;
+  
   $createdAt: string;
 
   // Navigation properties (not stored in DB, populated by queries)
@@ -149,6 +154,7 @@ export interface CreateOrderRequest {
     longitude: number;
   };
   notes?: string;
+  paymentMethod: 'cod' | 'payfast';
 }
 
 // For order display with full details
