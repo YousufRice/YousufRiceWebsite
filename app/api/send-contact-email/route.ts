@@ -5,12 +5,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const { name, email, phone, message } = body;
+    const { name, email, phone, subject, message } = body;
 
     // Validate required fields
-    if (!name || !email || !message) {
+    if (!name || !email || !subject || !message) {
       return NextResponse.json(
-        { error: 'Name, email, and message are required' },
+        { error: 'Name, email, subject, and message are required' },
         { status: 400 }
       );
     }
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       name,
       email,
       phone,
+      subject,
       message,
     });
 

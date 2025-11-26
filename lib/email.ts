@@ -463,11 +463,21 @@ export async function sendPasswordResetOTP(email: string, otp: string, name?: st
   }
 }
 
+interface ContactFormData {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}
+
+// ... (existing code)
+
 /**
  * Send contact form submission to business email
  */
 export async function sendContactFormEmail(data: ContactFormData) {
-  const { name, email, phone, message } = data;
+  const { name, email, phone, subject, message } = data;
 
   const emailHtml = `
 <!DOCTYPE html>
@@ -517,6 +527,9 @@ export async function sendContactFormEmail(data: ContactFormData) {
                     `
                         : ''
                     }
+
+                    <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Subject</p>
+                    <p style="margin: 0; color: #27247b; font-weight: bold; font-size: 16px;">${subject}</p>
                   </td>
                 </tr>
               </table>
@@ -563,7 +576,7 @@ export async function sendContactFormEmail(data: ContactFormData) {
     from: '"Yousuf Rice Website" <support@yousufrice.com>',
     to: 'support@yousufrice.com',
     replyTo: email,
-    subject: `New Contact Form Submission from ${name}`,
+    subject: `New Contact Form Submission: ${subject}`,
     html: emailHtml,
   };
 
