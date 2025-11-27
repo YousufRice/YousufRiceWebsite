@@ -60,6 +60,22 @@ export interface MetaEventPayload {
   test_event_code?: string;
 }
 
+// Utility: Remove call agent symbols from customer name before sending to Meta
+// Removes: -s, -S, (k), (K) which indicate orders taken by call agents
+export function sanitizeCustomerNameForMeta(name: string | undefined | null): string | undefined {
+  if (!name) return undefined;
+  
+  // Remove agent symbols: -s, -S, (k), (K)
+  // This regex removes the symbols with optional spaces around them
+  const sanitized = name
+    .replace(/\s*-\s*[sS]\s*/g, ' ')  // Remove -s or -S with surrounding spaces
+    .replace(/\s*\(\s*[kK]\s*\)\s*/g, ' ')  // Remove (k) or (K) with surrounding spaces
+    .replace(/\s+/g, ' ')  // Normalize multiple spaces to single space
+    .trim();  // Remove leading/trailing spaces
+  
+  return sanitized || undefined;
+}
+
 // Utility: Hash data with SHA256 (required by Meta)
 export function hashData(data: string | undefined | null): string | undefined {
   if (!data) return undefined;

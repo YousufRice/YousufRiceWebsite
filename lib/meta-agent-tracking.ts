@@ -3,6 +3,7 @@ import {
   prepareUserData,
   getCurrentTimestamp,
   generateEventId,
+  sanitizeCustomerNameForMeta,
   type MetaEvent,
   type MetaCustomData,
 } from '@/lib/meta';
@@ -51,11 +52,14 @@ export async function trackAgentPurchase(orderData: AgentOrderData): Promise<{
     const eventId = generateEventId();
     
     // Prepare user data for Meta (will be hashed automatically)
+    // Clean the name by removing agent symbols before sending to Meta
+    const cleanedName = sanitizeCustomerNameForMeta(orderData.customerName) || orderData.customerName;
+    
     const userData = prepareUserData({
       email: orderData.customerEmail,
       phone: orderData.customerPhone,
-      firstName: orderData.customerName.split(' ')[0], // Extract first name
-      lastName: orderData.customerName.split(' ').slice(1).join(' '), // Extract last name
+      firstName: cleanedName.split(' ')[0], // Extract first name
+      lastName: cleanedName.split(' ').slice(1).join(' '), // Extract last name
       clientIp: orderData.clientIp,
       userAgent: orderData.userAgent,
       externalId: orderData.orderId, // Use order ID as external ID for tracking
@@ -143,11 +147,14 @@ export async function trackAgentInitiateCheckout(orderData: {
     const eventId = generateEventId();
     
     // Prepare user data with required customer information
+    // Clean the name by removing agent symbols before sending to Meta
+    const cleanedName = sanitizeCustomerNameForMeta(orderData.customerName) || orderData.customerName;
+    
     const userData = prepareUserData({
       email: orderData.customerEmail,
       phone: orderData.customerPhone,
-      firstName: orderData.customerName.split(' ')[0],
-      lastName: orderData.customerName.split(' ').slice(1).join(' '),
+      firstName: cleanedName.split(' ')[0],
+      lastName: cleanedName.split(' ').slice(1).join(' '),
       clientIp: orderData.clientIp,
       userAgent: orderData.userAgent,
     });
@@ -224,11 +231,16 @@ export async function trackAgentViewContent(productData: {
     const eventId = generateEventId();
     
     // Prepare user data (only if we have customer info)
-    const userData = productData.customerName ? prepareUserData({
+    // Clean the name by removing agent symbols before sending to Meta
+    const cleanedName = productData.customerName ? 
+      sanitizeCustomerNameForMeta(productData.customerName) || productData.customerName : 
+      undefined;
+    
+    const userData = cleanedName ? prepareUserData({
       email: productData.customerEmail,
       phone: productData.customerPhone,
-      firstName: productData.customerName.split(' ')[0],
-      lastName: productData.customerName.split(' ').slice(1).join(' '),
+      firstName: cleanedName.split(' ')[0],
+      lastName: cleanedName.split(' ').slice(1).join(' '),
       clientIp: productData.clientIp,
       userAgent: productData.userAgent,
     }) : prepareUserData({
