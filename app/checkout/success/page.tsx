@@ -94,7 +94,7 @@ function SuccessContent() {
                             </Button>
                         </Link>
 
-                        <Link href="/products" className="block">
+                        <Link href="/#products" className="block">
                             <Button
                                 variant="outline"
                                 className="w-full border-2 border-[#27247b]/20 text-[#27247b] font-bold py-6 text-lg rounded-xl hover:bg-[#27247b]/5 transition-all"
