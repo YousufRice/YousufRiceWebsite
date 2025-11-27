@@ -1,0 +1,565 @@
+
+
+
+
+
+	
+
+Ritika Thorani	Junior QA Engineer
+Ikram Ul Haq	Senior Service Delivery Engineer
+
+
+
+
+	
+
+Syed Yousuf Aziz	Chief Technology Officer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2
+
+
+
+
+
+
+	
+	
+	
+
+26th Sep 2020	S Yousuf Aziz	API End Points	3.5 and 3.9 added
+
+7th Feb 2020	
+S Yousuf Aziz	
+Error Codes	
+Error codes update
+
+
+26th Jan 2021	
+Syed Danyal Hassan	Adding Store id in Initiate Transaction via Form POST	5.2 Initiate Transaction via Form Post
+
+Adding For Redirection implementation with store id
+
+18th Feb 2021	
+Syed Danyal Hassan	5.2 Initiate Transaction via Form Post	Adding Table 1.2
+
+24th Feb 2021	Syed Danyal Hassan	5.1 Get An Access Token	Updating Table 1.0 with Basket id and txnamt as optional parameters for getting access token
+
+24th Feb 2021	
+Syed Danyal Hassan	5.2 Initiate Transaction via Form POST request	
+Updating working code example
+
+16th Apr 2021	
+Syed Danyal Hassan	5.2 Initiate Transaction via Form POST request	
+Correction in Tran type field name in text field input type and adding respective tran type details
+
+
+
+
+
+22nd Apr 2021	
+Syed Danyal Hassan	Redirection implementation with transaction
+type	
+Adding Redirection implementation with transaction type paragraph
+
+6th May 2021	Syed Danyal Hassan	Error Codes and Description	
+Updating Error codes
+
+
+2nd Sept 2021	
+Safdar Abbas	3.2 Transaction Via Post	Addition of information for checkout URL
+23rd Dec 2022	
+Ritika Thorani	3.2 Initiate transaction via post	
+Addition of form parameters and their responses
+
+
+
+    1 Preface	4
+        1.1 About	4
+        1.2 Intended Audience	4
+        1.3 Integration scope	4
+    2 Introduction	4
+        2.1 Payment Flow	5
+        2.2 PayFast Checkout Flow	6
+            2.2.1 For redirection implementation	6
+        2.3 Merchant Logo/Name setup on PAYFAST gateway page	6
+        2.4 Getting Started with PayFast	6
+    3 Technical integration requirements	7
+        3.1 Getting an ACCESS TOKEN	7
+        3.2 Initiate Transaction via Form POST	8
+        3.3 For redirection implementation	9
+For Redirection implementation with store ID	14
+For Redirection/IPN (backend payment notification)	15
+        3.4 Description of mandatory field	16
+    4 Error Codes & Description	17
+        4.1 For redirection implementation	19
+
+
+
+
+This document contains detail explanation about how to integrate with PayFast Using Our Hosted Checkout and I-frame based transactions functionality. This document contains the details for online transactions.
+
+
+
+This document is for merchants, acquirers and developers who want to integrate with PAYFAST to perform Our Hosted Checkout and I-frame based transactions.
+
+
+Integration with ecommerce stores or websites will be done by the merchant. PayFast will provide technical assistance in the form of documents and video guides. PayFast will be used only for payment processing.
+
+
+
+PayFast payment gateway is a payment service developed for merchants to accept payments from the customers using variety of payment options like bank account, mobile wallets, and card instruments.
+
+
+
+
+
+The process begins on the merchant's website, where the customer shops and eventually proceeds to checkout. At this point, they are directed to the PAYFAST payment gateway's web checkout page. There, they enter their payment details like credit/debit card info or bank account number. After that, they may need to confirm the transaction with a one-time password (OTP), ensuring security. Once the OTP is verified, they complete the payment process through PAYFAST. Once the payment is successful, they are redirected back to the merchant's website. Here, the merchant confirms the order, signaling to the customer that their purchase is complete and their order is on its way.
+
+
+A generic payment flow:
+
+
+
+In a typical PAYFAST payment flow, a buyer
+
+    1. Buyer (customer) adds items in the shopping cart on merchant's ecommerce portal.
+    2. Buyer reaches checkout page and select the PAYFAST as the payment option.
+    3. Buyer is redirected to PAYFAST payment gateway web checkout page (For Details see section "3" PAYFAST Checkout Flow).
+    4. Buyer Send the correct OTP (one-time password), and completes the payment process. And customer will have redirected towards the same merchant's ecommerce portal where the customer order is confirmed by merchant if payment is successful.
+
+
+
+In the PAYFAST checkout flow, the buyer:
+	Logged IN user and clicks, "Submit my order" button on the merchant's ecommerce portal.
+
+
+        1. Order request forward to the PAYFAST checkout page.
+        2. Buyer select banks and enter their credit, debit, wallet and, account number, and proceed payment.
+        3. After clicking validate button, transaction request to the selected bank for authentication via OTP from customer.
+        4. After receiving OTP, customer can enter the OTP, which is provided, by bank on SMS/USSD channel.
+        5. Returns to Merchant site and confirms the order then receives confirmation.
+
+
+
+
+
+Before the transaction is processed the buyer is taken to a Merchant Logo/Name on PAYFAST payment gateway page, where the buyer's information is taken, and after submission the order information is displayed. Upon continuation, this page is used to process the transaction with the PAYFAST platform.
+The buyer is subsequently taken to the merchant website order confirmation page.
+
+
+
+
+
+A webhook has to be called to get the access token. Merchant ID, Secure Key, Basket ID, and Transaction amount are the values that will be sent to fetch the access token. Moreover, Empty user agents are not allowed.
+Please see below table 1.1.
+
+Table 1.0	
+URL	https://ipguat.apps.net.pk/Ecommerce/api/Transaction/GetAccessToke n
+Method	POST
+Parameter s	MERCHANT_ID (Mandatory)
+	SECURED_KEY (Mandatory)
+
+	BASKET_ID (Mandatory)
+	TXNAMT (Mandatory)
+	CURRENCY_CODE (Mandatory)
+Response Type	JSON
+Response	{
+"MERCHANT_ID":"<<MERCHANT_ID>>" "ACCESS_TOKEN":"<<ACCESS_TOKEN>>" "NAME":"sha"
+"GENERATED_DATE_TIME":"<<GENERATED_DATE_TIME>>"
+}
+
+
+
+
+
+After getting an access token, ecommerce shopping cart will send a FORM POST along with following parameters to PAYFAST payment gate.
+Table 1.1	
+URL for redirection option	https://ipguat.apps.net.pk/Ecommerce/api/Transaction
+/PostTransaction
+Method	POST
+Form Parameters	Description
+MERCHANT_ID	A unique ID provided by PAYFAST
+MERCHANT_NAME	Brand name
+TOKEN	Access token fetched by web hook as mentioned in Table 1.0
+PROCCODE	00/000
+TXNAMT	
+The amount which needs to be paid by the customer
+(this should match with the amount sent in the token API)
+CUSTOMER_MOBILE_NO	Customer's mobile number
+CUSTOMER_EMAIL_ADDRES S	Customer's email address
+SIGNATURE	A random string value
+VERSION	A random string value
+TXNDESC	Short description of the goods purchased by customer
+SUCCESS_URL	URL where customer will be redirected to in the browser if payment is successful.
+FAILURE_URL	URL where customer will be redirected to in the browser if payment is unsuccessful.
+
+BASKET_ID	A unique order id from the merchant, which will represent
+customer's order. (this should match with the Basket ID sent in the token API)
+ORDER_DATE [mandatory]	Date of the order.
+(Format: YYYY-MM-DD e.g. 2018-01-01)
+CHECKOUT_URL	URL payment information or notification is pushed to the merchant at the backend. There are two types of checkout URL immediate(Transaction notification will be pushed immediately) or delayed(Transaction notification will be pushed after a minute)
+STORE_ID	Alphanumeric string which would come from merchant portal's outlet section after outlet creation <optional>
+CURRENCY_CODE	PKR <optional>
+TRAN_TYPE	Transaction type for settlement <optional>
+
+
+	
+CUSTOMER_NAME	Customer name from merchant's web site
+MERCHANT_CUSTOMER_ID	Customer ID in merchant's web site
+CUSTOMER_IPADDRESS	Customer IP address at merchant's web site
+COUNTRY	Customer country
+SHIPPING_CUSTOMER_NAM E	Customer name for Shipping address
+SHIPPING_ADDRESS_1	Customer shipping address
+SHIPPING_ADDRESS_2	Customer shipping additional address
+SHIPPING_STATE_PROVINC E	Shipping state/province
+SHIPPING_ADDRESS_CITU	Shipping city
+SHIPPING_POSTALCODE	Shipping postal code
+SHIPPING_METHOD	Shipping method (Courier, Local Delivery etc)
+BILLING_CUSTOMER_NAME	Billing customer name from merchant's web site
+BILLING_ADDRESS_CITY	Billing city of customer
+BILLING_ADDRESS_1	Billing address
+BILLING_ADDRESS_2	Billing additional address
+BILLING_STATE_PROVINCE	Billing state/province
+BILLING_POSTALCODE	Billing postal code
+MERCHANT_USERAGENT	Browser user agent from merchant's web site
+ITEMS	An array (stating from zero) of purchased products from merchant's web site. S
+	ITEMS[x][SKU]
+	ITEMS[x][NAME]
+	ITEMS[x][PRICE]
+
+	ITEMS[x][QTY]
+TRAVEL_FIRSTNAME	Traveling customer's first name
+TRAVEL_LASTNAME	Traveling customer's last name
+TRAVEL_NOOFPASSENGERS	Traveling no of customers
+TRAVEL_CARRIERCODE	Traveling customer carrier code
+TRAVEL_DESTINATION	Traveling Destination
+TRAVEL_DEPARTUREDATE	Traveling departure date
+TRAVEL_DEPARTURETIME	Travelling departure time
+TRAVEL_ORIGINATION	Travelling origination
+TRAVEL_JOURNEYTYPE	Travelling journey type
+TRAVEL_ACTUALFINALDEST INATION	Traveling actual destination
+PROCESSING_TYPE	
+"HYBRID_TOKEN" (if a merchant requires a token against a customer-provided instrument used in the current transactions, skip this parameter if not relevant (optional) )
+
+MERCHANT_CUSTOMER_ID	(Customer ID used in merchant's system/application (optional)
+
+INSTRUMENT_TOKEN	
+"{Token Value}" (needs to provide the instrument token provided (optional
+Transaction_Instrument	1-Bank Account 2-UnionPay
+3-visa/MasterCard/paypak(card) 4-wallet
+(if a merchant needs only one payment type)
+	
+ 
+An example PHP code snippet is as follows:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+13
+
+
+function getAccessToken($merchant_id, $secured_key, $basket_id,
+$trans_amount)
+{
+$tokenApiUrl = 'https://ipguat.apps.net.pk/Ecommerce/api/Transaction/GetAccessToken';
+$urlPostParams = sprintf( 'MERCHANT_ID=%s&SECURED_KEY=%s&TXNAMT=%s&BASKET_ID=%s',
+$merchant_id,
+$secured_key,
+$trans_amount,
+$basket_id
+);
+
+
+$ch = curl_init();		curl_setopt($ch, CURLOPT_URL, $tokenApiUrl); curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);	curl_setopt($ch, CURLOPT_POST, 1);	curl_setopt($ch, CURLOPT_POSTFIELDS,
+$urlPostParams);	curl_setopt($ch, CURLOPT_USERAGENT, 'CURL/PHP PayFast Example');
+$response = curl_exec($ch); curl_close($ch);
+$payload = json_decode($response);
+$token = isset($payload->ACCESS_TOKEN) ? $payload-
+>ACCESS_TOKEN : '';
+return $token;
+}
+/**
+* process response coming from PayFast
+*
+
+
+echo "<br/>Transaction Failed. Message: " . $err_msg;
+}
+
+
+?>
+<!-- For data integrity purpose, transaction amount and basket_id should be the same as the ones sent in token request -->
+<!--
+Actual Payment Request
+-->
+<form id='PayFast_payment_form' name='PayFast-payment-form' method='post' action="https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransactio n">
+Currency Code: <input type="TEXT" name="CURRENCY_CODE" value="PKR" /><br />
+Merchant ID: <input type="TEXT" name="MERCHANT_ID" value="<?php echo $merchant_id; ?>" /><br />
+Merchant Name: <input type="TEXT" name="MERCHANT_NAME" value="UAT Demo Merchant" /><br />
+Token: <input type="TEXT" name="TOKEN" value="<?php echo $token;
+?>" /><br />
+Success URL: <input type="TEXT" name="SUCCESS_URL" value="http://merchant-site-example.com" /><br/>
+Failure URL: <input type="TEXT" name="FAILURE_URL" value="http://merchant-site-example.com" /><br/>
+Checkout URL: <input type="TEXT" name="CHECKOUT_URL" value="http://merchant-site-example.com" /><br/>
+Customer Email: <input type="TEXT" name="CUSTOMER_EMAIL_ADDRESS" value="some-email@example.com"
+/><br />
+Customer Mobile: <input type="TEXT" name="CUSTOMER_MOBILE_NO" value="00000000000" /><br />
+
+
+
+15
+Transaction Amount: <input type="TEXT" name="TXNAMT" value="<?php echo $trans_amount; ?>" /><br />
+Basket ID: <input type="TEXT" name="BASKET_ID" value="<?php echo
+$basket_id; ?>" /><br />
+Transaction Date: <input type="TEXT" name="ORDER_DATE" value="<?php echo date('Y-m-d H:i:s', time()); ?>" /><br />
+Signature: <input type="TEXT" name="SIGNATURE" value="SOMERANDOM-STRING" /><br />
+Version: <input type="TEXT" name="VERSION" value="MERCHANTCART- 0.1" /><br />
+Item Description: <input type="TEXT" name="TXNDESC" value="Item Purchased from Cart" /><br />
+Proccode: <input type="TEXT" name="PROCCODE" value="00" /><br /> Transaction Type: <input type="TEXT" name="TRAN_TYPE"
+value='ECOMM_PURCHASE' /><br />
+Store ID/Terminal ID (optional): <input type="TEXT" name="STORE_ID" value='102-ZEOJDZS3V' /><br />
+Recurring transaction: <input type="TEXT" name="RECURRING_TXN" value="TRUE/FALSE " /><br />
+<INPUT TYPE="HIDDEN" NAME="MERCHANT_USERAGENT" value="Mozilla/5.0
+(Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0">
+<INPUT TYPE="HIDDEN" NAME="ITEMS[0][SKU]" value="SAMPLE-SKU-01">
+
+
+
+
+
+
+
+
+17
+ 
+Please note that store id is optional but if added as a parameter then it will be validated in our system of which following example is slated below: Store id of sample merchant: 102-ZEOJDZS3V
+
+The payment gateway will send additional parameters (along with those sent already by the merchant) containing transaction information. These parameters are as follows:
+
+Table 1.2
+Method	GET
+transaction_id	Transaction ID processed at payment gateway
+err_code	
+Status code of the transaction. ('000' is for successful transaction)
+err_msg	
+
+
+Descriptive message in case of failed transaction
+
+basket_id	
+Order ID sent by merchant.
+order_date [Mandatory]	Date of order sent by merchant.
+validation_hash	A SHA256 hash of combination of following fields in particular order:
+Basket ID
+Merchant Secured Key Merchant ID
+Error Code (received from PayFast) String Sequence:
+"your_basket_id|your_merchant_secret_key
+|your_merchant_id|payasft_err_code"
+e.g. BAS-01|jdnkaabcks|102|000
+
+SHA256 of above example will make following hash: e8192a7554dd699975adf39619c703a49239
+2edf5e416a61e183866ecdf6a2a2
+(please note "|" (pipe) sign is included in the string) Value received from PayFast should match with your calculated hash for data integrity.
+
+PaymentName	
+Payment type ( account , card , wallet)
+discounted_amoun t	Discount given my merchant ( if any )
+transaction_amoun t	Actual transaction amount
+
+merchant_amount	
+Amount sent by merchant
+transaction_curren cy	Transaction currency
+Instrument_token	Merchant requested token (applies for particular opted service)
+
+
+
+19
+Recurring_txn	True/False
+
+
+Mandatory Field	Description
+MERCHANT_ID	A unique ID provided by PAYFAST
+Merchant_Name	Your brand name
+TOKEN	Access token fetched by webhook as mentioned in Table 1.0
+PROCCODE	00 /000
+TXNAMT	The amount that needs to be paid by the customer
+CUSTOMER_MOBILE_NO	Customer's mobile number
+CUSTOMER_EMAIL_ADDRESS	Customer's email address
+SIGNATURE	A random string value
+VERSION	A random string value
+TXNDESC	Short description of the goods purchased by customer
+SUCCESS_URL	URL where customer will be redirected to in the browser if payment is successful.
+FAILURE_URL	URL where customer will be redirected to in the browser if payment is unsuccessful.
+BASKET_ID	A unique order id from the merchant that will represent customer's order.
+ORDER_DATE	Date of the order.
+(Format: YYYY-MM-DD e.g. 2018-01-01)
+	
+CHECKOUT_URL	URL payment information or notification is pushed to the merchant at the backend. There are two types of checkout URL immediate(Transaction notification will be pushed immediately) or delayed (Transaction notification will be
+pushed after a minute)
+
+
+Some new error codes may not exist in the below table
+
+
+ERROR CODES	ERROR DESCRIPTIONS
+000 OR 00	
+Processed/Successful Transaction
+
+002	
+Time Out
+97	Dear Customer, You have an Insufficient Balance to proceed
+106	
+Dear Customer, Your transaction Limit has been exceeded please contact your bank
+03	You have entered an Inactive Account
+104	Entered details are Incorrect
+55	You have entered an Invalid OTP/PIN
+54	Card Expired
+13	You have entered an Invalid Amount
+126	Dear Customer your provided Account details are Invalid
+
+
+
+
+21
+75	Maximum PIN Retries has been Exceeded
+14	Dear Customer, You have entered an In- Active Card number
+
+15	Dear Customer, You have entered an In- Active Card number
+42	Dear Customer, You have entered an Invalid CNIC
+423	Dear Customer, We are unable to process your request at the moment please try again later
+41	Dear Customer, entered details are Mismatched
+801	{0} is your PayFast OTP (One Time Password). Please do not share with anyone.
+802	OTP could not be sent. Please try again later.
+
+803	OTP has been sent to your email address.
+804	
+OTP has been sent to your mobile number.
+805	OTP Verified
+806	OTP could not be verified.
+807	Too many attempts. Please try again later in few minutes.
+808	Passwords do not match
+809	Invalid Password
+810	Password could not be changed
+
+811	Password changed successfully
+812	Request could not be validated. Please try again.
+813	Email address already registered
+9000	FRMS Rejected
+9010	FRMS Error
+308	Dear Customer your provided Account details are Invalid
+600	OTP Already Expired
+309	You have entered Invalid OTP Length
+853	Dear Customer, Your provided Account details are Invalid
+04	You have entered a Closed Account
+
+537	You have entered a Dormant Account
+359	Blocked Account
+8811	Password changed successfully
+880	Transaction declined due to nonactivation of local ecommerce session. Please call your bank.
+881	Your transaction is declined due to insufficient funds. Please call your bank for assistance
+
+
+
+
+23
+882	Your transaction is declined due to consumption of daily local e_payment transaction limit/count.
+883	Your transaction is declined. Please call your bank to activate local e_payment service
+
+
+
+
+
+On posting the form data, the customer will be redirected to the following page of the PAYFAST web e- commerce portal.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+25

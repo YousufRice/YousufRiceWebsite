@@ -403,7 +403,7 @@
                     "orders": []
                 },
                 {
-                    "key": "online_payment_status_index",
+                    "key": "online_payment_status_idx",
                     "type": "key",
                     "status": "available",
                     "columns": [
