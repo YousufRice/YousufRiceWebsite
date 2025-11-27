@@ -26,6 +26,7 @@ import {
   formatPhoneNumberForDisplay,
   validatePakistaniPhoneNumber,
 } from "@/lib/utils";
+import { sanitizeCustomerNameForMeta } from "@/lib/meta";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
@@ -508,6 +509,9 @@ export default function CheckoutPage() {
       });
 
       // Track Purchase event
+      // Clean customer name by removing agent symbols before sending to Meta
+      const cleanedName = sanitizeCustomerNameForMeta(formData.fullName) || formData.fullName;
+
       await trackPurchase({
         value: getTotalPrice(),
         currency: "PKR",
@@ -522,8 +526,8 @@ export default function CheckoutPage() {
         userData: {
           email: formData.email || undefined,
           phone: formattedPhone,
-          firstName: formData.fullName.split(" ")[0],
-          lastName: formData.fullName.split(" ").slice(1).join(" "),
+          firstName: cleanedName.split(" ")[0],
+          lastName: cleanedName.split(" ").slice(1).join(" "),
         },
       });
 
