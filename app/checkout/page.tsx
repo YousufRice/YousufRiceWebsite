@@ -305,6 +305,20 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Validate that no product has 0 price
+    const zeroPriceProducts = items.filter(
+      (item) => item.product.base_price_per_kg === 0
+    );
+    if (zeroPriceProducts.length > 0) {
+      const productNames = zeroPriceProducts
+        .map((item) => item.product.name)
+        .join(", ");
+      toast.error(
+        `Cannot place order: The following products have invalid pricing: ${productNames}. Please contact support or remove these items from your cart.`
+      );
+      return;
+    }
+
     // Coordinates are now optional for manual checkout
 
     setLoading(true);

@@ -94,6 +94,19 @@ export class OrderService {
         })
       );
 
+      // Validate that no product has 0 price
+      const zeroPriceProducts = processedItems.filter(
+        (item) => item.product.base_price_per_kg === 0
+      );
+      if (zeroPriceProducts.length > 0) {
+        const productNames = zeroPriceProducts
+          .map((item) => item.product.name)
+          .join(", ");
+        throw new Error(
+          `Cannot create order: The following products have invalid pricing: ${productNames}. Please check product pricing.`
+        );
+      }
+
       const totalPrice = subtotalBeforeDiscount - totalDiscountAmount;
 
       // Create the order
