@@ -67,7 +67,9 @@ export default function LoginForm() {
           return;
         }
 
-        const formattedPhone = formatPhoneNumber(emailOrPhone);
+        // Use the cleaned phone number from validation
+        const cleanedPhone = validation.cleanedPhone || emailOrPhone;
+        const formattedPhone = formatPhoneNumber(cleanedPhone);
 
         // Phone login - find user email directly from Auth system
         const email = await getUserEmailByPhone(formattedPhone);

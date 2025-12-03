@@ -34,6 +34,7 @@ export default function RegisterForm() {
     password: "",
     confirmPassword: "",
   });
+  const [cleanedPhone, setCleanedPhone] = useState("");
 
 
 
@@ -61,10 +62,14 @@ export default function RegisterForm() {
       return;
     }
 
+    // Store the cleaned phone number in state for use in handleOTPVerify
+    const cleaned = validation.cleanedPhone || formData.phone;
+    setCleanedPhone(cleaned);
+
     setLoading(true);
 
     try {
-      const formattedPhone = formatPhoneNumber(formData.phone);
+      const formattedPhone = formatPhoneNumber(cleaned);
 
       // Check if phone number already exists
       const existingCustomer = await databases.listDocuments(
@@ -177,7 +182,7 @@ export default function RegisterForm() {
       const existingCustomerList = await databases.listDocuments(
         DATABASE_ID,
         CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formatPhoneNumber(formData.phone))]
+        [Query.equal("phone", formatPhoneNumber(cleanedPhone))]
       );
 
       if (existingCustomerList.documents.length > 0) {
@@ -202,7 +207,7 @@ export default function RegisterForm() {
           {
             user_id: user.$id,
             full_name: formData.name,
-            phone: formatPhoneNumber(formData.phone),
+            phone: formatPhoneNumber(cleanedPhone),
             email: formData.email,
           }
         );
@@ -216,7 +221,7 @@ export default function RegisterForm() {
 
       // Update phone number in Appwrite Auth (after session is established)
       await account.updatePhone(
-        formatPhoneNumber(formData.phone),
+        formatPhoneNumber(cleanedPhone),
         formData.password
       );
 

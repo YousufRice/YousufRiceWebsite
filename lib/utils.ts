@@ -201,25 +201,21 @@ export function calculateQuantityFromBags(bags: {
 export function validatePakistaniPhoneNumber(phone: string): {
   isValid: boolean;
   error?: string;
+  cleanedPhone?: string;
 } {
-  // Check for spaces or dashes
-  if (/[\s-]/.test(phone)) {
-    return {
-      isValid: false,
-      error: "Please enter number without spaces or dashes.",
-    };
-  }
+  // Remove spaces and dashes automatically
+  const cleanedPhone = phone.replace(/[\s-]/g, "");
 
   // Check if starts with +92
-  if (phone.startsWith("+92")) {
+  if (cleanedPhone.startsWith("+92")) {
     return {
       isValid: false,
       error: "Please enter number starting with 0, not +92.",
     };
   }
 
-  // Check if contains non-digits (already covered by spaces/dashes check partly, but good to be thorough)
-  if (/\D/.test(phone)) {
+  // Check if contains non-digits after cleaning
+  if (/\D/.test(cleanedPhone)) {
     return {
       isValid: false,
       error: "Phone number must contain only digits.",
@@ -227,14 +223,14 @@ export function validatePakistaniPhoneNumber(phone: string): {
   }
 
   // Check length and starting digit
-  if (phone.length !== 11 || !phone.startsWith("0")) {
+  if (cleanedPhone.length !== 11 || !cleanedPhone.startsWith("0")) {
     return {
       isValid: false,
       error: "Number must be 11 digits starting with 0 (e.g. 03001234567).",
     };
   }
 
-  return { isValid: true };
+  return { isValid: true, cleanedPhone };
 }
 
 export function formatPhoneNumber(phone: string): string {

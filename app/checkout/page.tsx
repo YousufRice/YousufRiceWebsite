@@ -305,6 +305,9 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Use the cleaned phone number from validation
+    const cleanedPhone = phoneValidation.cleanedPhone || formData.phone;
+
     // Validate that no product has 0 price
     const zeroPriceProducts = items.filter(
       (item) => item.product.base_price_per_kg === 0
@@ -326,7 +329,7 @@ export default function CheckoutPage() {
     try {
       // Use phone number as customer identifier
       // Format phone number first
-      const formattedPhone = formatPhoneNumber(formData.phone);
+      const formattedPhone = formatPhoneNumber(cleanedPhone);
 
       // Check if a customer with this phone number already exists
       const existingCustomerByPhone = await databases.listDocuments(
