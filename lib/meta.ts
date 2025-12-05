@@ -61,15 +61,15 @@ export interface MetaEventPayload {
 }
 
 // Utility: Remove call agent symbols from customer name before sending to Meta
-// Removes: -s, -S, (k), (K) which indicate orders taken by call agents
+// Removes: -s, -S, -k, -K, (s), (S), (k), (K) which indicate orders taken by call agents
 export function sanitizeCustomerNameForMeta(name: string | undefined | null): string | undefined {
   if (!name) return undefined;
   
-  // Remove agent symbols: -s, -S, (k), (K)
+  // Remove agent symbols: -s, -S, -k, -K, (s), (S), (k), (K)
   // This regex removes the symbols with optional spaces around them
   const sanitized = name
-    .replace(/\s*-\s*[sS]\s*/g, ' ')  // Remove -s or -S with surrounding spaces
-    .replace(/\s*\(\s*[kK]\s*\)\s*/g, ' ')  // Remove (k) or (K) with surrounding spaces
+    .replace(/\s*-\s*[sSkK]\s*/g, ' ')  // Remove -s, -S, -k, or -K with surrounding spaces
+    .replace(/\s*\(\s*[sSkK]\s*\)\s*/g, ' ')  // Remove (s), (S), (k), or (K) with surrounding spaces
     .replace(/\s+/g, ' ')  // Normalize multiple spaces to single space
     .trim();  // Remove leading/trailing spaces
   

@@ -372,6 +372,24 @@
                     "min": 0,
                     "max": 1.7976931348623157e+308,
                     "default": null
+                },
+                {
+                    "key": "payment_method",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 100,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "transaction_id",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
                 }
             ],
             "indexes": [
