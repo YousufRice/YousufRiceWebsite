@@ -66,12 +66,16 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderWithCustomer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<"all" | Order["status"]>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<
     "all" | "today" | "week" | "month"
   >("all");
   const [sortBy, setSortBy] = useState<"date" | "amount">("date");
+  const [lastDocumentId, setLastDocumentId] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const ORDERS_PER_PAGE = 30;
 
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -81,66 +85,71 @@ export default function AdminOrdersPage() {
   );
 
   useEffect(() => {
-    fetchOrders();
+    // Reset pagination and reload when filter changes
+    setOrders([]);
+    setFilteredOrders([]);
+    setLastDocumentId(null);
+    setHasMore(true);
+    fetchOrders(true);
   }, [filter]);
 
   useEffect(() => {
-    let filtered = [...orders];
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (order) =>
-          order.$id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.customer?.full_name
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          order.customer?.phone.includes(searchQuery)
-      );
+    // When search, date filter, or sort changes, reset and reload
+    if (orders.length > 0) {
+      setOrders([]);
+      setFilteredOrders([]);
+      setLastDocumentId(null);
+      setHasMore(true);
+      fetchOrders(true);
     }
+  }, [searchQuery, dateFilter, sortBy]);
 
-    // Apply date filter
-    if (dateFilter !== "all") {
-      const now = new Date();
-      const filterDate = new Date();
-
-      if (dateFilter === "today") {
-        filterDate.setHours(0, 0, 0, 0);
-      } else if (dateFilter === "week") {
-        filterDate.setDate(now.getDate() - 7);
-      } else if (dateFilter === "month") {
-        filterDate.setMonth(now.getMonth() - 1);
-      }
-
-      filtered = filtered.filter(
-        (order) => new Date(order.$createdAt) >= filterDate
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      if (sortBy === "amount") {
-        return b.total_price - a.total_price;
-      } else {
-        return (
-          new Date(b.$createdAt).getTime() - new Date(a.$createdAt).getTime()
-        );
-      }
-    });
-
-    setFilteredOrders(filtered);
-  }, [orders, searchQuery, dateFilter, sortBy]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = async (reset: boolean = false) => {
     try {
-      const queries =
-        filter === "all"
-          ? [Query.orderDesc("$createdAt"), Query.limit(5000)]
-          : [
-            Query.equal("status", filter),
-            Query.orderDesc("$createdAt"),
-            Query.limit(5000),
-          ];
+      const isInitialLoad = reset || !lastDocumentId;
+
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const queries: string[] = [
+        Query.limit(ORDERS_PER_PAGE),
+      ];
+
+      // Add status filter
+      if (filter !== "all") {
+        queries.push(Query.equal("status", filter));
+      }
+
+      // Add date filter
+      if (dateFilter !== "all") {
+        const now = new Date();
+        const filterDate = new Date();
+
+        if (dateFilter === "today") {
+          filterDate.setHours(0, 0, 0, 0);
+        } else if (dateFilter === "week") {
+          filterDate.setDate(now.getDate() - 7);
+        } else if (dateFilter === "month") {
+          filterDate.setMonth(now.getMonth() - 1);
+        }
+
+        queries.push(Query.greaterThanEqual("$createdAt", filterDate.toISOString()));
+      }
+
+      // Add sorting
+      if (sortBy === "amount") {
+        queries.push(Query.orderDesc("total_price"));
+      } else {
+        queries.push(Query.orderDesc("$createdAt"));
+      }
+
+      // Add cursor for pagination (only if not resetting)
+      if (!isInitialLoad && lastDocumentId) {
+        queries.push(Query.cursorAfter(lastDocumentId));
+      }
 
       const ordersResponse = await databases.listDocuments(
         DATABASE_ID,
@@ -163,13 +172,41 @@ export default function AdminOrdersPage() {
         })
       );
 
-      setOrders(ordersWithCustomers);
-      setFilteredOrders(ordersWithCustomers);
+      // Apply client-side search filter if needed (since Appwrite doesn't support full-text search easily)
+      let finalOrders = ordersWithCustomers;
+      if (searchQuery) {
+        finalOrders = ordersWithCustomers.filter(
+          (order) =>
+            order.$id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.customer?.full_name
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            order.customer?.phone.includes(searchQuery)
+        );
+      }
+
+      if (isInitialLoad) {
+        setOrders(finalOrders);
+        setFilteredOrders(finalOrders);
+      } else {
+        setOrders((prev) => [...prev, ...finalOrders]);
+        setFilteredOrders((prev) => [...prev, ...finalOrders]);
+      }
+
+      // Update pagination state
+      if (ordersResponse.documents.length > 0) {
+        setLastDocumentId(ordersResponse.documents[ordersResponse.documents.length - 1].$id);
+      }
+
+      // Check if there are more orders to load
+      setHasMore(ordersResponse.documents.length === ORDERS_PER_PAGE);
+
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -456,166 +493,183 @@ export default function AdminOrdersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <Card
-                key={order.$id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="grid md:grid-cols-5 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Order ID</p>
-                      <p className="font-mono text-sm font-medium">
-                        {order.$id.slice(0, 12)}...
-                      </p>
-                      <Badge
-                        variant={
-                          order.status === "pending"
-                            ? "warning"
-                            : order.status === "accepted"
-                              ? "info"
-                              : order.status === "out_for_delivery"
-                                ? "purple"
-                                : order.status === "delivered"
-                                  ? "success"
-                                  : "destructive"
-                        }
-                        className="mt-2"
-                      >
-                        {order.status.replace("_", " ")}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Customer</p>
-                      <p className="font-medium">
-                        {order.customer?.full_name || "Unknown"}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {order.customer?.phone}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Order Date</p>
-                      <p className="font-medium">
-                        {new Date(order.$createdAt).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(order.$createdAt).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Total Amount</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(order.total_price)}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <ReadOnlyGuard>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditClick(order)}
-                          title="Edit Order"
+          <>
+            <div className="space-y-4">
+              {filteredOrders.map((order) => (
+                <Card
+                  key={order.$id}
+                  className="hover:shadow-lg transition-shadow"
+                >
+                  <CardContent className="p-6">
+                    <div className="grid md:grid-cols-5 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Order ID</p>
+                        <p className="font-mono text-sm font-medium">
+                          {order.$id.slice(0, 12)}...
+                        </p>
+                        <Badge
+                          variant={
+                            order.status === "pending"
+                              ? "warning"
+                              : order.status === "accepted"
+                                ? "info"
+                                : order.status === "out_for_delivery"
+                                  ? "purple"
+                                  : order.status === "delivered"
+                                    ? "success"
+                                    : "destructive"
+                          }
+                          className="mt-2"
                         >
-                          <Pencil className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(order)}
-                          title="Delete Order"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </ReadOnlyGuard>
-                      <Link href={`/orders/${order.$id}?from=admin`}>
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(order.status)}
-                      <span className="text-sm text-gray-600">
-                        Status:{" "}
-                        <span className="font-medium capitalize">
                           {order.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Customer</p>
+                        <p className="font-medium">
+                          {order.customer?.full_name || "Unknown"}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {order.customer?.phone}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Order Date</p>
+                        <p className="font-medium">
+                          {new Date(order.$createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(order.$createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {formatCurrency(order.total_price)}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <ReadOnlyGuard>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditClick(order)}
+                            title="Edit Order"
+                          >
+                            <Pencil className="w-4 h-4 text-gray-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteClick(order)}
+                            title="Delete Order"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </ReadOnlyGuard>
+                        <Link href={`/orders/${order.$id}?from=admin`}>
+                          <Button variant="outline" size="sm">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(order.status)}
+                        <span className="text-sm text-gray-600">
+                          Status:{" "}
+                          <span className="font-medium capitalize">
+                            {order.status.replace("_", " ")}
+                          </span>
                         </span>
-                      </span>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        {order.status === "pending" && (
+                          <ReadOnlyGuard>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateOrderStatus(order.$id, "accepted")
+                              }
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Package className="w-4 h-4 mr-2" />
+                              Accept Order
+                            </Button>
+                          </ReadOnlyGuard>
+                        )}
+
+                        {order.status === "accepted" && (
+                          <ReadOnlyGuard>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateOrderStatus(order.$id, "out_for_delivery")
+                              }
+                              className="bg-purple-600 hover:bg-purple-700"
+                            >
+                              <Truck className="w-4 h-4 mr-2" />
+                              Out for Delivery
+                            </Button>
+                          </ReadOnlyGuard>
+                        )}
+
+                        {order.status === "out_for_delivery" && (
+                          <ReadOnlyGuard>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateOrderStatus(order.$id, "delivered")
+                              }
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              Mark Delivered
+                            </Button>
+                          </ReadOnlyGuard>
+                        )}
+
+                        {order.status === "delivered" && (
+                          <ReadOnlyGuard>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateOrderStatus(order.$id, "returned")
+                              }
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              Mark as Returned
+                            </Button>
+                          </ReadOnlyGuard>
+                        )}
+                      </div>
                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-                    <div className="flex space-x-2">
-                      {order.status === "pending" && (
-                        <ReadOnlyGuard>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              updateOrderStatus(order.$id, "accepted")
-                            }
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Package className="w-4 h-4 mr-2" />
-                            Accept Order
-                          </Button>
-                        </ReadOnlyGuard>
-                      )}
-
-                      {order.status === "accepted" && (
-                        <ReadOnlyGuard>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              updateOrderStatus(order.$id, "out_for_delivery")
-                            }
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            <Truck className="w-4 h-4 mr-2" />
-                            Out for Delivery
-                          </Button>
-                        </ReadOnlyGuard>
-                      )}
-
-                      {order.status === "out_for_delivery" && (
-                        <ReadOnlyGuard>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              updateOrderStatus(order.$id, "delivered")
-                            }
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Mark Delivered
-                          </Button>
-                        </ReadOnlyGuard>
-                      )}
-
-                      {order.status === "delivered" && (
-                        <ReadOnlyGuard>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              updateOrderStatus(order.$id, "returned")
-                            }
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Mark as Returned
-                          </Button>
-                        </ReadOnlyGuard>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            {/* Show More Button */}
+            {hasMore && !loading && (
+              <div className="flex justify-center mt-6">
+                <Button
+                  onClick={() => fetchOrders(false)}
+                  variant="outline"
+                  size="lg"
+                  className="min-w-[200px]"
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? "Loading..." : "Show More"}
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         <DeleteOrderDialog
