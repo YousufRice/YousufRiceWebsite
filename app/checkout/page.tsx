@@ -386,8 +386,9 @@ export default function CheckoutPage() {
         );
       }
 
-      // Create order
+      // Create order ID early to link items
       const orderId = ID.unique();
+      
       const orderItems = formatOrderItems(
         items.map((item) => ({
           productId: item.product.$id,
@@ -439,67 +440,86 @@ export default function CheckoutPage() {
         };
       });
 
-      // Create order with accurate calculated totals
-      await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
-        customer_id: customerId,
-        address_id: "", // Will be updated after address creation
-        order_items: orderItems,
+      // KEY FIX: Create Order Items FIRST to prevent "Zero Price" orders
+      // If this fails, no order is created. If order creation fails later, we have orphan items (better than ghost orders).
+      const createdItemIds: string[] = [];
 
-        // Summary fields
-        total_items_count: totalItemsCount,
-        total_weight_kg: totalWeightKg,
-        subtotal_before_discount: subtotalBeforeDiscount,
-        total_discount_amount: totalDiscountAmount,
-        total_price: finalTotalPrice,
+      try {
+        for (const processed of processedItems) {
+          const { item, product, tierPricing, itemCalculations, totalItemDiscount } = processed;
+          
+          const itemId = ID.unique();
+          await databases.createDocument(
+            DATABASE_ID,
+            ORDER_ITEMS_TABLE_ID,
+            itemId,
+            {
+              order_id: orderId,
+              product_id: product.$id,
+              product_name: product.name,
+              product_description: product.description || "",
 
-        status: "pending",
-      });
+              // Quantity info
+              quantity_kg: item.quantity,
+              bags_1kg: item.bags?.kg1 || 0,
+              bags_5kg: item.bags?.kg5 || 0,
+              bags_10kg: item.bags?.kg10 || 0,
+              bags_25kg: item.bags?.kg25 || 0,
 
-      // Create order items (full normalization)
-      for (const processed of processedItems) {
-        const { item, product, tierPricing, itemCalculations, totalItemDiscount } = processed;
+              // Price info
+              price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
+              base_price_per_kg: product.base_price_per_kg, // Original base price
 
-        await databases.createDocument(
-          DATABASE_ID,
-          ORDER_ITEMS_TABLE_ID,
-          ID.unique(),
-          {
-            order_id: orderId,
-            product_id: product.$id,
-            product_name: product.name,
-            product_description: product.description || "",
+              // Tier info
+              tier_applied: tierPricing.tierApplied,
 
-            // Quantity info
-            quantity_kg: item.quantity,
-            bags_1kg: item.bags?.kg1 || 0,
-            bags_5kg: item.bags?.kg5 || 0,
-            bags_10kg: item.bags?.kg10 || 0,
-            bags_25kg: item.bags?.kg25 || 0,
+              // Discount info
+              discount_percentage:
+                product.base_price_per_kg * item.quantity > 0
+                  ? (totalItemDiscount /
+                    (product.base_price_per_kg * item.quantity)) *
+                  100
+                  : 0,
+              discount_amount: totalItemDiscount, // Includes tier + loyalty discount
 
-            // Price info
-            price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
-            base_price_per_kg: product.base_price_per_kg, // Original base price
+              // Totals
+              subtotal_before_discount: product.base_price_per_kg * item.quantity,
+              total_after_discount: itemCalculations.total,
 
-            // Tier info
-            tier_applied: tierPricing.tierApplied,
+              // Metadata
+              notes: formData.notes || "",
+            }
+          );
+          createdItemIds.push(itemId);
+        }
 
-            // Discount info
-            discount_percentage:
-              product.base_price_per_kg * item.quantity > 0
-                ? (totalItemDiscount /
-                  (product.base_price_per_kg * item.quantity)) *
-                100
-                : 0,
-            discount_amount: totalItemDiscount, // Includes tier + loyalty discount
+        // Create order with accurate calculated totals
+        await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
+          customer_id: customerId,
+          address_id: "", // Will be updated after address creation
+          order_items: orderItems, // CSV string snapshot
 
-            // Totals
-            subtotal_before_discount: product.base_price_per_kg * item.quantity,
-            total_after_discount: itemCalculations.total,
+          // Summary fields
+          total_items_count: totalItemsCount,
+          total_weight_kg: totalWeightKg,
+          subtotal_before_discount: subtotalBeforeDiscount,
+          total_discount_amount: totalDiscountAmount,
+          total_price: finalTotalPrice,
 
-            // Metadata
-            notes: formData.notes || "",
-          }
-        );
+          status: "pending",
+        });
+      } catch (creationError) {
+        console.error("Error during order creation flow:", creationError);
+        
+        // ROLLBACK: If order creation failed but items were created, try to delete them
+        if (createdItemIds.length > 0) {
+          console.log("Rolling back created items...");
+          Promise.allSettled(
+            createdItemIds.map(id => databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, id))
+          ).then(() => console.log("Rollback complete"));
+        }
+        
+        throw creationError; // Re-throw to be caught by main try-catch
       }
 
       // Create address

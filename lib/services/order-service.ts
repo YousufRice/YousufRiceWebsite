@@ -109,108 +109,124 @@ export class OrderService {
 
       const totalPrice = subtotalBeforeDiscount - totalDiscountAmount;
 
-      // Create the order
-      const order = (await databases.createDocument(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        orderId,
-        {
-          customer_id: orderRequest.customer_id,
-          address_id: "", // Will be set after address creation
-          total_items_count: totalItemsCount,
-          total_weight_kg: totalWeightKg,
-          subtotal_before_discount: subtotalBeforeDiscount,
-          total_discount_amount: totalDiscountAmount,
-          total_price: totalPrice,
-          status: "pending",
-        }
-      )) as unknown as Order;
-
-      // Create address
-      const addressId = ID.unique();
-      const mapsUrl = generateMapsUrl(
-        orderRequest.address.latitude,
-        orderRequest.address.longitude
-      );
-
-      const address = (await databases.createDocument(
-        DATABASE_ID,
-        ADDRESSES_TABLE_ID,
-        addressId,
-        {
-          customer_id: orderRequest.customer_id,
-          order_id: orderId,
-          address_line: orderRequest.address.address_line,
-          latitude: orderRequest.address.latitude,
-          longitude: orderRequest.address.longitude,
-          maps_url: mapsUrl,
-        }
-      )) as unknown as Address;
-
-      // Update order with address_id
-      await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
-        address_id: addressId,
-      });
-
-      // Create order items
+      // KEY FIX: Create Order Items FIRST to prevent "Zero Price" orders
       const orderItems: OrderItem[] = [];
-      for (const processedItem of processedItems) {
-        const {
-          itemRequest,
-          product,
-          tierPricing,
-          pricePerKg,
-          itemTotal,
-          tierDiscountAmount,
-          percentageDiscountAmount,
-        } = processedItem;
+      const createdItemIds: string[] = [];
 
-        const orderItemId = ID.unique();
-        const orderItem = (await databases.createDocument(
-          DATABASE_ID,
-          ORDER_ITEMS_TABLE_ID,
-          orderItemId,
-          {
-            order_id: orderId,
-            product_id: itemRequest.product_id,
+      // Declare variables outside try/catch for scope access in return
+      let order: Order;
+      let address: Address;
+      const addressId = ID.unique();
 
-            // Product snapshot
-            product_name: product.name,
-            product_description: product.description || "",
+      try {
+        for (const processedItem of processedItems) {
+          const {
+            itemRequest,
+            product,
+            tierPricing,
+            pricePerKg,
+            itemTotal,
+            tierDiscountAmount,
+            percentageDiscountAmount,
+          } = processedItem;
 
-            // Quantity
-            quantity_kg: itemRequest.quantity_kg,
+          const orderItemId = ID.unique();
+          const orderItem = (await databases.createDocument(
+            DATABASE_ID,
+            ORDER_ITEMS_TABLE_ID,
+            orderItemId,
+            {
+              order_id: orderId,
+              product_id: itemRequest.product_id,
 
-            // Bag breakdown
-            bags_1kg: itemRequest.bags.kg1,
-            bags_5kg: itemRequest.bags.kg5,
-            bags_10kg: itemRequest.bags.kg10,
-            bags_25kg: itemRequest.bags.kg25,
+              // Product snapshot
+              product_name: product.name,
+              product_description: product.description || "",
 
-            // Pricing snapshot
-            price_per_kg_at_order: pricePerKg,
-            base_price_per_kg: product.base_price_per_kg,
-            tier_applied: tierPricing.tierApplied,
+              // Quantity
+              quantity_kg: itemRequest.quantity_kg,
 
-            // Discount
-            discount_percentage:
-              product.base_price_per_kg * itemRequest.quantity_kg > 0
-                ? ((tierDiscountAmount + percentageDiscountAmount) /
+              // Bag breakdown
+              bags_1kg: itemRequest.bags.kg1,
+              bags_5kg: itemRequest.bags.kg5,
+              bags_10kg: itemRequest.bags.kg10,
+              bags_25kg: itemRequest.bags.kg25,
+
+              // Pricing snapshot
+              price_per_kg_at_order: pricePerKg,
+              base_price_per_kg: product.base_price_per_kg,
+              tier_applied: tierPricing.tierApplied,
+
+              // Discount
+              discount_percentage:
+                product.base_price_per_kg * itemRequest.quantity_kg > 0
+                  ? ((tierDiscountAmount + percentageDiscountAmount) /
                     (product.base_price_per_kg * itemRequest.quantity_kg)) *
                   100
-                : 0,
-            discount_amount: tierDiscountAmount + percentageDiscountAmount,
-            // Totals
-            subtotal_before_discount:
-              product.base_price_per_kg * itemRequest.quantity_kg,
-            total_after_discount: itemTotal.total,
+                  : 0,
+              discount_amount: tierDiscountAmount + percentageDiscountAmount,
+              // Totals
+              subtotal_before_discount:
+                product.base_price_per_kg * itemRequest.quantity_kg,
+              total_after_discount: itemTotal.total,
 
-            // Metadata
-            notes: itemRequest.notes || orderRequest.notes || "",
+              // Metadata
+              notes: itemRequest.notes || orderRequest.notes || "",
+            }
+          )) as unknown as OrderItem;
+
+          orderItems.push(orderItem);
+          createdItemIds.push(orderItemId);
+        }
+
+        // Create address
+        const mapsUrl = generateMapsUrl(
+          orderRequest.address.latitude,
+          orderRequest.address.longitude
+        );
+
+        address = (await databases.createDocument(
+            DATABASE_ID,
+            ADDRESSES_TABLE_ID,
+            addressId,
+            {
+            customer_id: orderRequest.customer_id,
+            order_id: orderId,
+            address_line: orderRequest.address.address_line,
+            latitude: orderRequest.address.latitude,
+            longitude: orderRequest.address.longitude,
+            maps_url: mapsUrl,
+            }
+        )) as unknown as Address;
+
+        // Create the order
+        order = (await databases.createDocument(
+          DATABASE_ID,
+          ORDERS_TABLE_ID,
+          orderId,
+          {
+            customer_id: orderRequest.customer_id,
+            address_id: addressId, // Set address_id immediately
+            total_items_count: totalItemsCount,
+            total_weight_kg: totalWeightKg,
+            subtotal_before_discount: subtotalBeforeDiscount,
+            total_discount_amount: totalDiscountAmount,
+            total_price: totalPrice,
+            status: "pending",
           }
-        )) as unknown as OrderItem;
-
-        orderItems.push(orderItem);
+        )) as unknown as Order;
+      } catch (creationError) {
+        console.error("Error during order service creation flow:", creationError);
+        
+        // ROLLBACK: If order creation failed but items were created, delete them
+        if (createdItemIds.length > 0) {
+          console.log("Rolling back created items in OrderService...");
+          Promise.allSettled(
+            createdItemIds.map(id => databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, id))
+          ).then(() => console.log("Rollback complete"));
+        }
+        
+        throw creationError;
       }
 
       // Get customer details
