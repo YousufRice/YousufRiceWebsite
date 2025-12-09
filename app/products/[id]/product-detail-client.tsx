@@ -272,44 +272,46 @@ export default function ProductDetailClient({
 
               <div className="space-y-2 sm:space-y-3">
                 {/* 1kg Bag */}
-                <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
-                      1kg
+                {!product.name.toLowerCase().includes("every") && (
+                  <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
+                        1kg
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base truncate">
+                          1kg Bag
+                        </p>
+                        <p className="text-xs text-gray-600 font-medium">
+                          {formatCurrency(getPricePerKg(product, 1))}/kg
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base truncate">
-                        1kg Bag
-                      </p>
-                      <p className="text-xs text-gray-600 font-medium">
-                        {formatCurrency(getPricePerKg(product, 1))}/kg
-                      </p>
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRemoveBag(1)}
+                        disabled={!product.available || bagCounts.kg1 === 0}
+                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
+                      </Button>
+                      <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
+                        {bagCounts.kg1}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAddBag(1)}
+                        disabled={!product.available}
+                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
+                      >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b]" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRemoveBag(1)}
-                      disabled={!product.available || bagCounts.kg1 === 0}
-                      className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
-                    </Button>
-                    <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
-                      {bagCounts.kg1}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleAddBag(1)}
-                      disabled={!product.available}
-                      className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b]" />
-                    </Button>
-                  </div>
-                </div>
+                )}
 
                 {/* 5kg Bag */}
                 <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
