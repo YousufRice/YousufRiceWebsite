@@ -180,4 +180,5 @@ Focus on quality over quantity—make purposeful tool calls and respond once you
     getCustomerTool,
     checkLoyaltyRewardTool,
   ],
+  modelSettings: {toolChoice: "required"}
 });
