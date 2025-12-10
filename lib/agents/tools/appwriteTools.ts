@@ -288,7 +288,7 @@ export const searchProductsTool = tool({
         total: 0,
       };
     }
-  },
+  }
 });
 
 /**
@@ -1580,3 +1580,56 @@ export const createOrderTool = tool({
     }
   },
 });
+
+/**
+ * Tool to get ALL products at once (since catalog is small)
+ */
+export const getAllProductsTool = tool({
+  name: "get_all_products",
+  description:
+    "Get a list of ALL available products in the catalog. Use this tool immediately when the conversation starts or when asked about 'what products do you have', 'show all rice', or 'prices'. This provides the full context of all products including their prices and stock status.",
+  parameters: z.object({}),
+  async execute() {
+    try {
+      // Fetch up to 100 products (we expect ~10)
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        PRODUCTS_TABLE_ID,
+        [
+          Query.limit(100),
+          Query.orderDesc("$createdAt"),
+          Query.equal("available", true), // Only show available products by default
+        ]
+      );
+
+      const products = response.documents.map((doc: any) => ({
+        id: doc.$id,
+        name: doc.name,
+        // Identify if it's a hotel/restaurant product
+        type:
+          (doc.name + doc.description).toLowerCase().includes("hotel") ||
+          (doc.name + doc.description).toLowerCase().includes("restaurant")
+            ? "HOTEL_RESTAURANT_ONLY"
+            : "RETAIL_CUSTOMER",
+        basePrice: doc.base_price_per_kg,
+        priceTiers: buildPriceTiers(doc),
+        available: doc.available,
+      }));
+
+      return {
+        success: true,
+        total: products.length,
+        products: products,
+        message: `Found all ${products.length} available products.`,
+      };
+    } catch (error: any) {
+      console.error("getAllProductsTool error:", error);
+      return {
+        success: false,
+        error: "Failed to fetch product catalog",
+        products: [],
+      };
+    }
+  },
+});
+
