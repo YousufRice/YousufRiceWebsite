@@ -150,11 +150,10 @@ export default function ProductDetailClient({
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative aspect-square rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
-                      selectedImageIndex === index
+                    className={`relative aspect-square rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${selectedImageIndex === index
                         ? "border-[#ffff03] ring-4 ring-[#ffff03]/30 shadow-lg"
                         : "border-gray-200 hover:border-[#27247b]/30"
-                    }`}
+                      }`}
                   >
                     <Image
                       src={url || "/placeholder.svg"}
@@ -445,15 +444,38 @@ export default function ProductDetailClient({
               </div>
 
               {totalKg > 0 && (
-                <div className="mt-3 sm:mt-4 bg-linear-to-r from-[#27247b] to-[#1a1854] rounded-lg p-3 sm:p-4 shadow-lg">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="mt-3 sm:mt-4 bg-linear-to-r from-[#27247b] to-[#1a1854] rounded-lg p-3 sm:p-4 shadow-lg overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <Zap className="w-24 h-24 text-[#ffff03] -rotate-12 transform translate-x-8 -translate-y-8" />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 relative z-10">
                     <div className="min-w-0">
                       <p className="text-white/80 text-xs sm:text-sm mb-1">
                         Total Amount
                       </p>
-                      <p className="text-xl sm:text-2xl font-bold text-[#ffff03]">
-                        {formatCurrency(totalPrice)}
-                      </p>
+                      <div className="flex flex-col">
+                        {totalKg * product.base_price_per_kg > totalPrice && (
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-sm font-medium text-red-300 line-through decoration-red-300/70 decoration-1">
+                              {formatCurrency(
+                                totalKg * product.base_price_per_kg
+                              )}
+                            </span>
+                            <span className="text-[10px] sm:text-xs font-bold bg-[#ffff03] text-[#27247b] px-1.5 py-0.5 rounded-full animate-pulse">
+                              {Math.round(
+                                ((totalKg * product.base_price_per_kg -
+                                  totalPrice) /
+                                  (totalKg * product.base_price_per_kg)) *
+                                100
+                              )}
+                              % OFF
+                            </span>
+                          </div>
+                        )}
+                        <p className="text-xl sm:text-3xl font-bold text-[#ffff03] tracking-tight">
+                          {formatCurrency(totalPrice)}
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-white/80 text-xs sm:text-sm mb-1">
