@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Minimize2, Maximize2 } from "lucide-react";
+import { MessageSquare, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ChatBox from "./chat-box";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -54,7 +54,7 @@ export default function FloatingChatbox() {
           className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-linear-to-br from-green-600 to-emerald-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center group"
           aria-label="Open chat"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageSquare className="w-6 h-6" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
 
           {/* Tooltip */}
@@ -78,7 +78,7 @@ export default function FloatingChatbox() {
           <div className="flex items-center justify-between px-4 py-3 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-t-lg">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5" />
+                <MessageSquare className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-semibold text-sm">Yousuf Rice Assistant</h3>
@@ -115,7 +115,7 @@ export default function FloatingChatbox() {
             ) : (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <MessageCircle className="w-8 h-8 text-green-600" />
+                  <MessageSquare className="w-8 h-8 text-green-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Login Required
@@ -151,7 +151,7 @@ export default function FloatingChatbox() {
           className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-linear-to-br from-green-600 to-emerald-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 flex items-center justify-center group"
           aria-label="Expand chat"
         >
-          <MessageCircle className="w-6 h-6 animate-bounce" />
+          <MessageSquare className="w-6 h-6 animate-bounce" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
 
           {/* Tooltip */}
