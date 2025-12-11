@@ -388,7 +388,7 @@ export default function CheckoutPage() {
 
       // Create order ID early to link items
       const orderId = ID.unique();
-      
+
       const orderItems = formatOrderItems(
         items.map((item) => ({
           productId: item.product.$id,
@@ -447,7 +447,7 @@ export default function CheckoutPage() {
       try {
         for (const processed of processedItems) {
           const { item, product, tierPricing, itemCalculations, totalItemDiscount } = processed;
-          
+
           const itemId = ID.unique();
           await databases.createDocument(
             DATABASE_ID,
@@ -510,7 +510,7 @@ export default function CheckoutPage() {
         });
       } catch (creationError) {
         console.error("Error during order creation flow:", creationError);
-        
+
         // ROLLBACK: If order creation failed but items were created, try to delete them
         if (createdItemIds.length > 0) {
           console.log("Rolling back created items...");
@@ -518,7 +518,7 @@ export default function CheckoutPage() {
             createdItemIds.map(id => databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, id))
           ).then(() => console.log("Rollback complete"));
         }
-        
+
         throw creationError; // Re-throw to be caught by main try-catch
       }
 
@@ -961,19 +961,32 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-3 mb-6">
-                  {items.map((item) => (
-                    <div
-                      key={item.product.$id}
-                      className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200"
-                    >
-                      <span className="text-sm font-medium text-[#27247b]">
-                        {item.product.name}
-                      </span>
-                      <span className="text-sm font-bold text-[#27247b]">
-                        {item.quantity}kg
-                      </span>
-                    </div>
-                  ))}
+                  {items.map((item) => {
+                    const itemSavings = calculateSavings(
+                      item.product,
+                      item.quantity
+                    );
+                    return (
+                      <div
+                        key={item.product.$id}
+                        className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-[#27247b]">
+                            {item.product.name}
+                          </span>
+                          {itemSavings.savings > 0 && (
+                            <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full w-fit mt-1">
+                              {itemSavings.savingsPercentage.toFixed(0)}% OFF
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-[#27247b]">
+                          {item.quantity}kg
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="border-t-2 border-gray-200 pt-4">
