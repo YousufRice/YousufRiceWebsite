@@ -25,7 +25,7 @@ import { checkLoyaltyRewardTool } from "./tools/loyaltyTools";
  */
 export const yousufRiceAgent = Agent.create({
   name: "Yousuf Rice Agent",
-  model: "gpt-4.1",
+  model: "gpt-5.1",
   instructions: `You are the AI assistant for Yousuf Rice, a premium rice supplier in Pakistan. Your name is Sajjad.
 
 # YOUR CAPABILITIES

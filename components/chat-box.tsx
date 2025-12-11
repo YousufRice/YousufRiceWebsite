@@ -3,6 +3,8 @@
 import { useRef, useState, useEffect } from "react";
 import { Send, User2, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   role: "user" | "assistant";
@@ -397,16 +399,6 @@ export default function ChatBox({
         className
       )}
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-linear-to-r from-green-50 to-emerald-50">
-        <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-          <User2 className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-gray-900">Yousuf Rice Assistant</h3>
-          <p className="text-xs text-gray-600">Always here to help</p>
-        </div>
-      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -441,9 +433,31 @@ export default function ChatBox({
                   : "bg-gray-100 text-gray-900"
               )}
             >
-              <p className="text-sm whitespace-pre-wrap wrap-break-word">
-                {message.content}
-              </p>
+              {message.role === "assistant" ? (
+                <div className="text-sm markdown-container">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                      strong: ({ children }) => <span className="font-semibold">{children}</span>,
+                      a: ({ children, href }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap wrap-break-word">
+                  {message.content}
+                </p>
+              )}
               <span
                 className={cn(
                   "text-xs mt-1 block",
@@ -468,9 +482,25 @@ export default function ChatBox({
               <User2 className="w-5 h-5 text-white" />
             </div>
             <div className="max-w-[75%] rounded-lg px-4 py-2 bg-gray-100 text-gray-900">
-              <p className="text-sm whitespace-pre-wrap wrap-break-word">
-                {streamingContent}
-              </p>
+              <div className="text-sm markdown-container">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ children }) => <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                    li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                    strong: ({ children }) => <span className="font-semibold">{children}</span>,
+                    a: ({ children, href }) => (
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {streamingContent}
+                </ReactMarkdown>
+              </div>
               <span className="inline-block w-2 h-4 ml-1 bg-green-600 animate-pulse" />
             </div>
           </div>
