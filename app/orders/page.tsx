@@ -399,7 +399,7 @@ export default function OrdersPage() {
                     variant="secondary"
                     size="lg"
                     disabled={loading}
-                    className="min-w-[200px]"
+                    className="min-w-50"
                   >
                     {loading ? 'Loading...' : 'Load More Orders'}
                   </Button>
