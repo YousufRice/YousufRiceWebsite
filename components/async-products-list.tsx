@@ -11,7 +11,8 @@ import { Package } from "lucide-react";
  */
 export async function AsyncProductsList() {
   // Fetch products using cached data functions
-  const products = await getCachedRegularProducts();
+  const allProducts = await getCachedRegularProducts();
+  const products = allProducts.filter((p) => p.available);
 
   // Custom sort order: Every Grain -> All Steam -> All Sella -> Bachat Basmati -> Bachat Regular
   const sortedProducts = products.sort((a, b) => {
