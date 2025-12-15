@@ -424,12 +424,17 @@ export default function CheckoutPage() {
         const tierDiscountAmount = tierPricing.discountAmount;
         const totalItemDiscount = tierDiscountAmount + itemCalculations.discountAmount;
 
+        // Round values for Appwrite (requires integer)
+        const roundedItemTotal = Math.round(itemCalculations.total);
+        const roundedItemDiscount = Math.round(totalItemDiscount);
+        const roundedSubtotal = Math.round(product.base_price_per_kg * item.quantity);
+
         // Update order-level totals
         totalItemsCount += 1;
         totalWeightKg += item.quantity;
-        subtotalBeforeDiscount += product.base_price_per_kg * item.quantity;
-        totalDiscountAmount += totalItemDiscount;
-        finalTotalPrice += itemCalculations.total;
+        subtotalBeforeDiscount += roundedSubtotal;
+        totalDiscountAmount += roundedItemDiscount;
+        finalTotalPrice += roundedItemTotal;
 
         return {
           item,
@@ -437,6 +442,10 @@ export default function CheckoutPage() {
           tierPricing,
           itemCalculations,
           totalItemDiscount,
+          // Pass rounded values for use in order item creation
+          roundedItemTotal,
+          roundedItemDiscount,
+          roundedSubtotal
         };
       });
 
@@ -446,7 +455,16 @@ export default function CheckoutPage() {
 
       try {
         for (const processed of processedItems) {
-          const { item, product, tierPricing, itemCalculations, totalItemDiscount } = processed;
+          const {
+            item,
+            product,
+            tierPricing,
+            itemCalculations,
+            totalItemDiscount,
+            roundedItemTotal,
+            roundedItemDiscount,
+            roundedSubtotal
+          } = processed;
 
           const itemId = ID.unique();
           await databases.createDocument(
@@ -480,11 +498,11 @@ export default function CheckoutPage() {
                     (product.base_price_per_kg * item.quantity)) *
                   100
                   : 0,
-              discount_amount: totalItemDiscount, // Includes tier + loyalty discount
+              discount_amount: roundedItemDiscount, // Includes tier + loyalty discount (Rounded)
 
               // Totals
-              subtotal_before_discount: product.base_price_per_kg * item.quantity,
-              total_after_discount: itemCalculations.total,
+              subtotal_before_discount: roundedSubtotal, // Rounded
+              total_after_discount: roundedItemTotal, // Rounded
 
               // Metadata
               notes: formData.notes || "",
@@ -624,10 +642,12 @@ export default function CheckoutPage() {
         }
       }
 
+      let loyaltyData = null;
+
       // Process loyalty discount (for NEXT order)
       try {
         const productNames = items.map((item) => item.product.name);
-        await LoyaltyService.processLoyaltyDiscount(
+        loyaltyData = await LoyaltyService.processLoyaltyDiscount(
           customerId,
           formData.fullName,
           getTotalPrice(),
@@ -645,7 +665,13 @@ export default function CheckoutPage() {
       isOrderPlacedRef.current = true;
 
       clearCart();
-      router.push(`/checkout/success?orderId=${orderId}`);
+
+      let successUrl = `/checkout/success?orderId=${orderId}`;
+      if (loyaltyData) {
+        successUrl += `&loyaltyCode=${loyaltyData.discount_code}&loyaltyPercent=${loyaltyData.discount_percentage}`;
+      }
+
+      router.push(successUrl);
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error("Failed to place order. Please try again.");
@@ -767,7 +793,7 @@ export default function CheckoutPage() {
                             notes: e.target.value,
                           })
                         }
-                        className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base min-h-[100px]"
+                        className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base min-h-25"
                         placeholder="Any special instructions for delivery..."
                       />
                     </div>
@@ -944,7 +970,7 @@ export default function CheckoutPage() {
                       </Button>
                     </div>
                     <p className="text-sm text-green-700">
-                      {appliedDiscount.extra_discount_percentage}% discount will be
+                      {appliedDiscount.extra_discount_percentage}% Loyalty Extra discount will be
                       applied to your total.
                     </p>
                   </div>
