@@ -11,8 +11,9 @@ import {
   DATABASE_ID,
   ORDERS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
+  ADDRESSES_TABLE_ID,
 } from "@/lib/appwrite";
-import { Order, Customer } from "@/lib/types";
+import { Order, Customer, Address } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,8 @@ import {
   RotateCcw,
   Pencil,
   Trash2,
+  MapPin,
+  Scale,
 } from "lucide-react";
 import { Query } from "appwrite";
 import toast from "react-hot-toast";
@@ -58,6 +61,7 @@ import EditOrderDialog from "@/components/admin/EditOrderDialog";
 
 interface OrderWithCustomer extends Order {
   customer?: Customer;
+  address?: Address;
 }
 
 export default function AdminOrdersPage() {
@@ -160,12 +164,29 @@ export default function AdminOrdersPage() {
       const ordersWithCustomers = await Promise.all(
         ordersResponse.documents.map(async (order: any) => {
           try {
-            const customer = (await databases.getDocument(
+            // Fetch Customer
+            const customerPromise = databases.getDocument(
               DATABASE_ID,
               CUSTOMERS_TABLE_ID,
               order.customer_id
-            )) as unknown as Customer;
-            return { ...order, customer } as OrderWithCustomer;
+            ).catch(() => null);
+
+            // Fetch Address
+            const addressPromise = order.address_id
+              ? databases.getDocument(
+                DATABASE_ID,
+                ADDRESSES_TABLE_ID,
+                order.address_id
+              ).catch(() => null)
+              : Promise.resolve(null);
+
+            const [customer, address] = await Promise.all([customerPromise, addressPromise]);
+
+            return {
+              ...order,
+              customer: customer as Customer | null,
+              address: address as Address | null
+            } as OrderWithCustomer;
           } catch {
             return order as OrderWithCustomer;
           }
@@ -215,6 +236,8 @@ export default function AdminOrdersPage() {
       "Order ID",
       "Customer",
       "Phone",
+      "Address",
+      "Weight (kg)",
       "Date",
       "Status",
       "Total",
@@ -223,6 +246,8 @@ export default function AdminOrdersPage() {
       order.$id,
       order.customer?.full_name || "Unknown",
       order.customer?.phone || "",
+      order.address?.address_line || "No Address",
+      order.total_weight_kg || "0",
       new Date(order.$createdAt).toLocaleDateString(),
       order.status,
       order.total_price,
@@ -501,10 +526,10 @@ export default function AdminOrdersPage() {
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardContent className="p-6">
-                    <div className="grid md:grid-cols-5 gap-4 mb-4">
-                      <div>
+                    <div className="grid md:grid-cols-7 gap-4 mb-4 items-start">
+                      <div className="md:col-span-1">
                         <p className="text-sm text-gray-500 mb-1">Order ID</p>
-                        <p className="font-mono text-sm font-medium">
+                        <p className="font-mono text-xs font-medium truncate" title={order.$id}>
                           {order.$id.slice(0, 12)}...
                         </p>
                         <Badge
@@ -519,36 +544,48 @@ export default function AdminOrdersPage() {
                                     ? "success"
                                     : "destructive"
                           }
-                          className="mt-2"
+                          className="mt-2 text-[10px]"
                         >
                           {order.status.replace("_", " ")}
                         </Badge>
                       </div>
-                      <div>
+                      <div className="md:col-span-1">
                         <p className="text-sm text-gray-500 mb-1">Customer</p>
-                        <p className="font-medium">
+                        <p className="font-medium text-sm truncate" title={order.customer?.full_name || "Unknown"}>
                           {order.customer?.full_name || "Unknown"}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs text-gray-600">
                           {order.customer?.phone}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Order Date</p>
-                        <p className="font-medium">
-                          {new Date(order.$createdAt).toLocaleDateString()}
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          Address
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(order.$createdAt).toLocaleTimeString()}
+                        <p className="text-sm text-gray-700 line-clamp-2" title={order.address?.address_line || "No address"}>
+                          {order.address?.address_line || "No address"}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Total Amount</p>
-                        <p className="text-2xl font-bold text-green-600">
+                      <div className="md:col-span-1">
+                        <p className="text-sm text-gray-500 mb-1 text-center">Weight</p>
+                        <div className="flex items-center justify-center gap-1">
+                          <Scale className="w-4 h-4 text-gray-400" />
+                          <p className="font-medium text-sm">
+                            {order.total_weight_kg ? `${order.total_weight_kg} kg` : "-"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="md:col-span-1">
+                        <p className="text-sm text-gray-500 mb-1">Date & Total</p>
+                        <p className="font-medium text-green-600">
                           {formatCurrency(order.total_price)}
                         </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(order.$createdAt).toLocaleDateString()}
+                        </p>
                       </div>
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2 md:col-span-1">
                         <ReadOnlyGuard>
                           <Button
                             variant="ghost"
@@ -569,9 +606,8 @@ export default function AdminOrdersPage() {
                           </Button>
                         </ReadOnlyGuard>
                         <Link href={`/orders/${order.$id}?from=admin`}>
-                          <Button variant="outline" size="sm">
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Details
+                          <Button variant="outline" size="sm" className="h-8">
+                            <ExternalLink className="w-3 h-3" />
                           </Button>
                         </Link>
                       </div>
@@ -662,7 +698,7 @@ export default function AdminOrdersPage() {
                   onClick={() => fetchOrders(false)}
                   variant="outline"
                   size="lg"
-                  className="min-w-[200px]"
+                  className="min-w-50"
                   disabled={loadingMore}
                 >
                   {loadingMore ? "Loading..." : "Show More"}
