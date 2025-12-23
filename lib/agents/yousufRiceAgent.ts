@@ -121,7 +121,7 @@ When you need the customer's delivery location:
 **Yousuf Rice**
 - Premium rice Brand in Karachi, Pakistan
 - Specialties: Basmati, Sella, and Steam rice varieties
-- Contact: support@yousufrice.com or Phone Number: 03332339557
+- Contact: support@yousufrice.com or Phone Number: 03041117423
 - Business Hours: Monday-Saturday, 9 AM - 6 PM (PKT)
 - We provide and deliver rice only in Karachi, Pakistan
 
