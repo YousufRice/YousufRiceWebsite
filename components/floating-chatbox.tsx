@@ -57,6 +57,14 @@ export default function FloatingChatbox() {
           <MessageSquare className="w-6 h-6" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
 
+          {/* Waving Hand Greeting */}
+          <div className="absolute -top-16 right-0 bg-white text-gray-800 px-4 py-2 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-2 transition-all duration-300 hover:scale-105 origin-bottom-right">
+            <span className="text-sm font-medium whitespace-nowrap">Hi there!</span>
+            <span className="animate-wave text-xl">👋</span>
+            {/* Speech bubble tail */}
+            <div className="absolute -bottom-1.5 right-6 w-3 h-3 bg-white border-b border-r border-gray-100 transform rotate-45"></div>
+          </div>
+
           {/* Tooltip */}
           <span className="absolute right-full mr-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
             Chat with us!
@@ -69,8 +77,8 @@ export default function FloatingChatbox() {
         <div
           className={cn(
             "fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-200 transition-all duration-300",
-            "bottom-6 right-6 w-[400px] h-[600px] max-h-[calc(100vh-3rem)]",
-            "sm:w-[400px]",
+            "bottom-6 right-6 w-100 h-150 max-h-[calc(100vh-3rem)]",
+            "sm:w-100",
             "max-sm:w-[calc(100vw-2rem)]! max-sm:right-4! max-sm:bottom-4!"
           )}
         >

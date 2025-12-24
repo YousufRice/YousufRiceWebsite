@@ -13,11 +13,11 @@ export function calculatePrice(product: Product, quantity: number): number {
 
   let pricePerKg = product.base_price_per_kg;
 
-  if (quantity >= 10 && product.tier_10kg_up_price) {
+  if (quantity >= 10 && product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
     pricePerKg = product.tier_10kg_up_price;
-  } else if (quantity >= 5 && product.tier_5_9kg_price) {
+  } else if (quantity >= 5 && product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
     pricePerKg = product.tier_5_9kg_price;
-  } else if (quantity >= 2 && product.tier_2_4kg_price) {
+  } else if (quantity >= 2 && product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
     pricePerKg = product.tier_2_4kg_price;
   }
 
@@ -29,11 +29,11 @@ export function getPricePerKg(product: Product, quantity: number): number {
     return product.base_price_per_kg;
   }
 
-  if (quantity >= 10 && product.tier_10kg_up_price) {
+  if (quantity >= 10 && product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
     return product.tier_10kg_up_price;
-  } else if (quantity >= 5 && product.tier_5_9kg_price) {
+  } else if (quantity >= 5 && product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
     return product.tier_5_9kg_price;
-  } else if (quantity >= 2 && product.tier_2_4kg_price) {
+  } else if (quantity >= 2 && product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
     return product.tier_2_4kg_price;
   }
 
@@ -63,11 +63,11 @@ export function calculateSavings(
   let tierApplied: string | null = null;
 
   if (product.has_tier_pricing && savings > 0) {
-    if (quantity >= 10 && product.tier_10kg_up_price) {
+    if (quantity >= 10 && product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
       tierApplied = "10+ kg tier";
-    } else if (quantity >= 5 && product.tier_5_9kg_price) {
+    } else if (quantity >= 5 && product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
       tierApplied = "5-9 kg tier";
-    } else if (quantity >= 2 && product.tier_2_4kg_price) {
+    } else if (quantity >= 2 && product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
       tierApplied = "2-4 kg tier";
     }
   }
@@ -125,13 +125,13 @@ export function calculateTierPricing(
   let tierApplied = "base";
 
   if (product.has_tier_pricing) {
-    if (quantity >= 10 && product.tier_10kg_up_price) {
+    if (quantity >= 10 && product.tier_10kg_up_price && product.tier_10kg_up_price > 0) {
       pricePerKg = product.tier_10kg_up_price;
       tierApplied = "10kg+";
-    } else if (quantity >= 5 && product.tier_5_9kg_price) {
+    } else if (quantity >= 5 && product.tier_5_9kg_price && product.tier_5_9kg_price > 0) {
       pricePerKg = product.tier_5_9kg_price;
       tierApplied = "5-9kg";
-    } else if (quantity >= 2 && product.tier_2_4kg_price) {
+    } else if (quantity >= 2 && product.tier_2_4kg_price && product.tier_2_4kg_price > 0) {
       pricePerKg = product.tier_2_4kg_price;
       tierApplied = "2-4kg";
     }

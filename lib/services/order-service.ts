@@ -109,6 +109,10 @@ export class OrderService {
 
       const totalPrice = subtotalBeforeDiscount - totalDiscountAmount;
 
+      if (totalPrice <= 0) {
+        throw new Error("Cannot create order with 0 or negative total price.");
+      }
+
       // KEY FIX: Create Order Items FIRST to prevent "Zero Price" orders
       const orderItems: OrderItem[] = [];
       const createdItemIds: string[] = [];
