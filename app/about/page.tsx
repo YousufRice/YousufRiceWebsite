@@ -71,18 +71,18 @@ export default function AboutPage() {
             <h2 className="text-4xl font-bold text-[#27247b] mb-6">Our Story</h2>
             <div className="space-y-4 text-gray-700 leading-relaxed">
               <p className="text-lg">
-                <strong className="text-[#27247b]">Yousuf Rice</strong> is a leading exporter of premium quality rice from Pakistan, 
-                serving major markets across the globe. We specialize in delivering excellence through our carefully selected 
+                <strong className="text-[#27247b]">Yousuf Rice</strong> is a leading exporter of premium quality rice from Pakistan,
+                serving major markets across the globe. We specialize in delivering excellence through our carefully selected
                 rice varieties, directly harvested from state-of-the-art facilities in Pakistan's grain hub.
               </p>
               <p>
-                With an impressive export capacity of <strong>150 containers per month</strong>, we have established ourselves 
-                as a trusted partner for businesses worldwide. Our commitment to quality and reliability has made us the 
+                With an impressive export capacity of <strong>150 containers per month</strong>, we have established ourselves
+                as a trusted partner for businesses worldwide. Our commitment to quality and reliability has made us the
                 preferred choice for major hypermarkets, including <strong>Union Coop</strong> in the UAE.
               </p>
               <p>
-                Operating under <strong>S.S.I Foodstuff Trading</strong>, we are renowned for our expertise in 1121 Sella Rice 
-                and long grain 1121 Steam Basmati. Our flexible packaging options range from convenient 2kg bags to bulk 35kg and 40kg 
+                Operating under <strong>S.S.I Foodstuff Trading</strong>, we are renowned for our expertise in 1121 Sella Rice
+                and long grain 1121 Steam Basmati. Our flexible packaging options range from convenient 5kg bags to bulk 25kg and 50kg
                 master bags, catering to diverse customer needs.
               </p>
             </div>
@@ -145,9 +145,9 @@ export default function AboutPage() {
           <h2 className="text-4xl font-bold text-[#27247b] mb-8 text-center">Flexible Packaging Options</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { size: '2kg Bags', description: 'Perfect for retail customers' },
-              { size: '35kg Bags', description: 'Ideal for restaurants & businesses' },
-              { size: '40kg Master Bags', description: 'Bulk orders & wholesale' },
+              { size: '5kg Bags', description: 'Perfect for retail customers' },
+              { size: '25kg Bags', description: 'Ideal for restaurants & businesses' },
+              { size: '50kg Master Bags', description: 'Bulk orders & wholesale' },
             ].map((pack, index) => (
               <Card key={index} className="border-2 border-[#27247b]/20 text-center hover:shadow-lg transition-shadow">
                 <CardContent className="p-8">

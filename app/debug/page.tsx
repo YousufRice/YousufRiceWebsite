@@ -1,4 +1,3 @@
-
 import { getCachedProducts } from '@/lib/cached-data';
 
 export default async function DebugPage() {
