@@ -322,6 +322,16 @@ export default function CheckoutPage() {
       return;
     }
 
+    // FAILSAFE: Ensure total price is positive
+    const currentTotalPrice = getTotalPrice();
+    if (currentTotalPrice <= 0) {
+      toast.error(
+        "Cannot place order with 0 total price. Please check your cart items."
+      );
+      console.error("Attempted to place order with 0 total price", { items });
+      return;
+    }
+
     // Coordinates are now optional for manual checkout
 
     setLoading(true);
