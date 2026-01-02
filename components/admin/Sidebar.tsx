@@ -8,7 +8,8 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingBag, 
-  Users, 
+  Users,
+  UserSearchIcon,
   LogOut, 
   ShieldCheck,
   Home
@@ -42,11 +43,16 @@ export function Sidebar() {
       name: 'Customers',
       href: '/admin/customers',
       icon: Users,
-    },
+    },  
     {
       name: 'Auth Test',
       href: '/admin/test',
       icon: ShieldCheck,
+    },
+    {
+      name: 'Staff Performance',
+      href: '/admin/staff-performance',
+      icon: UserSearchIcon,
     },
   ];
 

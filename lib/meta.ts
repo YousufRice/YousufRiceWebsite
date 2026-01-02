@@ -70,6 +70,7 @@ export function sanitizeCustomerNameForMeta(name: string | undefined | null): st
   const sanitized = name
     .replace(/\s*-\s*[sSkK]\s*/g, ' ')  // Remove -s, -S, -k, or -K with surrounding spaces
     .replace(/\s*\(\s*[sSkK]\s*\)\s*/g, ' ')  // Remove (s), (S), (k), or (K) with surrounding spaces
+    .replace(/\b[sSkK]\b/g, ' ')  // Remove standalone s, S, k, or K
     .replace(/\s+/g, ' ')  // Normalize multiple spaces to single space
     .trim();  // Remove leading/trailing spaces
   
