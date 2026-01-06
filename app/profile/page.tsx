@@ -12,13 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Query } from "appwrite";
+import { Query, ID } from "appwrite";
 import toast from "react-hot-toast";
 import { ArrowLeft, Gift, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { DiscountService } from "@/lib/services/discount-service";
 import { LoyaltyDiscount } from "@/lib/services/loyalty-service";
-import { formatPhoneNumberForDisplay } from "@/lib/utils";
+import { formatPhoneNumberForDisplay, formatPhoneNumber } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -110,24 +110,57 @@ export default function ProfilePage() {
     }
 
     setLoading(true);
+    let updateErrors: string[] = [];
+
     try {
       // Update user name in Appwrite Auth
       if (formData.full_name !== user.name) {
-        await account.updateName(formData.full_name);
+        try {
+          await account.updateName(formData.full_name);
+        } catch (error: any) {
+          console.error("Error updating name:", error);
+          updateErrors.push(`Name update failed: ${error.message}`);
+        }
       }
 
       // Update email in Appwrite Auth
       if (formData.email !== user.email) {
-        await account.updateEmail(formData.email, password);
+        try {
+          await account.updateEmail(formData.email, password);
+        } catch (error: any) {
+          // Ignore "A target with the same ID already exists." error (Code 409)
+          // This happens when the email is already linked to a target (push/messaging) internally
+          if (error.code === 409 || error.message?.includes("target with the same ID")) {
+            console.warn("Target conflict ignored for email update");
+          } else {
+            console.error("Error updating email:", error);
+            updateErrors.push(`Email update failed: ${error.message}`);
+          }
+        }
       }
 
       // Update phone number in Appwrite Auth
       if (formData.phone && formData.phone !== user.phone) {
-        const formattedPhone = formData.phone.startsWith("+")
-          ? formData.phone
-          : `+92${formData.phone}`;
-        await account.updatePhone(formattedPhone, password);
+        try {
+          // Use robust formatting from utils
+          const formattedPhone = formatPhoneNumber(formData.phone);
+
+          if (formattedPhone !== user.phone) {
+            await account.updatePhone(formattedPhone, password);
+          }
+        } catch (error: any) {
+          // Ignore "A target with the same ID already exists." error (Code 409)
+          if (error.code === 409 || error.message?.includes("target with the same ID")) {
+            console.warn("Target conflict ignored for phone update");
+          } else {
+            console.error("Error updating phone:", error);
+            updateErrors.push(`Phone update failed: ${error.message}`);
+          }
+        }
       }
+
+      // If there were critical Auth errors (not target conflicts), we might want to stop or warn
+      // But typically we want to try to keep the Customer record in sync even if Auth had minor hiccups
 
       // Find the customer document
       const response = await databases.listDocuments(
@@ -136,29 +169,48 @@ export default function ProfilePage() {
         [Query.equal("user_id", user.$id)]
       );
 
+      // Prepare formatted phone for Customer record
+      const customerPhone = formatPhoneNumber(formData.phone);
+
       if (response.documents.length === 0) {
-        toast.error("Customer record not found");
-        setLoading(false);
-        return;
+        // Customer record not found - create new one
+        console.log("Customer record not found, creating new one...");
+
+        await databases.createDocument(
+          DATABASE_ID,
+          CUSTOMERS_TABLE_ID,
+          ID.unique(),
+          {
+            user_id: user.$id,
+            full_name: formData.full_name,
+            email: formData.email,
+            phone: customerPhone
+          }
+        );
+
+        toast.success("Profile updated and synchronized successfully!");
+      } else {
+        // Existing customer found - update it
+        const customerId = response.documents[0].$id;
+
+        await databases.updateDocument(
+          DATABASE_ID,
+          CUSTOMERS_TABLE_ID,
+          customerId,
+          {
+            full_name: formData.full_name,
+            phone: customerPhone,
+            email: formData.email,
+          }
+        );
+
+        if (updateErrors.length > 0) {
+          toast.success("Profile saved (with some restrictions)");
+        } else {
+          toast.success("Profile updated successfully!");
+        }
       }
 
-      const customerId = response.documents[0].$id;
-
-      // Update customer document
-      await databases.updateDocument(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        customerId,
-        {
-          full_name: formData.full_name,
-          phone: formData.phone.startsWith("+")
-            ? formData.phone
-            : `+92${formData.phone}`,
-          email: formData.email,
-        }
-      );
-
-      toast.success("Profile updated successfully!");
       setIsEditing(false);
       setPassword("");
       await checkAuth();

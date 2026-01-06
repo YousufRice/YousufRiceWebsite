@@ -5,6 +5,7 @@ import { Send, User2, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { account } from "@/lib/appwrite";
 
 interface Message {
   role: "user" | "assistant";
@@ -152,10 +153,14 @@ export default function ChatBox({
     setStreamingContent("");
 
     try {
+      // Get JWT for authentication
+      const jwt = await account.createJWT();
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt.jwt}`,
         },
         body: JSON.stringify({
           userId,
@@ -307,10 +312,14 @@ export default function ChatBox({
     setStreamingContent("");
 
     try {
+      // Get JWT for authentication
+      const jwt = await account.createJWT();
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt.jwt}`,
         },
         body: JSON.stringify({
           userId,
@@ -440,7 +449,7 @@ export default function ChatBox({
                     components={{
                       p: ({ children }) => <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>,
                       ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                      ol: ({ children, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
                       li: ({ children }) => <li className="mb-0.5">{children}</li>,
                       strong: ({ children }) => <span className="font-semibold">{children}</span>,
                       a: ({ children, href }) => (
@@ -488,7 +497,7 @@ export default function ChatBox({
                   components={{
                     p: ({ children }) => <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>,
                     ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                    ol: ({ children, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
                     li: ({ children }) => <li className="mb-0.5">{children}</li>,
                     strong: ({ children }) => <span className="font-semibold">{children}</span>,
                     a: ({ children, href }) => (

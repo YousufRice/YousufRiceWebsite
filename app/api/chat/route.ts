@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { run } from '@openai/agents';
 import { yousufRiceAgent } from '@/lib/agents/yousufRiceAgent';
+import { Client, Account } from 'appwrite';
 import { serverSessionManager } from '@/lib/server-session-manager';
 
 interface ChatRequest {
@@ -25,12 +26,45 @@ interface ChatRequest {
  */
 export async function POST(req: Request) {
   try {
-    const { userId, message, stream, sessionId: existingSessionId, userContext } = (await req.json()) as ChatRequest;
+    const { message, stream, sessionId: existingSessionId, userContext } = (await req.json()) as ChatRequest;
 
-    // Validate required fields
-    if (!userId || !message) {
+    // Initialize Appwrite client for this request
+    const client = new Client()
+      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
+
+    // Get JWT from Authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Missing required fields: userId and message are required' },
+        { error: 'Unauthorized: Missing or invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    // Set JWT on client
+    client.setJWT(token);
+    const account = new Account(client);
+
+    let userId: string;
+    try {
+      const user = await account.get();
+      userId = user.$id;
+      // console.log('[API] User authenticated:', userId);
+    } catch (error: any) {
+      console.error('[API] Auth failed:', error.message);
+      return NextResponse.json(
+        { error: 'Unauthorized: Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Validate required message field
+    if (!message) {
+      return NextResponse.json(
+        { error: 'Missing required fields: message is required' },
         { status: 400 }
       );
     }
@@ -42,17 +76,20 @@ export async function POST(req: Request) {
       if (userContext.name) contextParts.push(`Customer Name: ${userContext.name}`);
       if (userContext.email) contextParts.push(`Email: ${userContext.email}`);
       if (userContext.phone) contextParts.push(`Phone: ${userContext.phone}`);
-      
+
       // Prepend context only on first message or when creating orders
-      const needsContext = !existingSessionId || 
-                          message.toLowerCase().includes('order') || 
-                          message.toLowerCase().includes('buy') ||
-                          message.toLowerCase().includes('purchase');
-      
+      const needsContext = !existingSessionId ||
+        message.toLowerCase().includes('order') ||
+        message.toLowerCase().includes('buy') ||
+        message.toLowerCase().includes('purchase');
+
       if (needsContext && contextParts.length > 0) {
         contextualMessage = `[User Context: ${contextParts.join(', ')}]\n\n${message}`;
       }
     }
+
+    // Use the authenticated userId for session management
+    console.log(`Authenticated user: ${userId}`);
 
     // Get or create server-managed session
     let sessionData;
@@ -147,7 +184,7 @@ export async function POST(req: Request) {
       stack: error.stack,
       cause: error.cause,
     });
-    
+
     // Check if it's a max turns error
     if (error.message && error.message.includes('Max turns')) {
       console.error('Max turns exceeded - Agent may be stuck in a loop');
@@ -159,7 +196,7 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -196,7 +233,7 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     console.error('Get Sessions Error:', error);
-    
+
     return NextResponse.json(
       {
         success: false,

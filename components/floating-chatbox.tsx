@@ -111,7 +111,7 @@ export default function FloatingChatbox() {
               <ChatBox
                 userId={user.email}
                 welcomeMessage={`Assalam o Alaikum${user.name ? ", " + user.name : ""
-                  }! Welcome to Yousuf Rice. How can I assist you today?`}
+                  }! Yousuf Rice mein khush aamdeed. Main aaj aapki kis tarah madad kar sakta hoon?`}
                 placeholder="Type your message..."
                 className="h-full border-0 rounded-none rounded-b-lg shadow-none"
                 userContext={{
