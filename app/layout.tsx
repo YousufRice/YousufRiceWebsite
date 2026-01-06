@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 
 // Support multiple domains - uses primary domain for metadata
 const primaryDomain =
-  process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yourdomain.com";
+  process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com";
 
 // Validate URL format - if invalid, use fallback
 let metadataBaseUrl: URL;
@@ -33,7 +33,7 @@ try {
   console.warn(
     `Invalid NEXT_PUBLIC_PRIMARY_DOMAIN: "${primaryDomain}". Using fallback.`
   );
-  metadataBaseUrl = new URL("https://yourdomain.com");
+  metadataBaseUrl = new URL("https://yousufrice.com");
 }
 
 export const viewport: Viewport = {
