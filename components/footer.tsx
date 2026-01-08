@@ -106,6 +106,17 @@ export function Footer() {
           <p className="text-white/60 text-sm">
             © {new Date().getFullYear()} Yousuf Rice. All rights reserved.
           </p>
+          <p className="text-white/60 text-sm mt-2">
+            Design and developed by{' '}
+            <a 
+              href="https://contra.com/muhammadwahajofficiall_f1yj87dw/services" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-[#ffff03] transition-colors underline decoration-dotted underline-offset-4"
+            >
+              Muhammad Wahaj
+            </a>
+          </p>
         </div>
       </div>
     </footer>
