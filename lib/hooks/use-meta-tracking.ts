@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback } from 'react';
-import { generateEventId, getFacebookCookies, type MetaCustomData } from '@/lib/meta';
+import {
+  generateEventId, 
+  getFacebookCookies, 
+  sanitizeCustomerNameForMeta,
+  type MetaCustomData 
+} from '@/lib/meta';
 
 // Get test event code from environment variable
 const TEST_EVENT_CODE = process.env.NEXT_PUBLIC_META_TEST_EVENT_CODE || '';
@@ -69,6 +74,8 @@ export function useMetaTracking() {
           event_source_url: eventSourceUrl,
           user_data: {
             ...userData,
+            firstName: userData.firstName ? sanitizeCustomerNameForMeta(userData.firstName) : undefined,
+            lastName: userData.lastName ? sanitizeCustomerNameForMeta(userData.lastName) : undefined,
             fbp,
             fbc,
           },

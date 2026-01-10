@@ -4,6 +4,7 @@ import {
   prepareUserData,
   getClientIp,
   getCurrentTimestamp,
+  sanitizeCustomerNameForMeta,
   type MetaEvent,
   type MetaCustomData,
 } from '@/lib/meta';
@@ -37,8 +38,8 @@ export async function POST(request: NextRequest) {
     const preparedUserData = prepareUserData({
       email: user_data?.email,
       phone: user_data?.phone,
-      firstName: user_data?.firstName,
-      lastName: user_data?.lastName,
+      firstName: sanitizeCustomerNameForMeta(user_data?.firstName),
+      lastName: sanitizeCustomerNameForMeta(user_data?.lastName),
       city: user_data?.city,
       state: user_data?.state,
       zipCode: user_data?.zipCode,

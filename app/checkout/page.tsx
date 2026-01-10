@@ -341,6 +341,36 @@ export default function CheckoutPage() {
       // Format phone number first
       const formattedPhone = formatPhoneNumber(cleanedPhone);
 
+      // ---------------------------------------------------------
+      // AGENT ID LOGIC: Append (S) or (K) for specific agents
+      // ---------------------------------------------------------
+      let dbFullName = formData.fullName;
+      if (user && user.labels) {
+        // Case-insensitive check for agent labels
+        const labels = user.labels.map(l => l.toLowerCase());
+        let suffix = '';
+
+        if (labels.includes('saima')) {
+          suffix = ' (S)';
+        } else if (labels.includes('kiran')) {
+          suffix = ' (K)';
+        }
+
+        // Append suffix if found and not already present (avoid duplicates)
+        if (suffix) {
+          // Check if name already ends with this suffix (ignoring case)
+          const lowerName = dbFullName.toLowerCase();
+          const lowerSuffix = suffix.toLowerCase();
+
+          if (!lowerName.endsWith(lowerSuffix)) {
+            // Also check if it ends with just the letter part e.g. " (s)" or " (S)"
+            // to be safe, but generic check is safer.
+            dbFullName = dbFullName + suffix;
+          }
+        }
+      }
+      // ---------------------------------------------------------
+
       // Check if a customer with this phone number already exists
       const existingCustomerByPhone = await databases.listDocuments(
         DATABASE_ID,
@@ -375,7 +405,7 @@ export default function CheckoutPage() {
           customerId,
           {
             user_id: userIdToSave,
-            full_name: formData.fullName,
+            full_name: dbFullName,
             email: formData.email || null,
             phone: formattedPhone, // Ensure phone is formatted
           }
@@ -389,7 +419,7 @@ export default function CheckoutPage() {
           customerId,
           {
             user_id: user?.$id || "guest",
-            full_name: formData.fullName,
+            full_name: dbFullName,
             phone: formattedPhone,
             email: formData.email || null,
           }
@@ -911,7 +941,7 @@ export default function CheckoutPage() {
                     disabled={loading}
                   >
                     {loading
-                      ? "⏳ Placing Order..."
+                      ? "🚀 Placing Order. Please wait..."
                       : "🛒 Place Order (Cash on Delivery)"}
                   </Button>
                 </form>
