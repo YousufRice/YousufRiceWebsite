@@ -42,6 +42,8 @@ interface OrderConfirmationData {
   totalPrice: number;
   totalSavings?: number;
   totalOriginalPrice?: number;
+  loyaltyCode?: string;
+  loyaltyPercent?: number;
 }
 
 interface ContactFormData {
@@ -66,6 +68,8 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
     totalPrice,
     totalSavings = 0,
     totalOriginalPrice = 0,
+    loyaltyCode,
+    loyaltyPercent,
   } = data;
 
   // Generate order items HTML
@@ -208,6 +212,26 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
                   </td>
                 </tr>
               </table>
+
+              ${loyaltyCode ? `
+              <!-- Loyalty Reward -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #27247b 0%, #1e1b4b 100%); border: 2px solid #ffff03; border-radius: 8px; margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 25px; text-align: center;">
+                    <h3 style="margin: 0 0 10px 0; color: #ffff03; font-size: 22px;">🎁 Loyalty Reward Unlocked!</h3>
+                    <p style="margin: 0 0 15px 0; color: #ffffff; font-size: 14px;">
+                      You've earned a special <strong>${loyaltyPercent}% discount</strong> for your next purchase!
+                    </p>
+                    <div style="background-color: rgba(255, 255, 255, 0.1); border: 1px dashed #ffff03; padding: 10px; border-radius: 6px; display: inline-block;">
+                      <span style="color: #ffff03; font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px;">${loyaltyCode}</span>
+                    </div>
+                    <p style="margin: 15px 0 0 0; color: #9ca3af; font-size: 12px;">
+                      Use this code at checkout on your next order.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
 
               <!-- Contact Info -->
               <p style="color: #6b7280; line-height: 1.6; margin: 0; font-size: 14px;">

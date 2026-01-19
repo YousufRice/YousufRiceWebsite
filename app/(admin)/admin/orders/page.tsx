@@ -58,6 +58,7 @@ import { Query } from "appwrite";
 import toast from "react-hot-toast";
 import DeleteOrderDialog from "@/components/admin/DeleteOrderDialog";
 import EditOrderDialog from "@/components/admin/EditOrderDialog";
+import { Loader2 } from "lucide-react";
 
 interface OrderWithCustomer extends Order {
   customer?: Customer;
@@ -87,6 +88,9 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<OrderWithCustomer | null>(
     null
   );
+  
+  // Track which orders are currently updating to show specific loading states
+  const [updatingOrderIds, setUpdatingOrderIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Reset pagination and reload when filter changes
@@ -271,15 +275,43 @@ export default function AdminOrdersPage() {
     orderId: string,
     newStatus: Order["status"]
   ) => {
+    // Prevent multiple updates for the same order
+    if (updatingOrderIds.has(orderId)) return;
+
+    // Add to updating set
+    setUpdatingOrderIds((prev) => new Set(prev).add(orderId));
+
     try {
       await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
         status: newStatus,
       });
-      toast.success("Order status updated!");
-      fetchOrders();
+      
+      // Optimistic update: Update local state immediately
+      setOrders((prevOrders) => 
+        prevOrders.map((order) => 
+          order.$id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+      
+      setFilteredOrders((prevOrders) => 
+        prevOrders.map((order) => 
+          order.$id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+
+      toast.success(`Order updated to ${newStatus.replace("_", " ")}`);
+      
+      // We do NOT call fetchOrders() here to preserve the list state and enable rapid updates
     } catch (error) {
       console.error("Error updating order:", error);
       toast.error("Failed to update order status");
+    } finally {
+      // Remove from updating set
+      setUpdatingOrderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
     }
   };
 
@@ -633,8 +665,13 @@ export default function AdminOrdersPage() {
                                 updateOrderStatus(order.$id, "accepted")
                               }
                               className="bg-blue-600 hover:bg-blue-700"
+                              disabled={updatingOrderIds.has(order.$id)}
                             >
-                              <Package className="w-4 h-4 mr-2" />
+                              {updatingOrderIds.has(order.$id) ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <Package className="w-4 h-4 mr-2" />
+                              )}
                               Accept Order
                             </Button>
                           </ReadOnlyGuard>
@@ -648,8 +685,13 @@ export default function AdminOrdersPage() {
                                 updateOrderStatus(order.$id, "out_for_delivery")
                               }
                               className="bg-purple-600 hover:bg-purple-700"
+                              disabled={updatingOrderIds.has(order.$id)}
                             >
-                              <Truck className="w-4 h-4 mr-2" />
+                              {updatingOrderIds.has(order.$id) ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <Truck className="w-4 h-4 mr-2" />
+                              )}
                               Out for Delivery
                             </Button>
                           </ReadOnlyGuard>
@@ -663,14 +705,20 @@ export default function AdminOrdersPage() {
                                 updateOrderStatus(order.$id, "delivered")
                               }
                               className="bg-green-600 hover:bg-green-700"
+                              disabled={updatingOrderIds.has(order.$id)}
                             >
-                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              {updatingOrderIds.has(order.$id) ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                              )}
                               Mark Delivered
                             </Button>
                           </ReadOnlyGuard>
                         )}
 
-                        {order.status === "delivered" && (
+                        {/* Returned button available for Accepted, Out for Delivery, and Delivered */}
+                        {["accepted", "out_for_delivery", "delivered"].includes(order.status) && (
                           <ReadOnlyGuard>
                             <Button
                               size="sm"
@@ -678,9 +726,35 @@ export default function AdminOrdersPage() {
                                 updateOrderStatus(order.$id, "returned")
                               }
                               className="bg-red-600 hover:bg-red-700"
+                              disabled={updatingOrderIds.has(order.$id)}
                             >
-                              <RotateCcw className="w-4 h-4 mr-2" />
-                              Mark as Returned
+                              {updatingOrderIds.has(order.$id) ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                              )}
+                              Return
+                            </Button>
+                          </ReadOnlyGuard>
+                        )}
+
+                        {/* Re-open returned order if needed */}
+                         {order.status === "returned" && (
+                          <ReadOnlyGuard>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                updateOrderStatus(order.$id, "pending")
+                              }
+                              variant="outline"
+                              disabled={updatingOrderIds.has(order.$id)}
+                            >
+                              {updatingOrderIds.has(order.$id) ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : (
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                              )}
+                              Re-open
                             </Button>
                           </ReadOnlyGuard>
                         )}
