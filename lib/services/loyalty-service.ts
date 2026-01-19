@@ -77,6 +77,7 @@ export class LoyaltyService {
         orderAmount,
         hasHotelRestaurantProduct
       );
+      
       if (!isEligible) {
         return null;
       }
@@ -213,7 +214,11 @@ export class LoyaltyService {
       const records = await databases.listDocuments(
         DATABASE_ID,
         DISCOUNT_MANAGEMENT_TABLE_ID,
-        [Query.equal("customer_id", customerId)]
+        [
+          Query.equal("customer_id", customerId),
+          Query.orderDesc("$createdAt"), // Get the latest one
+          Query.limit(1)
+        ]
       );
 
       if (records.documents.length === 0) {

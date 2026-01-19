@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
       mapsUrl,
       items,
       totalPrice,
+      loyaltyCode,
+      loyaltyPercent,
     } = body;
 
     // Validate required fields
@@ -43,6 +45,8 @@ export async function POST(request: NextRequest) {
       mapsUrl,
       items,
       totalPrice,
+      loyaltyCode,
+      loyaltyPercent,
     });
 
     return NextResponse.json({

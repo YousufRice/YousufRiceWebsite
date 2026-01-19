@@ -32,6 +32,7 @@ import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
 import { MapPin, Gift, Check, X } from "lucide-react";
 import { LoyaltyService, LoyaltyDiscount } from "@/lib/services/loyalty-service";
+import { processLoyaltyReward } from "@/app/actions/loyalty-actions";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -626,7 +627,41 @@ export default function CheckoutPage() {
         },
       });
 
-      // Send order confirmation email if email is provided
+
+
+      // Mark discount code as used if applied
+      if (appliedDiscount) {
+        try {
+          await LoyaltyService.validateAndUseDiscountCode(
+            appliedDiscount.discount_code,
+            orderId
+          );
+        } catch (discountError) {
+          console.error("Error marking discount as used:", discountError);
+          // Don't fail the order, but log it for admin attention
+        }
+      }
+
+      let loyaltyData = null;
+
+      // Process loyalty discount (for NEXT order)
+      try {
+        const productNames = items.map((item) => item.product.name);
+
+        // Use Server Action to ensure secure execution with API key
+        loyaltyData = await processLoyaltyReward(
+          customerId,
+          formData.fullName,
+          getTotalPrice(),
+          productNames,
+          orderId
+        );
+      } catch (loyaltyError) {
+        console.error("Error processing loyalty discount:", loyaltyError);
+        // Don't block the flow if loyalty processing fails
+      }
+
+      // Send order confirmation email if email is provided (AFTER loyalty check)
       if (formData.email) {
         try {
           await fetch("/api/send-order-confirmation", {
@@ -659,44 +694,16 @@ export default function CheckoutPage() {
               totalPrice: getTotalPrice(),
               totalSavings,
               totalOriginalPrice,
+              loyaltyCode: loyaltyData?.discount_code,
+              loyaltyPercent: loyaltyData?.discount_percentage,
             }),
           });
           // Don't block order completion if email fails
-          console.log("Order confirmation email sent");
+          console.log("Order confirmation email sent (with loyalty info if applicable)");
         } catch (emailError) {
           console.error("Failed to send order confirmation email:", emailError);
           // Continue with order completion even if email fails
         }
-      }
-
-      // Mark discount code as used if applied
-      if (appliedDiscount) {
-        try {
-          await LoyaltyService.validateAndUseDiscountCode(
-            appliedDiscount.discount_code,
-            orderId
-          );
-        } catch (discountError) {
-          console.error("Error marking discount as used:", discountError);
-          // Don't fail the order, but log it for admin attention
-        }
-      }
-
-      let loyaltyData = null;
-
-      // Process loyalty discount (for NEXT order)
-      try {
-        const productNames = items.map((item) => item.product.name);
-        loyaltyData = await LoyaltyService.processLoyaltyDiscount(
-          customerId,
-          formData.fullName,
-          getTotalPrice(),
-          productNames,
-          orderId
-        );
-      } catch (loyaltyError) {
-        console.error("Error processing loyalty discount:", loyaltyError);
-        // Don't block the flow if loyalty processing fails
       }
 
       toast.success("Order placed successfully!");
