@@ -47,7 +47,8 @@ export default function AdminDashboard() {
   const { hasReadPermission, hasWritePermission } = useAuthStore();
   const [stats, setStats] = useState({
     totalOrders: 0,
-    totalRevenue: 0,
+    monthlyRevenue: 0,
+    lifetimeRevenue: 0,
     totalProducts: 0,
     totalCustomers: 0,
     pendingOrders: 0,
@@ -70,9 +71,6 @@ export default function AdminDashboard() {
 
       try {
         const now = new Date();
-        const thirtyDaysAgo = new Date(
-          now.getTime() - 30 * 24 * 60 * 60 * 1000
-        );
 
         const [
           ordersRes,
@@ -83,11 +81,12 @@ export default function AdminDashboard() {
           outForDeliveryRes,
           deliveredRes,
           recentOrdersRes,
-          lastMonthOrdersRes,
+
           orderItemsRes,
         ] = await Promise.all([
           databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
             Query.limit(5000),
+            Query.orderDesc("$createdAt"),
           ]),
           databases.listDocuments(DATABASE_ID, PRODUCTS_TABLE_ID),
           databases.listDocuments(DATABASE_ID, CUSTOMERS_TABLE_ID),
@@ -107,40 +106,73 @@ export default function AdminDashboard() {
             Query.orderDesc("$createdAt"),
             Query.limit(5),
           ]),
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.greaterThan("$createdAt", thirtyDaysAgo.toISOString()),
-          ]),
           databases.listDocuments(DATABASE_ID, ORDER_ITEMS_TABLE_ID, [
             Query.limit(5000),
           ]),
         ]);
 
-        const totalRevenue = ordersRes.documents.reduce(
+
+        // Calculate Lifetime Revenue
+        const lifetimeRevenue = ordersRes.documents.reduce(
           (sum: number, order: any) => {
-            // Exclude returned orders from revenue calculation
             if (order.status === "returned") return sum;
             return sum + (order.total_price || 0);
           },
           0
         );
 
-        const lastMonthRevenue = lastMonthOrdersRes.documents.reduce(
-          (sum: number, order: any) => {
-            // Exclude returned orders from revenue calculation
-            if (order.status === "returned") return sum;
-            return sum + (order.total_price || 0);
-          },
-          0
-        );
+        // Calculate Monthly Revenue (MTD)
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const currentDate = now.getDate(); // 1-31
 
-        const previousRevenue = totalRevenue - lastMonthRevenue;
+        const thisMonthStart = new Date(currentYear, currentMonth, 1);
+        const nextMonthStart = new Date(currentYear, currentMonth + 1, 1);
+
+        const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
+        // Correctly handle end of last month for comparison (e.g. if today is 19th, compare with 19th of last month)
+        // Also handle edge cases where last month has fewer days (e.g. Mar 31 -> Feb 28/29)
+        const daysInLastMonth = new Date(currentYear, currentMonth, 0).getDate();
+        const compareDate = Math.min(currentDate, daysInLastMonth);
+        const lastMonthEnd = new Date(currentYear, currentMonth - 1, compareDate, 23, 59, 59, 999);
+
+        // Filter for This Month (MTD)
+        const thisMonthOrders = ordersRes.documents.filter((order: any) => {
+          const orderDate = new Date(order.$createdAt);
+          return orderDate >= thisMonthStart && orderDate < nextMonthStart;
+        });
+
+        const thisMonthRevenue = thisMonthOrders.reduce((sum: number, order: any) => {
+          if (order.status === "returned") return sum;
+          return sum + (order.total_price || 0);
+        }, 0);
+
+        // Filter for Last Month (MTD equivalent)
+        const lastMonthOrdersMTD = ordersRes.documents.filter((order: any) => {
+          const orderDate = new Date(order.$createdAt);
+          return orderDate >= lastMonthStart && orderDate <= lastMonthEnd;
+        });
+
+        const lastMonthRevenueMTD = lastMonthOrdersMTD.reduce((sum: number, order: any) => {
+          if (order.status === "returned") return sum;
+          return sum + (order.total_price || 0);
+        }, 0);
+
         const revenueGrowth =
-          previousRevenue > 0
-            ? (lastMonthRevenue / previousRevenue) * 100 - 100
+          lastMonthRevenueMTD > 0
+            ? ((thisMonthRevenue - lastMonthRevenueMTD) / lastMonthRevenueMTD) * 100
             : 0;
+
+        // Last Month Orders count for Growth (using MTD logic broadly or just full month? 
+        // usually order growth is also interesting as MTD. Let's keep existing logic or align it.
+        // The existing logic used `lastMonthOrdersRes` which was simply > 30 days ago.
+        // Let's improve Order Growth to be MTD as well for consistency.
+        const lastMonthOrdersCountMTD = lastMonthOrdersMTD.length;
+        const thisMonthOrdersCount = thisMonthOrders.length;
+
         const ordersGrowth =
-          ordersRes.total > 0
-            ? (lastMonthOrdersRes.total / ordersRes.total) * 100
+          lastMonthOrdersCountMTD > 0
+            ? ((thisMonthOrdersCount - lastMonthOrdersCountMTD) / lastMonthOrdersCountMTD) * 100
             : 0;
 
         const availableProducts = (productsRes.documents as any[]).filter(
@@ -149,7 +181,8 @@ export default function AdminDashboard() {
 
         setStats({
           totalOrders: ordersRes.total,
-          totalRevenue,
+          monthlyRevenue: thisMonthRevenue,
+          lifetimeRevenue: lifetimeRevenue,
           totalProducts: productsRes.total,
           totalCustomers: customersRes.total,
           pendingOrders: pendingRes.total,
@@ -264,9 +297,9 @@ export default function AdminDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Total Revenue</p>
+                  <p className="text-sm text-gray-500 mb-1">Monthly Revenue</p>
                   <p className="text-3xl font-bold text-green-600">
-                    {formatCurrency(stats.totalRevenue)}
+                    {formatCurrency(stats.monthlyRevenue)}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -278,18 +311,38 @@ export default function AdminDashboard() {
                   <>
                     <ArrowUpRight className="w-4 h-4 text-green-600 mr-1" />
                     <span className="text-green-600 font-medium">
-                      +{stats.revenueGrowth}%
+                      +{Math.round(stats.revenueGrowth)}%
                     </span>
                   </>
                 ) : (
                   <>
                     <ArrowDownRight className="w-4 h-4 text-red-600 mr-1" />
                     <span className="text-red-600 font-medium">
-                      {stats.revenueGrowth}%
+                      {Math.round(stats.revenueGrowth)}%
                     </span>
                   </>
                 )}
-                <span className="text-gray-500 ml-2">vs last month</span>
+                <span className="text-gray-500 ml-2">vs last month (MTD)</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Lifetime Revenue</p>
+                  <p className="text-3xl font-bold text-emerald-600">
+                    {formatCurrency(stats.lifetimeRevenue)}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+              <div className="flex items-center text-sm">
+                <TrendingUp className="w-4 h-4 text-emerald-600 mr-1" />
+                <span className="text-gray-600">Total earnings</span>
               </div>
             </CardContent>
           </Card>
