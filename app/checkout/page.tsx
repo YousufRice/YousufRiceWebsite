@@ -42,6 +42,11 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  // Detect if user is an agent (Saima or Kiran) - case insensitive
+  const isAgent = user?.labels?.some(label =>
+    ['saima', 'kiran'].includes(label.toLowerCase())
+  );
+
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -67,9 +72,9 @@ export default function CheckoutPage() {
     checkAuth();
   }, [checkAuth]);
 
-  // Auto-fill customer information if logged in
+  // Auto-fill customer information if logged in (SKIP FOR AGENTS)
   useEffect(() => {
-    if (user) {
+    if (user && !isAgent) {
       setFormData((prev) => ({
         ...prev,
         fullName: user.name || prev.fullName,
@@ -77,7 +82,7 @@ export default function CheckoutPage() {
         email: user.email || prev.email,
       }));
     }
-  }, [user]);
+  }, [user, isAgent]);
 
   useEffect(() => {
     // Only redirect if items are empty AND order hasn't been placed
@@ -85,14 +90,25 @@ export default function CheckoutPage() {
       router.push("/cart");
     } else if (items.length > 0) {
       // Track InitiateCheckout when user lands on checkout page
+      // Filter out agent data
+      const safeUser = isAgent ? null : user;
+
       trackInitiateCheckout({
         value: getTotalPrice(),
         currency: "PKR",
         numItems: items.reduce((sum, item) => sum + item.quantity, 0),
         contentIds: items.map((item) => item.product.$id),
+        userData: {
+          email: safeUser?.email || formData.email || undefined,
+          phone: safeUser?.phone || formData.phone || undefined,
+          externalId: safeUser?.$id || undefined,
+          firstName: (safeUser?.name || formData.fullName)?.split(' ')[0],
+          lastName: (safeUser?.name || formData.fullName)?.split(' ').slice(1).join(' '),
+          city: "Karachi", // Default to Karachi context if unknown
+        }
       });
     }
-  }, [items, router, getTotalPrice, trackInitiateCheckout]);
+  }, [items, router, getTotalPrice, trackInitiateCheckout, user, isAgent, formData]);
 
   const handleGetLocation = () => {
     setGettingLocation(true);
@@ -624,6 +640,7 @@ export default function CheckoutPage() {
           phone: formattedPhone,
           firstName: cleanedName.split(" ")[0],
           lastName: cleanedName.split(" ").slice(1).join(" "),
+          externalId: customerId || (!isAgent ? user?.$id : undefined), // CRITICAL: Link to customer/user ID, but NEVER agent ID
         },
       });
 
