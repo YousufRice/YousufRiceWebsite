@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useAuthStore } from "@/lib/store/auth-store";
 import {
   Plus,
   Minus,
@@ -32,6 +33,12 @@ export default function ProductDetailClient({
     useState(primaryImageIndex);
   const [isBuyNowHovered, setIsBuyNowHovered] = useState(false);
   const { trackViewContent, trackAddToCart } = useMetaTracking();
+  const { user } = useAuthStore();
+
+  // Detect if user is an agent (Saima or Kiran) - case insensitive
+  const isAgent = user?.labels?.some(label =>
+    ['saima', 'kiran'].includes(label.toLowerCase())
+  );
 
   const {
     bagCounts,
@@ -45,20 +52,39 @@ export default function ProductDetailClient({
 
   // Track ViewContent event when product page loads
   useEffect(() => {
+    // Don't send user data if it's an agent
+    const userData = (user && !isAgent) ? {
+      email: user.email,
+      phone: user.phone,
+      externalId: user.$id,
+      firstName: user.name?.split(' ')[0],
+      lastName: user.name?.split(' ').slice(1).join(' '),
+    } : undefined;
+
     trackViewContent({
       contentName: product.name,
       contentId: product.$id,
       contentType: "product",
       value: totalPrice,
       currency: "PKR",
+      userData,
     });
-  }, [product.$id, product.name, totalPrice, trackViewContent]);
+  }, [product.$id, product.name, totalPrice, trackViewContent, user, isAgent]);
 
   // Wrapper for handleBuyNow with analytics tracking
   const handleBuyNow = () => {
     if (totalKg === 0) {
       return; // Hook already shows error toast
     }
+
+    // Don't send user data if it's an agent
+    const userData = (user && !isAgent) ? {
+      email: user.email,
+      phone: user.phone,
+      externalId: user.$id,
+      firstName: user.name?.split(' ')[0],
+      lastName: user.name?.split(' ').slice(1).join(' '),
+    } : undefined;
 
     // Track AddToCart event
     trackAddToCart({
@@ -67,6 +93,7 @@ export default function ProductDetailClient({
       value: totalPrice,
       currency: "PKR",
       quantity: totalKg,
+      userData,
     });
 
     // Call the hook's buyNow function
@@ -151,8 +178,8 @@ export default function ProductDetailClient({
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
                     className={`relative aspect-square rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${selectedImageIndex === index
-                        ? "border-[#ffff03] ring-4 ring-[#ffff03]/30 shadow-lg"
-                        : "border-gray-200 hover:border-[#27247b]/30"
+                      ? "border-[#ffff03] ring-4 ring-[#ffff03]/30 shadow-lg"
+                      : "border-gray-200 hover:border-[#27247b]/30"
                       }`}
                   >
                     <Image

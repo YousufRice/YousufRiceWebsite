@@ -112,9 +112,21 @@ export function useMetaTracking() {
     contentType?: string;
     value?: number;
     currency?: string;
+    userData?: {
+      email?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
+      externalId?: string;
+    };
   }) => {
     return trackEvent({
       eventName: 'ViewContent',
+      userData: productData.userData,
       customData: {
         content_name: productData.contentName,
         content_ids: [productData.contentId],
@@ -131,9 +143,21 @@ export function useMetaTracking() {
     value: number;
     currency?: string;
     quantity?: number;
+    userData?: {
+      email?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
+      externalId?: string;
+    };
   }) => {
     return trackEvent({
       eventName: 'AddToCart',
+      userData: cartData.userData,
       customData: {
         content_name: cartData.contentName,
         content_ids: [cartData.contentId],
@@ -155,9 +179,21 @@ export function useMetaTracking() {
     currency?: string;
     numItems: number;
     contentIds: string[];
+    userData?: {
+      email?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
+      externalId?: string;
+    };
   }) => {
     return trackEvent({
       eventName: 'InitiateCheckout',
+      userData: checkoutData.userData,
       customData: {
         value: checkoutData.value,
         currency: checkoutData.currency || 'PKR',
@@ -184,6 +220,7 @@ export function useMetaTracking() {
       phone?: string;
       firstName?: string;
       lastName?: string;
+      externalId?: string;
     };
   }) => {
     return trackEvent({
