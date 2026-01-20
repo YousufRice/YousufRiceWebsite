@@ -56,6 +56,11 @@ export const metadata: Metadata = {
   description:
     "Order premium quality basmati and sella rice online with discounts, free delivery, and cash on delivery. Every Grain XXXL, Steam Rice, Sella Rice, and Bachat varieties available.",
   keywords: [
+    "SS Rice",
+    "SSRice",
+    "SS Rice Mills",
+    "SS Rice Mill",
+    "SS International",
     "rice delivery",
     "basmati rice",
     "sella rice",
@@ -80,7 +85,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_PK",
     url: primaryDomain,
-    siteName: "Yousuf Rice",
+    siteName: "Yousuf Rice - Part of SS International",
     title: "Yousuf Rice - Premium Quality Rice Delivery",
     description:
       "Order premium quality rice online with With Discounts, free delivery, and cash on delivery. Best prices in Pakistan.",
@@ -113,6 +118,29 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Yousuf Rice",
+  alternateName: [
+    "SS Rice",
+    "SS Rice Mills",
+    "SSRice",
+    "Yousuf Rice Mill",
+    "SS International",
+  ],
+  url: "https://yousufrice.com",
+  logo: "https://yousufrice.com/images/logo.png",
+  sameAs: ["https://ssricemills.com", "https://yousufricemill.com"],
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+92-304-1117423",
+    contactType: "customer service",
+    areaServed: "PK",
+    availableLanguage: "en",
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -121,6 +149,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <MetaPixel />
       </head>
       <body

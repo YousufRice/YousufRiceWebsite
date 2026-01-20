@@ -10,7 +10,10 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-2xl font-bold text-[#ffff03] mb-4">Yousuf Rice</h3>
+            <h3 className="text-2xl font-bold text-[#ffff03] mb-1">Yousuf Rice</h3>
+            <p className="text-[#ffff03]/80 text-xs font-semibold uppercase tracking-wider mb-4">
+              © Yousuf Rice | A Brand of SS International
+            </p>
             <p className="text-white/80 text-sm leading-relaxed mb-4">
               Premium quality rice delivered to your doorstep. Experience the finest selection of rice varieties for your family.
             </p>
@@ -91,8 +94,8 @@ export function Footer() {
               </li>
             </ul>
             <div className="mt-4">
-              <Link 
-                href="/contact" 
+              <Link
+                href="/contact"
                 className="inline-block bg-[#ffff03] text-[#27247b] px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-white transition-all duration-300 hover:scale-105 shadow-lg"
               >
                 Contact Us Page
@@ -108,9 +111,9 @@ export function Footer() {
           </p>
           <p className="text-white/60 text-sm mt-2">
             Design and developed by{' '}
-            <a 
-              href="https://contra.com/muhammadwahajofficiall_f1yj87dw/services" 
-              target="_blank" 
+            <a
+              href="https://contra.com/muhammadwahajofficiall_f1yj87dw/services"
+              target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#ffff03] transition-colors underline decoration-dotted underline-offset-4"
             >
