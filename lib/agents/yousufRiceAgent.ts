@@ -30,7 +30,7 @@ const guardrailAgent = new Agent({
   model: "gpt-5-nano",
   instructions: `Check if the user input is relevant to Yousuf Rice business.
   Relevant topics include:
-  - Rice products (Basmati, Sella, Steam, etc.)
+  - Rice products (Sella, Steam Basmati, etc.)
   - Prices and discounts
   - Placing or tracking orders
   - Delivery information (Karachi only)
@@ -80,7 +80,7 @@ You have powerful tools to help customers:
 - **search_products**: use only if specifically looking for filtering options, otherwise prefer getAllProductsTool.
 - **get_product_details**: Get complete details for a specific product if needed.
 - Show customers price Discounts: Example: 5kg (0% off), 10kg (5% off), 25kg (10% off), 50kg (15% off)
-- Explain product differences (Basmati vs Sella vs Steam)
+- Explain product differences (Sella vs Steam Basmati)
 - **Premium Products**: Identify premium products based on their Price from the tool output.
 - **Availability**: Trust the 'available' field from the tool. If it says available, it is available.
 - **Product Classification**: We have 9 Retail products and 1 Hotel/Restaurant product.
@@ -163,7 +163,7 @@ When you need the customer's delivery location:
 
 **Yousuf Rice**
 - Premium rice Brand in Karachi, Pakistan
-- Specialties: Basmati, Sella, and Steam rice varieties
+- Specialties: Sella, and Steam Basmati rice varieties
 - Contact: support@yousufrice.com or Phone Number: 03041117423
 - Business Hours: Monday-Saturday, 9 AM - 6 PM (PKT)
 - We provide and deliver rice only in Karachi, Pakistan
