@@ -89,21 +89,12 @@ export const metadata: Metadata = {
     title: "Yousuf Rice - Premium Quality Rice Delivery",
     description:
       "Order premium quality rice online with With Discounts, free delivery, and cash on delivery. Best prices in Pakistan.",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Yousuf Rice - Premium Quality Rice Delivery",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Yousuf Rice - Premium Quality Rice Delivery",
     description:
       "Order premium quality rice online with tier-based pricing and free delivery",
-    images: ["/opengraph-image"],
   },
   robots: {
     index: true,
@@ -149,10 +140,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
         <MetaPixel />
       </head>
       <body
@@ -184,6 +171,10 @@ export default function RootLayout({
           <PWAInstall />
         </Suspense>
         <ImageProtection />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </body>
     </html>
   );
