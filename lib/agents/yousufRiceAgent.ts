@@ -1,4 +1,5 @@
-import { Agent } from "@openai/agents";
+import { Agent, run, InputGuardrail } from "@openai/agents";
+import { z } from "zod";
 import {
   searchProductsTool,
   getProductDetailsTool,
@@ -23,9 +24,51 @@ import { checkLoyaltyRewardTool } from "./tools/loyaltyTools";
  *
  * The agent always asks for confirmation before taking actions like creating orders.
  */
+
+const guardrailAgent = new Agent({
+  name: "Safety Guardrail",
+  model: "gpt-5-nano",
+  instructions: `Check if the user input is relevant to Yousuf Rice business.
+  Relevant topics include:
+  - Rice products (Basmati, Sella, Steam, etc.)
+  - Prices and discounts
+  - Placing or tracking orders
+  - Delivery information (Karachi only)
+  - Company information and policies
+  - Customer service inquiries
+  - General greetings (Hello, Hi, Salam)
+
+  Irrelevant topics include:
+  - Math homework or general extensive calculations
+  - Coding or programming questions
+  - Creative writing (poems, stories) unrelated to rice
+  - General knowledge questions not related to rice/cooking/Pakistan
+  - Politics or sensitive topics
+  
+  Return isRelevant: true for relevant topics, false otherwise.`,
+  outputType: z.object({
+    isRelevant: z.boolean(),
+    reasoning: z.string(),
+  }),
+});
+
+const safetyGuardrail: InputGuardrail = {
+  name: "Relevance Guardrail",
+  runInParallel: false, // Block execution to save costs if irrelevant
+  execute: async ({ input, context }) => {
+    // If input is not a string (e.g. image), let it pass or handle accordingly.
+    // The SDK types suggest input is what's passed to run(), usually string.
+    const result = await run(guardrailAgent, input, { context });
+    return {
+      outputInfo: result.finalOutput,
+      tripwireTriggered: result.finalOutput?.isRelevant === false,
+    };
+  },
+};
 export const yousufRiceAgent = Agent.create({
   name: "Yousuf Rice Agent",
   model: "gpt-5.2",
+  inputGuardrails: [safetyGuardrail],
   instructions: `You are the customer service agent and a good sales man for Yousuf Rice, a premium rice supplier in Pakistan. Your name is Sajjad.
 
 # YOUR CAPABILITIES
