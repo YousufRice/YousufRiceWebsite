@@ -44,7 +44,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://yousufrice.com"),
+  metadataBase: metadataBaseUrl,
   alternates: {
     canonical: "/",
   },
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     siteName: "Yousuf Rice - Part of SS International",
     title: "Yousuf Rice - Premium Quality Rice Delivery",
     description:
-      "Order premium quality rice online with With Discounts, free delivery, and cash on delivery. Best prices in Pakistan.",
+      "Order premium quality rice online with Discounts, free delivery, and cash on delivery. Best prices in Pakistan.",
   },
   twitter: {
     card: "summary_large_image",
