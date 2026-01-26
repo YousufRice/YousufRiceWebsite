@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Metadata } from 'next';
 import { getCachedProduct, getCachedProductImagesById } from '@/lib/cached-data';
 import { storage, STORAGE_BUCKET_ID } from '@/lib/appwrite';
 import { ProductDetailSkeleton } from '@/components/loading-skeletons';
@@ -26,6 +27,33 @@ interface ProductPageProps {
  * - Optimal SEO with immediate content
  * - Better UX with loading states
  */
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getCachedProduct(id);
+
+  if (!product) {
+    return {
+      title: 'Product Not Found',
+    };
+  }
+
+  const images = await getCachedProductImagesById(id);
+  const primaryImage = images.find((img) => img.is_primary) || images[0];
+
+  const imageUrl = primaryImage
+    ? `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKET_ID}/files/${primaryImage.file_id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+    : undefined;
+
+  return {
+    title: product.name,
+    description: product.description,
+    openGraph: {
+      title: product.name,
+      description: product.description,
+      images: imageUrl ? [imageUrl] : [],
+    },
+  };
+}
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
 
