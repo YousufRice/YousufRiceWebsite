@@ -32,6 +32,10 @@ export async function PUT(req: NextRequest) {
       updateData
     );
     
+    // Revalidate products cache
+    const { updateTag } = await import('next/cache');
+    updateTag('products');
+    
     return NextResponse.json({
       success: true,
       message: 'Product updated successfully',
@@ -74,6 +78,10 @@ export async function DELETE(req: NextRequest) {
       PRODUCTS_TABLE_ID,
       id
     );
+    
+    // Revalidate products cache
+    const { updateTag } = await import('next/cache');
+    updateTag('products');
     
     return NextResponse.json({
       success: true,

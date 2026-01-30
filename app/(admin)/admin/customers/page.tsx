@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
-import { User, Mail, Phone, ShoppingBag, Search, Users, TrendingUp, DollarSign, Award } from 'lucide-react';
+import { User, Mail, Phone, ShoppingBag, Search, Users, TrendingUp, DollarSign, Award, Download } from 'lucide-react';
 import { Query } from 'appwrite';
 import toast from 'react-hot-toast';
+import { sanitizeCustomerNameForMeta } from '@/lib/meta';
 
 interface CustomerWithStats extends Customer {
   orderCount: number;
@@ -110,6 +111,65 @@ export default function AdminCustomersPage() {
     }
   };
 
+  const exportToMetaCSV = () => {
+    try {
+      if (customers.length === 0) {
+        toast.error('No customers to export');
+        return;
+      }
+
+      const headers = ['email', 'phone', 'fn', 'ln', 'value'];
+      const rows = customers.map(customer => {
+        // Sanitize name
+        const cleanName = sanitizeCustomerNameForMeta(customer.full_name) || '';
+        const nameParts = cleanName.trim().split(/\s+/);
+        const fn = nameParts[0] || '';
+        const ln = nameParts.slice(1).join(' ') || '';
+
+        // Format phone: must include country code. Assume 92 if starts with 0 or has 10 digits
+        let phone = customer.phone.replace(/\D/g, '');
+        if (phone.startsWith('0')) {
+          phone = '92' + phone.substring(1);
+        } else if (phone.length === 10 && !phone.startsWith('92')) {
+          phone = '92' + phone;
+        }
+
+        // Ensure phone has 92 prefix if it's a standard length Pakistani mobile number (10 digits after 0)
+        if (phone.length === 10) {
+          phone = '92' + phone;
+        }
+
+        return [
+          customer.email || '',
+          phone,
+          fn,
+          ln,
+          customer.totalSpent.toFixed(2)
+        ];
+      });
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `meta_audience_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Audience list exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export audience list');
+    }
+  };
+
+
 
   const stats = {
     total: customers.length,
@@ -122,12 +182,22 @@ export default function AdminCustomersPage() {
     <AdminAuthGuard>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Customer Management</h1>
-            <p className="text-lg text-gray-600 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              View and analyze customer data and behavior
-            </p>
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Customer Management</h1>
+              <p className="text-lg text-gray-600 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                View and analyze customer data and behavior
+              </p>
+            </div>
+            <button
+              onClick={exportToMetaCSV}
+              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+              title="Export customer list for Meta Ads Audience upload"
+            >
+              <Download className="w-4 h-4" />
+              Export for Meta
+            </button>
           </div>
 
           {/* Stats Cards */}
