@@ -57,6 +57,7 @@ import Image from "next/image";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import ReadOnlyGuard from "@/components/admin/ReadOnlyGuard";
 import { AdminPermission } from "@/lib/store/auth-store";
+import { clearImageCache } from "@/lib/actions/cache-actions";
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -197,6 +198,8 @@ export default function AdminProductsPage() {
 
       resetForm();
       fetchProducts();
+      // Clear cache so frontend shows updated availability
+      await clearImageCache();
     } catch (error) {
       console.error("Error saving product:", error);
       toast.error("Failed to save product");
@@ -227,6 +230,8 @@ export default function AdminProductsPage() {
       await databases.deleteDocument(DATABASE_ID, PRODUCTS_TABLE_ID, id);
       toast.success("Product deleted successfully!");
       fetchProducts();
+      // Clear cache so frontend reflects the deletion
+      await clearImageCache();
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error("Failed to delete product");
