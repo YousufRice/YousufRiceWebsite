@@ -109,7 +109,7 @@ export async function AsyncProductsList() {
             if (productName.includes("every grain")) {
               category = "Every Grain Rice XXXL";
             } else if (productName.includes("steam")) {
-              category = "Steam Rice";
+              category = "Basmati Steam Rice";
             } else if (productName.includes("sella")) {
               category = "Sella Rice";
             }
