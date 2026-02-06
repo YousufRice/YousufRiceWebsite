@@ -90,7 +90,7 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<OrderWithCustomer | null>(
     null
   );
-  
+
   // Track which orders are currently updating to show specific loading states
   const [updatingOrderIds, setUpdatingOrderIds] = useState<Set<string>>(new Set());
 
@@ -287,22 +287,22 @@ export default function AdminOrdersPage() {
       await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
         status: newStatus,
       });
-      
+
       // Optimistic update: Update local state immediately
-      setOrders((prevOrders) => 
-        prevOrders.map((order) => 
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
           order.$id === orderId ? { ...order, status: newStatus } : order
         )
       );
-      
-      setFilteredOrders((prevOrders) => 
-        prevOrders.map((order) => 
+
+      setFilteredOrders((prevOrders) =>
+        prevOrders.map((order) =>
           order.$id === orderId ? { ...order, status: newStatus } : order
         )
       );
 
       toast.success(`Order updated to ${newStatus.replace("_", " ")}`);
-      
+
       // We do NOT call fetchOrders() here to preserve the list state and enable rapid updates
     } catch (error) {
       console.error("Error updating order:", error);
@@ -372,7 +372,7 @@ export default function AdminOrdersPage() {
       const note = items.length > 0 && items[0].notes ? items[0].notes : "";
       const parts = [
         order.customer?.full_name,
-        order.address?.address_line,
+        order.customer?.phone,
         note
       ].filter(Boolean); // Remove null/undefined/empty strings
 
@@ -774,7 +774,7 @@ export default function AdminOrdersPage() {
                         )}
 
                         {/* Re-open returned order if needed */}
-                         {order.status === "returned" && (
+                        {order.status === "returned" && (
                           <ReadOnlyGuard>
                             <Button
                               size="sm"
