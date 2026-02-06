@@ -464,7 +464,7 @@ export default function AdminOrdersPage() {
             </Card>
           </div>
 
-          {/* Search and Filters */}
+          {/* Search and Filters  */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex flex-col md:flex-row gap-4 mb-4">
