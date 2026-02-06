@@ -12,6 +12,7 @@ import {
   ORDERS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
   ADDRESSES_TABLE_ID,
+  ORDER_ITEMS_TABLE_ID,
 } from "@/lib/appwrite";
 import { Order, Customer, Address } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,7 @@ import {
   Trash2,
   MapPin,
   Scale,
+  Copy,
 } from "lucide-react";
 import { Query } from "appwrite";
 import toast from "react-hot-toast";
@@ -359,6 +361,31 @@ export default function AdminOrdersPage() {
     setDeleteDialogOpen(true);
   };
 
+  const handleCopyDetails = async (order: OrderWithCustomer) => {
+    try {
+      const { documents: items } = await databases.listDocuments(
+        DATABASE_ID,
+        ORDER_ITEMS_TABLE_ID,
+        [Query.equal("order_id", order.$id), Query.limit(1)]
+      );
+
+      const note = items.length > 0 && items[0].notes ? items[0].notes : "";
+      const parts = [
+        order.customer?.full_name,
+        order.address?.address_line,
+        note
+      ].filter(Boolean); // Remove null/undefined/empty strings
+
+      const textToCopy = parts.join("  ");
+
+      await navigator.clipboard.writeText(textToCopy);
+      toast.success("Details copied to clipboard");
+    } catch (error) {
+      console.error("Failed to copy details:", error);
+      toast.error("Failed to copy details");
+    }
+  };
+
   return (
     <AdminAuthGuard>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -618,6 +645,14 @@ export default function AdminOrdersPage() {
                         </p>
                       </div>
                       <div className="flex items-center justify-end gap-2 md:col-span-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleCopyDetails(order)}
+                          title="Copy Details"
+                        >
+                          <Copy className="w-4 h-4 text-gray-500" />
+                        </Button>
                         <ReadOnlyGuard>
                           <Button
                             variant="ghost"
