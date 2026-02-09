@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuthStore } from "@/lib/store/auth-store";
+import { useCartStore } from "@/lib/store/cart-store";
 import {
   Plus,
   Minus,
@@ -34,6 +35,7 @@ export default function ProductDetailClient({
   const [isBuyNowHovered, setIsBuyNowHovered] = useState(false);
   const { trackViewContent, trackAddToCart } = useMetaTracking();
   const { user } = useAuthStore();
+  const { items: cartItems } = useCartStore();
 
   // Detect if user is an agent (Saima or Kiran) - case insensitive
   const isAgent = user?.labels?.some(label =>
@@ -295,6 +297,34 @@ export default function ProductDetailClient({
                   </div>
                 )}
               </div>
+
+              {/* Ramadan Offer Banner */}
+              {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
+                // Calculate total weight from cart (cart already includes current product if added)
+                const cartWeight = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+                return (
+                  <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white shadow-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                      <span className="text-6xl">🌙</span>
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1 text-sm sm:text-base">
+                        <span>🌙</span> Ramadan Special
+                      </h3>
+                      {cartWeight >= 15 ? (
+                        <p className="text-xs sm:text-sm">
+                          🎉 <span className="font-bold text-[#ffff03]">1kg FREE Rice</span> qualified!
+                        </p>
+                      ) : (
+                        <p className="text-xs sm:text-sm">
+                          Add <span className="font-bold text-[#ffff03]">{15 - cartWeight}kg</span> more for 1kg FREE Rice!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="space-y-2 sm:space-y-3">
                 {/* 1kg Bag */}

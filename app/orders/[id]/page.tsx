@@ -434,6 +434,34 @@ export default function OrderDetailPage() {
           </Card>
         )}
 
+        {/* Ramadan Offer Note */}
+        {(() => {
+          // Calculate weight directly from items to ensure accuracy (like checkout page)
+          const calculatedWeight = data.items.reduce((acc, item) => acc + (Number(item.quantity_kg) || 0), 0);
+
+          if (
+            process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' &&
+            calculatedWeight >= 15
+          ) {
+            return (
+              <Card className="border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-[#ffff03]">
+                    <span className="mr-2">🌙</span> Ramadan Gift Qualified
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-white/90">
+                    This order qualifies for the Ramadan Special Offer! <strong className="text-[#ffff03]">1kg Free Rice</strong> will be included in your delivery.
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          }
+          return null;
+        })()}
+
+
         {/* Delivery Address */}
         <Card>
           <CardHeader>
@@ -467,6 +495,6 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
       </div>
-    </div >
+    </div>
   );
 }
