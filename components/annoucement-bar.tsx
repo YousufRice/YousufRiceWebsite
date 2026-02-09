@@ -31,16 +31,10 @@ export default function AnnocementBar() {
       <div className="flex flex-nowrap items-center gap-x-2 sm:gap-x-4 gap-y-2">
         <p className="text-xs sm:text-sm/6 text-gray-900">
           <strong className="font-semibold">
-            Yousuf Rice 2025 - Now delivering premium rice with Free Delivery
+            {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true'
+              ? 'Ramadan Offer: Order 15kg+ & Get 1kg FREE Rice! Free Delivery & up to 12% to 24% OFF.'
+              : 'Yousuf Rice 2026 - Now delivering premium rice with Free Delivery across Karachi!'}
           </strong>
-          <svg
-            viewBox="0 0 2 2"
-            aria-hidden="true"
-            className="mx-2 inline size-0.5 fill-current"
-          >
-            <circle r={1} cx={1} cy={1} />
-          </svg>
-          across Karachi!
         </p>
         <Link
           href="/#products"

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/lib/types";
 import { Card, CardContent } from "./ui/card";
-import { storage, STORAGE_BUCKET_ID } from "@/lib/appwrite";
+import { STORAGE_BUCKET_ID } from "@/lib/appwrite";
 
 interface ProductCardSimpleProps {
   product: Product;
@@ -42,6 +42,13 @@ export function ProductCard({ product, imageFileId }: ProductCardSimpleProps) {
               <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white font-bold text-sm bg-red-600 px-4 py-2 rounded-full">
                   Out of Stock
+                </span>
+              </div>
+            )}
+            {product.available && process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (
+              <div className="absolute top-2 left-2 z-10">
+                <span className="bg-[#ffff03] text-[#27247b] text-[10px] md:text-xs font-bold px-2 py-1 rounded-full shadow-md flex items-center gap-1">
+                  <span>🌙</span> Ramadan Offer
                 </span>
               </div>
             )}
