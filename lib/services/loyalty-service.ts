@@ -281,6 +281,13 @@ export class LoyaltyService {
     orderId: string // Order that generated this discount
   ): Promise<LoyaltyDiscount | null> {
     try {
+      // Check if loyalty discount feature is enabled
+      const isLoyaltyEnabled = process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true';
+      if (!isLoyaltyEnabled) {
+        console.log("Loyalty discount feature is currently disabled");
+        return null;
+      }
+
       // Check if any product is hotel/restaurant product
       const hasHotelRestaurantProduct = productNames.some((name) =>
         this.hasHotelRestaurantProduct(name)
