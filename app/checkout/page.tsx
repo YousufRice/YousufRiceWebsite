@@ -711,6 +711,7 @@ export default function CheckoutPage() {
               totalPrice: getTotalPrice(),
               totalSavings,
               totalOriginalPrice,
+              totalWeight: items.reduce((acc, item) => acc + item.quantity, 0),
               loyaltyCode: loyaltyData?.discount_code,
               loyaltyPercent: loyaltyData?.discount_percentage,
             }),
