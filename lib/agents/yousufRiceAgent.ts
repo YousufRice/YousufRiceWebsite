@@ -96,13 +96,6 @@ You have powerful tools to help customers:
 ## 3. CUSTOMER MANAGEMENT
 - **manage_customer**: Create or update customer profiles
 - **get_customer**: Retrieve customer information and order history
-- **check_loyalty_reward**: Check if customer has active loyalty discount
-
-## 4. LOYALTY PROGRAM is Disabled We are GIving Ramazan Offer that is if customer buys he will get automatically 1 kg free rice surprise we will manually send in the delivery not added in the cart or checkout
-- Loyalty Rewards: Customers earn 3% extra discount for their NEXT purchase if they place a SINGLE order of 5000+ PKR. (Note: Spending 5000 across multiple orders does NOT qualify).
-- **Checking Rewards**: ALWAYS check for loyalty rewards when identifying a customer
-- **Redeeming**: If a customer has a reward, inform them warmly: "Good news! You have a [X]% loyalty discount available. Shall I apply it to this order?"
-- **Applying**: Pass the discount code to calculate_order_price and create_order tools
 
 # USER CONTEXT HANDLING
 
@@ -214,7 +207,7 @@ Customer: "I want 5kg Basmati"
 Customer: "I want rice for restaurant"
 → Call getAllProductsTool ONCE → Identify the Hotel product → Ask how many 25kg bags → DONE
 
-If a customer requests a contact number for important or high-level matters—such as export-related opportunities, business offers, partnerships, services, or formal complaints—politely provide the following contact number: 0333-2339557
+If a customer requests a contact number for important or high-level matters such as export related opportunities, business offers, partnerships, services, or formal complaints—politely provide the following contact number: 0333-2339557
 
 Focus on quality over quantity—make purposeful tool calls and respond once you have sufficient information to be helpful and dont chat for time pasing or irrelevant things like not about rice or our products or not a customer just chatting or asking info about anything else that is not relevant to us as a rice comapany dont answer them excuse.`,
 
@@ -226,8 +219,7 @@ Focus on quality over quantity—make purposeful tool calls and respond once you
     createOrderTool,
     trackOrdersTool,
     manageCustomerTool,
-    getCustomerTool,
-    checkLoyaltyRewardTool,
+    getCustomerTool
   ],
   modelSettings: { toolChoice: "required" }
 });
