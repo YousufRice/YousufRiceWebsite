@@ -473,10 +473,12 @@ export default function OrderDetailPage() {
                 <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
                 <div>
                   <p className="font-medium">{data.address.address_line}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Coordinates: {data.address.latitude.toFixed(6)},{" "}
-                    {data.address.longitude.toFixed(6)}
-                  </p>
+                  {data.address.latitude != null && data.address.longitude != null && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Coordinates: {data.address.latitude.toFixed(15)},{" "}
+                      {data.address.longitude.toFixed(15)}
+                    </p>
+                  )}
                 </div>
               </div>
 
