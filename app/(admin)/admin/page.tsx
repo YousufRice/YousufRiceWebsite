@@ -638,7 +638,7 @@ export default function AdminDashboard() {
                   className="flex items-center gap-2"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  {revalidating ? "Clearing Cache..." : "Clear Image Cache"}
+                  {revalidating ? "Clearing Cache..." : "Clear Cache"}
                 </Button>
               </ReadOnlyGuard>
             </div>
