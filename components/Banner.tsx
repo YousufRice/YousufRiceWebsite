@@ -71,9 +71,21 @@ const Banner: React.FC<BannerProps> = ({
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
+      {/* Blurred Background Layer */}
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src={getImageUrl(images[currentIndex])}
+          alt="Background blur"
+          fill
+          className="object-cover scale-125 blur-3xl"
+          priority={currentIndex === 0}
+          sizes="100vw"
+        />
+      </div>
+
       {/* Image Container */}
       <div
-        className="flex transition-transform duration-500 ease-in-out h-full"
+        className="flex transition-transform duration-500 ease-in-out h-full relative z-1"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((image, index) => (
@@ -82,7 +94,7 @@ const Banner: React.FC<BannerProps> = ({
               src={getImageUrl(image)}
               alt={`Banner ${index + 1}`}
               fill
-              className="object-cover"
+              className="object-contain"
               priority={index === 0}
               sizes="100vw"
             />
@@ -118,40 +130,15 @@ const Banner: React.FC<BannerProps> = ({
             key={index}
             onClick={() => goToSlide(index)}
             className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-200 active:scale-110 ${index === currentIndex
-                ? 'bg-[#27247b] scale-110 sm:scale-125'
-                : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+              ? 'bg-[#27247b] scale-110 sm:scale-125'
+              : 'bg-white bg-opacity-50 hover:bg-opacity-75'
               }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>
 
-      {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 w-full h-0.5 sm:h-1 bg-black bg-opacity-20">
-        {/* Completed portion */}
-        <div
-          className="absolute top-0 left-0 h-full bg-white transition-all duration-300 ease-out"
-          style={{
-            width: `${(currentIndex / images.length) * 100}%`
-          }}
-        />
-        {/* Current animating portion */}
-        <div
-          className="absolute top-0 h-full"
-          style={{
-            left: `${(currentIndex / images.length) * 100}%`,
-            width: `${(1 / images.length) * 100}%`
-          }}
-        >
-          <div
-            key={currentIndex}
-            className="h-full bg-white animate-progress origin-left"
-            style={{
-              animationPlayState: isPaused ? 'paused' : 'running'
-            }}
-          />
-        </div>
-      </div>
+
     </div>
   );
 };
