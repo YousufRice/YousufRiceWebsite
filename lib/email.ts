@@ -223,15 +223,25 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
                       <h3 style="margin: 0 0 8px 0; color: #ffff03; font-size: 18px; font-weight: bold;">
                         🌙 Ramadan Special
                       </h3>
-                      ${totalWeight >= 15 ? `
-                        <p style="margin: 0; color: #ffffff; font-size: 14px;">
-                          🎉 <span style="font-weight: bold; color: #ffff03;">1kg FREE Rice</span> qualified!
-                        </p>
-                      ` : `
-                        <p style="margin: 0; color: #ffffff; font-size: 14px;">
-                          Add <span style="font-weight: bold; color: #ffff03;">${15 - totalWeight}kg</span> more for 1kg FREE Rice!
-                        </p>
-                      `}
+                      ${(() => {
+                        const freeKg = Math.floor(totalWeight / 15);
+                        const nextThreshold = (freeKg + 1) * 15;
+                        const kgNeeded = nextThreshold - totalWeight;
+                        
+                        if (freeKg > 0) {
+                          return `
+                            <p style="margin: 0; color: #ffffff; font-size: 14px;">
+                              🎉 <span style="font-weight: bold; color: #ffff03;">${freeKg}kg FREE Rice</span> qualified! Add <span style="font-weight: bold; color: #ffff03;">${kgNeeded}kg</span> more for ${freeKg + 1}kg free.
+                            </p>
+                          `;
+                        } else {
+                          return `
+                            <p style="margin: 0; color: #ffffff; font-size: 14px;">
+                              Add <span style="font-weight: bold; color: #ffff03;">${kgNeeded}kg</span> more for 1kg FREE Rice!
+                            </p>
+                          `;
+                        }
+                      })()}
                     </div>
                   </td>
                 </tr>
