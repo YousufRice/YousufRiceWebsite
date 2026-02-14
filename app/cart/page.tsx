@@ -52,47 +52,54 @@ export default function CartPage() {
 
       {/* Ramadan Offer Banner */}
       {
-        process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (
-          <div className="mb-8 relative overflow-hidden rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6 text-white shadow-lg">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <span className="text-9xl">🌙</span>
-            </div>
-            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="space-y-2 text-center sm:text-left">
-                <h3 className="text-xl font-bold text-[#ffff03] flex items-center justify-center sm:justify-start gap-2">
-                  <span>🌙</span> Ramadan Special Offer
-                </h3>
-                {items.reduce((acc, item) => acc + item.quantity, 0) >= 15 ? (
-                  <div className="space-y-1">
-                    <p className="text-lg font-medium text-white">
-                      🎉 Congratulations! You qualify for <span className="font-bold text-[#ffff03]">1kg FREE Rice</span>
-                    </p>
-                    <p className="text-sm text-white/80">
-                      Your free gift will be manually added to your delivery.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <p className="text-lg font-medium text-white">
-                      Order <span className="font-bold text-[#ffff03]">15kg or more</span> to get 1kg FREE Rice!
-                    </p>
-                    <p className="text-sm text-white/80">
-                      Current Cart Weight: <span className="font-bold">{items.reduce((acc, item) => acc + item.quantity, 0)}kg</span> •
-                      Add <span className="font-bold text-[#ffff03]">{15 - items.reduce((acc, item) => acc + item.quantity, 0)}kg</span> more to unlock.
-                    </p>
-                  </div>
+        process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
+          const totalWeight = items.reduce((acc, item) => acc + item.quantity, 0);
+          const freeKg = Math.floor(totalWeight / 15);
+          const nextThreshold = (freeKg + 1) * 15;
+          const kgNeeded = nextThreshold - totalWeight;
+
+          return (
+            <div className="mb-8 relative overflow-hidden rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6 text-white shadow-lg">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <span className="text-9xl">🌙</span>
+              </div>
+              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="space-y-2 text-center sm:text-left">
+                  <h3 className="text-xl font-bold text-[#ffff03] flex items-center justify-center sm:justify-start gap-2">
+                    <span>🌙</span> Ramadan Special Offer
+                  </h3>
+                  {freeKg > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-lg font-medium text-white">
+                        🎉 Congratulations! You qualify for <span className="font-bold text-[#ffff03]">{freeKg}kg FREE Rice</span>
+                      </p>
+                      <p className="text-sm text-white/80">
+                        Your free gift will be manually added to your delivery. Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for {freeKg + 1}kg free!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-lg font-medium text-white">
+                        Order <span className="font-bold text-[#ffff03]">15kg or more</span> to get 1kg FREE Rice!
+                      </p>
+                      <p className="text-sm text-white/80">
+                        Current Cart Weight: <span className="font-bold">{totalWeight}kg</span> •
+                        Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more to unlock.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {freeKg === 0 && (
+                  <Link href="/#products">
+                    <Button className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold whitespace-nowrap">
+                      Add More Items
+                    </Button>
+                  </Link>
                 )}
               </div>
-              {items.reduce((acc, item) => acc + item.quantity, 0) < 15 && (
-                <Link href="/#products">
-                  <Button className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold whitespace-nowrap">
-                    Add More Items
-                  </Button>
-                </Link>
-              )}
             </div>
-          </div>
-        )
+          );
+        })()
       }
 
       <div className="grid lg:grid-cols-3 gap-8">

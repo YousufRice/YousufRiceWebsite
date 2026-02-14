@@ -302,6 +302,9 @@ export default function ProductDetailClient({
               {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
                 // Calculate total weight from cart (cart already includes current product if added)
                 const cartWeight = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+                const freeKg = Math.floor(cartWeight / 15);
+                const nextThreshold = (freeKg + 1) * 15;
+                const kgNeeded = nextThreshold - cartWeight;
 
                 return (
                   <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white shadow-lg relative overflow-hidden">
@@ -312,13 +315,13 @@ export default function ProductDetailClient({
                       <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1 text-sm sm:text-base">
                         <span>🌙</span> Ramadan Special
                       </h3>
-                      {cartWeight >= 15 ? (
+                      {freeKg > 0 ? (
                         <p className="text-xs sm:text-sm">
-                          🎉 <span className="font-bold text-[#ffff03]">1kg FREE Rice</span> qualified!
+                          🎉 <span className="font-bold text-[#ffff03]">{freeKg}kg FREE Rice</span> qualified! Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for {freeKg + 1}kg free.
                         </p>
                       ) : (
                         <p className="text-xs sm:text-sm">
-                          Add <span className="font-bold text-[#ffff03]">{15 - cartWeight}kg</span> more for 1kg FREE Rice!
+                          Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for 1kg FREE Rice!
                         </p>
                       )}
                     </div>
