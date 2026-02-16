@@ -10,6 +10,8 @@ import "./globals.css";
 import AnnocementBar from "@/components/annoucement-bar";
 import { Suspense } from "react";
 import { ImageProtection } from "@/components/image-protection";
+import { RamadanPopup } from "@/components/ramadan-popup";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -170,6 +172,9 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <PWAInstall />
         </Suspense>
+        <Suspense fallback={null}>
+          <RamadanPopup />
+        </Suspense>
         <ImageProtection />
         <script
           type="application/ld+json"
@@ -179,3 +184,4 @@ export default function RootLayout({
     </html>
   );
 }
+

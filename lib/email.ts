@@ -17,7 +17,7 @@ transporter.verify()
     console.log('✅ SMTP server is ready to send emails');
   })
   .catch((error) => {
-    console.error('❌ SMTP connection error:', error);
+    console.error('❌ SMTP connection error: ', error);
     console.error('Email functionality may not work. Please check SMTP_PASSWORD in .env.local');
   });
 
