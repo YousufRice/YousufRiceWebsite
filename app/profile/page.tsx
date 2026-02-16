@@ -123,21 +123,8 @@ export default function ProfilePage() {
         }
       }
 
-      // Update email in Appwrite Auth
-      if (formData.email !== user.email) {
-        try {
-          await account.updateEmail(formData.email, password);
-        } catch (error: any) {
-          // Ignore "A target with the same ID already exists." error (Code 409)
-          // This happens when the email is already linked to a target (push/messaging) internally
-          if (error.code === 409 || error.message?.includes("target with the same ID")) {
-            console.warn("Target conflict ignored for email update");
-          } else {
-            console.error("Error updating email:", error);
-            updateErrors.push(`Email update failed: ${error.message}`);
-          }
-        }
-      }
+
+      let phoneUpdateSuccess = true;
 
       // Update phone number in Appwrite Auth
       if (formData.phone && formData.phone !== user.phone) {
@@ -150,11 +137,15 @@ export default function ProfilePage() {
           }
         } catch (error: any) {
           // Ignore "A target with the same ID already exists." error (Code 409)
-          if (error.code === 409 || error.message?.includes("target with the same ID")) {
+          if (
+            error.code === 409 &&
+            error.message?.includes("target with the same ID")
+          ) {
             console.warn("Target conflict ignored for phone update");
           } else {
             console.error("Error updating phone:", error);
             updateErrors.push(`Phone update failed: ${error.message}`);
+            phoneUpdateSuccess = false;
           }
         }
       }
@@ -171,6 +162,10 @@ export default function ProfilePage() {
 
       // Prepare formatted phone for Customer record
       const customerPhone = formatPhoneNumber(formData.phone);
+      // If Auth update failed, revert to original user phone to prevent inconsistency
+      // If user.phone is undefined (unlikely for logged in user), fallback to customerPhone but that implies we trust the input.
+      const dbPhone = phoneUpdateSuccess ? customerPhone : (user.phone || customerPhone);
+
 
       if (response.documents.length === 0) {
         // Customer record not found - create new one
@@ -184,7 +179,7 @@ export default function ProfilePage() {
             user_id: user.$id,
             full_name: formData.full_name,
             email: formData.email,
-            phone: customerPhone
+            phone: dbPhone
           }
         );
 
@@ -199,7 +194,7 @@ export default function ProfilePage() {
           customerId,
           {
             full_name: formData.full_name,
-            phone: customerPhone,
+            phone: dbPhone, // Only update if Auth succeeded
             email: formData.email,
           }
         );
@@ -289,8 +284,8 @@ export default function ProfilePage() {
                 name="email"
                 type="email"
                 value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email"
+                disabled
+                placeholder="Email cannot be changed"
               />
 
               <Input
