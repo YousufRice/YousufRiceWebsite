@@ -1,0 +1,92 @@
+===========================================
+META DATASET TRACKING - ENVIRONMENT VARIABLES (2025)
+===========================================
+
+🆕 WHAT'S NEW IN 2025?
+Every Pixel is now part of a Dataset. Use Dataset ID for unified tracking!
+
+Add these to your .env.local file:
+
+# Meta Dataset ID (Public - used in browser AND server)
+NEXT_PUBLIC_META_DATASET_ID="your_dataset_id_here"
+
+# Meta Access Token (Private - used in server API only)
+META_ACCESS_TOKEN="your_system_user_access_token_here"
+
+# Meta Test Event Code (Optional - for testing Conversions API)
+# Set this to "yousufrice" or your test code to enable test mode
+# Remove or leave empty for production (no test events)
+NEXT_PUBLIC_META_TEST_EVENT_CODE=""
+
+===========================================
+HOW TO GET THESE VALUES
+===========================================
+
+1. NEXT_PUBLIC_META_DATASET_ID (RECOMMENDED):
+   - Go to: https://business.facebook.com/events_manager2
+   - Click: Data Sources → Datasets
+   - Select or create your Dataset
+   - Copy: Your Dataset ID (16-digit number)
+   - Note: Your Pixel is automatically part of this Dataset
+
+2. META_ACCESS_TOKEN:
+   - Go to: https://business.facebook.com/settings/system-users
+   - Create or select a System User
+   - Click: Generate New Token
+   - Select: Your Ad Account
+   - Permissions: ads_management, business_management
+   - Copy: The generated token (long string)
+
+===========================================
+SECURITY NOTES
+===========================================
+
+- NEVER commit .env.local to git
+- NEVER share your ACCESS_TOKEN publicly
+- DATASET_ID is public when prefixed with NEXT_PUBLIC_ (used in browser)
+- ACCESS_TOKEN is ALWAYS private (server-only, never expose)
+- Rotate ACCESS_TOKEN regularly for security
+
+===========================================
+TESTING CONVERSIONS API
+===========================================
+
+🧪 HOW TO TEST WITH TEST EVENT CODE:
+
+1. Get your Test Event Code:
+   - Go to: https://business.facebook.com/events_manager2
+   - Click: Data Sources → Your Dataset
+   - Click: Test Events tab
+   - Copy your Test Event Code (e.g., "TEST12345")
+
+2. Enable Test Mode:
+   - Open your .env.local file
+   - Set: NEXT_PUBLIC_META_TEST_EVENT_CODE="yousufrice"
+   - (or use your actual test code from Meta)
+
+3. Restart Development Server:
+   - Stop your server (Ctrl+C)
+   - Run: npm run dev (or pnpm dev)
+
+4. Test AddToCart and Purchase:
+   - Add products to cart
+   - Complete a purchase
+   - Events will be sent with test code
+
+5. Verify in Meta Events Manager:
+   - Go to: Test Events tab
+   - You should see your test events appear in real-time
+   - Events will show "Test" label
+
+6. Switch to Production:
+   - Remove the test code: NEXT_PUBLIC_META_TEST_EVENT_CODE=""
+   - Or delete the line entirely
+   - Restart server
+   - Events will now be sent as production events
+
+⚠️ IMPORTANT:
+- Test events do NOT affect your ad performance or analytics
+- Always test before going live
+- Remove test code for production deployment
+
+===========================================

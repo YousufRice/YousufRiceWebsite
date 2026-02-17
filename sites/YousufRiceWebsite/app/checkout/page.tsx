@@ -443,9 +443,8 @@ export default function CheckoutPage() {
         );
       }
 
-      // Create IDs upfront for atomic linking
+      // Create order ID early to link items
       const orderId = ID.unique();
-      const addressId = ID.unique();
 
       const orderItems = formatOrderItems(
         items.map((item) => ({
@@ -569,27 +568,10 @@ export default function CheckoutPage() {
           createdItemIds.push(itemId);
         }
 
-        // Create address FIRST (using pre-generated orderId)
-        const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
-
-        await databases.createDocument(
-          DATABASE_ID,
-          ADDRESSES_TABLE_ID,
-          addressId,
-          {
-            customer_id: customerId,
-            order_id: orderId,
-            address_line: formData.addressLine,
-            latitude: formData.latitude,
-            longitude: formData.longitude,
-            maps_url: mapsUrl,
-          }
-        );
-
-        // Create order with accurate calculated totals AND the pre-generated address_id
+        // Create order with accurate calculated totals
         await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
           customer_id: customerId,
-          address_id: addressId, // Set immediately! No update needed.
+          address_id: "", // Will be updated after address creation
           order_items: orderItems, // CSV string snapshot
 
           // Summary fields
@@ -601,33 +583,42 @@ export default function CheckoutPage() {
 
           status: "pending",
         });
-
       } catch (creationError) {
         console.error("Error during order creation flow:", creationError);
 
-        // ROLLBACK: If order creation failed, clean up items and potentially address
-        // Note: If address creation failed, the order creation isn't attempted, so we just clean items.
-        // If order creation failed, we should technically clean up the address too to avoid orphans.
-        
-        // 1. Delete Items
+        // ROLLBACK: If order creation failed but items were created, try to delete them
         if (createdItemIds.length > 0) {
           console.log("Rolling back created items...");
-          await Promise.allSettled(
+          Promise.allSettled(
             createdItemIds.map(id => databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, id))
-          );
-        }
-
-        // 2. Delete Address (if it was created but order failed)
-        // We can try to delete the addressId just in case. If it doesn't exist, it will just fail silently or throw (we catch).
-        try {
-           await databases.deleteDocument(DATABASE_ID, ADDRESSES_TABLE_ID, addressId);
-           console.log("Rolled back address");
-        } catch (ignored) {
-          // Address might not have been created yet, or delete failed. 
+          ).then(() => console.log("Rollback complete"));
         }
 
         throw creationError; // Re-throw to be caught by main try-catch
       }
+
+      // Create address
+      const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
+      const addressId = ID.unique();
+
+      await databases.createDocument(
+        DATABASE_ID,
+        ADDRESSES_TABLE_ID,
+        addressId,
+        {
+          customer_id: customerId,
+          order_id: orderId,
+          address_line: formData.addressLine,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          maps_url: mapsUrl,
+        }
+      );
+
+      // Update order with address_id
+      await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
+        address_id: addressId,
+      });
 
       // Track Purchase event
       // Clean customer name by removing agent symbols before sending to Meta

@@ -299,36 +299,11 @@ export class OrderService {
       )) as unknown as Customer;
 
       // Get address
-      let address: Address | null = null;
-      
-      if (order.address_id) {
-        try {
-          address = (await databases.getDocument(
-            DATABASE_ID,
-            ADDRESSES_TABLE_ID,
-            order.address_id
-          )) as unknown as Address;
-        } catch (e) {
-          console.warn(`Address ${order.address_id} not found for order ${orderId}`);
-        }
-      }
-
-      // Fallback: If address_id is missing or fetch failed, try to find address by order_id
-      if (!address) {
-        try {
-          const addressList = await databases.listDocuments(
-            DATABASE_ID,
-            ADDRESSES_TABLE_ID,
-            [Query.equal("order_id", orderId), Query.limit(1)]
-          );
-          
-          if (addressList.documents.length > 0) {
-             address = addressList.documents[0] as unknown as Address;
-          }
-        } catch (e) {
-          console.error("Failed to find fallback address for order", orderId);
-        }
-      }
+      const address = (await databases.getDocument(
+        DATABASE_ID,
+        ADDRESSES_TABLE_ID,
+        order.address_id
+      )) as unknown as Address;
 
       return {
         ...order,
