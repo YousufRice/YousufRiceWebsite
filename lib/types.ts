@@ -155,5 +155,5 @@ export interface CreateOrderRequest {
 export interface OrderWithDetails extends Order {
   items: OrderItem[];
   customer: Customer;
-  address: Address;
+  address?: Address;
 }

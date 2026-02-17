@@ -470,30 +470,42 @@ export default function OrderDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
-                <div>
-                  <p className="font-medium">{data.address.address_line}</p>
-                  {data.address.latitude != null && data.address.longitude != null && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Coordinates: {data.address.latitude.toFixed(15)},{" "}
-                      {data.address.longitude.toFixed(15)}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {data.address ? (
+                <>
+                  <div className="flex items-start space-x-3">
+                    <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
+                    <div>
+                      <p className="font-medium">{data.address.address_line}</p>
+                      {data.address.latitude != null &&
+                        data.address.longitude != null && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Coordinates: {data.address.latitude.toFixed(15)},{" "}
+                            {data.address.longitude.toFixed(15)}
+                          </p>
+                        )}
+                    </div>
+                  </div>
 
-              <a
-                href={data.address.maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block"
-              >
-                <Button variant="outline" className="mt-2">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open in Maps
-                </Button>
-              </a>
+                  <a
+                    href={data.address.maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block"
+                  >
+                    <Button variant="outline" className="mt-2">
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open in Maps
+                    </Button>
+                  </a>
+                </>
+              ) : (
+                <div className="flex items-start space-x-3">
+                  <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <p className="text-gray-500 italic">
+                    Address details not available
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

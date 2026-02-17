@@ -60,7 +60,7 @@ export class AdminService {
             order.$id.toLowerCase().includes(searchLower) ||
             order.customer.full_name.toLowerCase().includes(searchLower) ||
             order.customer.phone.includes(searchTerm) ||
-            order.address.address_line.toLowerCase().includes(searchLower) ||
+            (order.address?.address_line || "").toLowerCase().includes(searchLower) ||
             order.items.some((item) =>
               item.product_name.toLowerCase().includes(searchLower)
             )
@@ -560,8 +560,8 @@ export class AdminService {
           .join("; "),
         order.total_weight_kg || 0,
         order.total_price,
-        order.address.address_line,
-        `${order.address.latitude}, ${order.address.longitude}`,
+        order.address?.address_line || "N/A",
+        order.address ? `${order.address.latitude}, ${order.address.longitude}` : "N/A",
       ]);
 
       // Combine headers and rows
