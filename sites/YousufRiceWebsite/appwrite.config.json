@@ -50,7 +50,7 @@
             "installCommand": "pnpm i",
             "buildCommand": "pnpm build",
             "outputDirectory": "./.next",
-            "specification": "s-1vcpu-1gb",
+            "specification": "s-2vcpu-2gb",
             "buildRuntime": "node-22",
             "adapter": "ssr",
             "fallbackFile": "",
@@ -227,9 +227,7 @@
                 "create(\"any\")",
                 "read(\"any\")",
                 "update(\"any\")",
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")"
+                "delete(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Customers",
@@ -280,14 +278,8 @@
             "$permissions": [
                 "create(\"any\")",
                 "read(\"any\")",
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")",
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "update(\"any\")",
+                "delete(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Orders",
@@ -497,14 +489,8 @@
             "$permissions": [
                 "create(\"any\")",
                 "read(\"any\")",
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")",
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "update(\"any\")",
+                "delete(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Order Items",
@@ -702,10 +688,7 @@
                 "create(\"any\")",
                 "read(\"any\")",
                 "update(\"any\")",
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "delete(\"any\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Discount Management",
@@ -967,9 +950,7 @@
         },
         {
             "$id": "691d585f003acdc55cc8",
-            "$permissions": [
-                "read(\"guests\")"
-            ],
+            "$permissions": [],
             "fileSecurity": false,
             "name": "MillImageId",
             "enabled": true,
