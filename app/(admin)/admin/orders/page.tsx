@@ -175,7 +175,7 @@ export default function AdminOrdersPage() {
               DATABASE_ID,
               CUSTOMERS_TABLE_ID,
               order.customer_id
-            ).catch(() => null);
+            ).catch(() => undefined);
 
             // Fetch Address with Fallback
             const addressPromise = order.address_id
@@ -183,19 +183,19 @@ export default function AdminOrdersPage() {
                 DATABASE_ID,
                 ADDRESSES_TABLE_ID,
                 order.address_id
-              ).catch(() => null)
+              ).catch(() => undefined)
               : databases.listDocuments(
                 DATABASE_ID,
                 ADDRESSES_TABLE_ID,
                 [Query.equal("order_id", order.$id), Query.limit(1)]
-              ).then((res) => res.documents[0] || null).catch(() => null);
+              ).then((res) => res.documents[0] || undefined).catch(() => undefined);
 
             const [customer, address] = await Promise.all([customerPromise, addressPromise]);
 
             return {
               ...order,
-              customer: customer as Customer | null,
-              address: address as Address | null
+              customer: customer as Customer | undefined,
+              address: address as Address | undefined
             } as OrderWithCustomer;
           } catch {
             return order as OrderWithCustomer;

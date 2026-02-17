@@ -334,7 +334,7 @@ export class OrderService {
         ...order,
         items,
         customer,
-        address,
+        address: address || undefined,
       };
     } catch (error) {
       console.error("Error fetching order with details:", error);

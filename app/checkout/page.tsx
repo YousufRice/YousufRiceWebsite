@@ -446,6 +446,7 @@ export default function CheckoutPage() {
       // Create IDs upfront for atomic linking
       const orderId = ID.unique();
       const addressId = ID.unique();
+      const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
 
       const orderItems = formatOrderItems(
         items.map((item) => ({
@@ -570,8 +571,6 @@ export default function CheckoutPage() {
         }
 
         // Create address FIRST (using pre-generated orderId)
-        const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
-
         await databases.createDocument(
           DATABASE_ID,
           ADDRESSES_TABLE_ID,
@@ -608,7 +607,7 @@ export default function CheckoutPage() {
         // ROLLBACK: If order creation failed, clean up items and potentially address
         // Note: If address creation failed, the order creation isn't attempted, so we just clean items.
         // If order creation failed, we should technically clean up the address too to avoid orphans.
-        
+
         // 1. Delete Items
         if (createdItemIds.length > 0) {
           console.log("Rolling back created items...");
@@ -620,8 +619,8 @@ export default function CheckoutPage() {
         // 2. Delete Address (if it was created but order failed)
         // We can try to delete the addressId just in case. If it doesn't exist, it will just fail silently or throw (we catch).
         try {
-           await databases.deleteDocument(DATABASE_ID, ADDRESSES_TABLE_ID, addressId);
-           console.log("Rolled back address");
+          await databases.deleteDocument(DATABASE_ID, ADDRESSES_TABLE_ID, addressId);
+          console.log("Rolled back address");
         } catch (ignored) {
           // Address might not have been created yet, or delete failed. 
         }
