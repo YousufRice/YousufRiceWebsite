@@ -29,7 +29,6 @@ export function RamadanPopup() {
     return (
         <>
             <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@500;600;700&display=swap');
 
                 @keyframes starFloat {
                     0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
@@ -67,7 +66,7 @@ export function RamadanPopup() {
                 }
 
                 .ramadan-modal-content {
-                    font-family: 'Poppins', sans-serif;
+                    font-family: var(--font-poppins), sans-serif;
                     animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
                     background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #064e3b 100%) !important;
                     border: 2px solid rgba(251, 191, 36, 0.4) !important;
@@ -85,7 +84,7 @@ export function RamadanPopup() {
                 .star-4 { animation: starFloat 4s ease-in-out infinite 1.5s; }
 
                 .title-text {
-                    font-family: 'Playfair Display', serif;
+                    font-family: var(--font-playfair), serif;
                     background: linear-gradient(135deg, #fbbf24 0%, #fef3c7 50%, #f59e0b 100%);
                     background-size: 200% auto;
                     -webkit-background-clip: text;
@@ -190,7 +189,7 @@ export function RamadanPopup() {
                         {/* Big FREE badge */}
                         <div className="free-badge text-center mb-5">
                             <div className="inline-flex flex-col items-center gap-0.5 bg-linear-to-br from-yellow-400 to-amber-600 rounded-2xl px-8 py-3 shadow-2xl" style={{ boxShadow: '0 0 30px rgba(251,191,36,0.5)' }}>
-                                <span className="text-5xl font-black text-white leading-none tracking-tight" style={{ fontFamily: 'Playfair Display, serif', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>1kg FREE</span>
+                                <span className="text-5xl font-black text-white leading-none tracking-tight" style={{ fontFamily: 'var(--font-playfair), serif', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>1kg FREE</span>
                                 <span className="text-base font-semibold text-amber-900">Premium Basmati Rice</span>
                             </div>
                         </div>
@@ -233,7 +232,7 @@ export function RamadanPopup() {
                             href="#products"
                             onClick={handleClose}
                             className="cta-btn block w-full text-white font-bold py-4 px-6 rounded-2xl text-center text-lg"
-                            style={{ fontFamily: 'Poppins, sans-serif' }}
+                            style={{ fontFamily: 'var(--font-poppins), sans-serif' }}
                         >
                             🛍️ Shop Now — Grab the Deal
                         </a>
