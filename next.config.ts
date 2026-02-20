@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "sgp.cloud.appwrite.io",
+        hostname: "fra.cloud.appwrite.io",
         port: "",
         pathname: "/v1/storage/buckets/**",
       },
