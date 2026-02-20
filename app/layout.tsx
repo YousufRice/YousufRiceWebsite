@@ -11,6 +11,19 @@ import AnnocementBar from "@/components/annoucement-bar";
 import { Suspense } from "react";
 import { ImageProtection } from "@/components/image-protection";
 import { RamadanPopup } from "@/components/ramadan-popup";
+import { Playfair_Display, Poppins } from "next/font/google";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  variable: "--font-playfair",
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 
 const geistSans = Geist({
@@ -140,7 +153,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className={`scroll-smooth ${playfair.variable} ${poppins.variable}`}>
       <head>
         <MetaPixel />
       </head>
