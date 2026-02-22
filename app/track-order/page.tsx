@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { databases, DATABASE_ID, ORDERS_TABLE_ID, CUSTOMERS_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, ORDERS_TABLE_ID, CUSTOMERS_TABLE_ID } from "@/lib/appwrite";
 import { Order, Customer } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,13 +44,9 @@ export default function TrackOrderPage() {
 
     try {
       // Find customer by phone number
-      const customerResponse = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal('phone', phoneNumber.trim())]
-      );
+      const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal('phone', phoneNumber.trim())] });
 
-      if (customerResponse.documents.length === 0) {
+      if (customerResponse.rows.length === 0) {
         setOrders([]);
         setCustomer(null);
         toast.error('No orders found for this phone number');
@@ -58,20 +54,16 @@ export default function TrackOrderPage() {
         return;
       }
 
-      const foundCustomer = customerResponse.documents[0] as unknown as Customer;
+      const foundCustomer = customerResponse.rows[0] as unknown as Customer;
       setCustomer(foundCustomer);
 
       // Get all orders for this customer
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        [Query.equal('customer_id', foundCustomer.$id), Query.orderDesc('$createdAt'), Query.limit(100)]
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('customer_id', foundCustomer.$id), Query.orderDesc('$createdAt'), Query.limit(100)] });
 
-      setOrders(ordersResponse.documents as unknown as Order[]);
+      setOrders(ordersResponse.rows as unknown as Order[]);
       
-      if (ordersResponse.documents.length > 0) {
-        toast.success(`Found ${ordersResponse.documents.length} order(s)`);
+      if (ordersResponse.rows.length > 0) {
+        toast.success(`Found ${ordersResponse.rows.length} order(s)`);
       } else {
         toast.error('No orders found for this phone number');
       }

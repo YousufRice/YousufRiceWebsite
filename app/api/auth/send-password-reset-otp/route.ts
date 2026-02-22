@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateOTP, sendPasswordResetOTP } from '@/lib/email';
-import { databases, DATABASE_ID, CUSTOMERS_TABLE_ID, account } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID, account } from "@/lib/appwrite";
 import { Query } from 'appwrite';
 
 export async function POST(request: NextRequest) {
@@ -15,13 +15,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists with this email
-    const customerResponse = await databases.listDocuments(
-      DATABASE_ID,
-      CUSTOMERS_TABLE_ID,
-      [Query.equal('email', email)]
-    );
+    const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal('email', email)] });
 
-    if (customerResponse.documents.length === 0) {
+    if (customerResponse.rows.length === 0) {
       // Don't reveal if email exists or not for security
       return NextResponse.json({
         success: true,
@@ -29,7 +25,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const customer = customerResponse.documents[0];
+    const customer = customerResponse.rows[0];
 
     // Generate OTP
     const otp = generateOTP();
@@ -39,10 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Also initiate Appwrite's password recovery (this will send another email, but we'll use our OTP)
     try {
-      await account.createRecovery(
-        email,
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`
-      );
+      await account.createRecovery({ email: email, url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password` });
     } catch (error) {
       // If recovery fails, continue with our OTP system
       console.log('Appwrite recovery failed, using OTP system:', error);

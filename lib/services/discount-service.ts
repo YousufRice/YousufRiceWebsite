@@ -1,5 +1,5 @@
 import { LoyaltyService, LoyaltyDiscount } from "./loyalty-service";
-import { databases, DATABASE_ID, Query, DISCOUNT_MANAGEMENT_TABLE_ID } from "@/lib/appwrite";
+import { tablesDB, DATABASE_ID, Query, DISCOUNT_MANAGEMENT_TABLE_ID } from "@/lib/appwrite";
 
 export interface DiscountValidationResult {
   isValid: boolean;
@@ -151,21 +151,17 @@ export class DiscountService {
     customerId: string
   ): Promise<LoyaltyDiscount[]> {
     try {
-      const records = await databases.listDocuments(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        [
-          Query.equal("customer_id", customerId),
-          Query.equal("code_status", "active"),
-          Query.orderDesc("$createdAt")
-        ]
-      );
+      const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [
+                    Query.equal("customer_id", customerId),
+                    Query.equal("code_status", "active"),
+                    Query.orderDesc("$createdAt")
+                  ] });
 
-      if (records.documents.length === 0) {
+      if (records.rows.length === 0) {
         return [];
       }
 
-      return records.documents.map(doc => doc as unknown as LoyaltyDiscount);
+      return records.rows.map(doc => doc as unknown as LoyaltyDiscount);
     } catch (error) {
       console.error("Error getting customer discount codes:", error);
       return [];

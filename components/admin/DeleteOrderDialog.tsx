@@ -11,7 +11,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { databases, DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { tablesDB, DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import { LoyaltyService } from "@/lib/services/loyalty-service";
 import { OrderService } from "@/lib/services/order-service";
 import toast from "react-hot-toast";

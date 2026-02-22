@@ -54,7 +54,7 @@ function ResetPasswordForm() {
 
     try {
       // Use Appwrite's password recovery completion
-      await account.updateRecovery(userId, secret, newPassword);
+      await account.updateRecovery({ userId: userId, secret: secret, password: newPassword });
 
       toast.success('Password updated successfully!');
       router.push('/auth/login');

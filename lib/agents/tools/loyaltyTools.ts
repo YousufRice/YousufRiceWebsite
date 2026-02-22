@@ -1,7 +1,7 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import { LoyaltyService } from "@/lib/services/loyalty-service";
-import { databases, DATABASE_ID, CUSTOMERS_TABLE_ID } from "@/lib/appwrite";
+import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID } from "@/lib/appwrite";
 import { Query } from "appwrite";
 
 /**
@@ -54,15 +54,11 @@ export const checkLoyaltyRewardTool = tool({
         queries.push(Query.equal("email", email.trim().toLowerCase()));
       }
 
-      const customerResponse = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        queries
-      );
+      const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: queries });
 
-      if (customerResponse.documents.length > 0) {
-        customerId = customerResponse.documents[0].$id;
-        customerName = customerResponse.documents[0].full_name;
+      if (customerResponse.rows.length > 0) {
+        customerId = customerResponse.rows[0].$id;
+        customerName = customerResponse.rows[0].full_name;
       } else {
         return {
           success: true,

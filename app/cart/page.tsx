@@ -111,7 +111,7 @@ export default function CartPage() {
 
             // Get image URL if available
             const imageUrl = item.product.primary_image_id
-              ? storage.getFileView(STORAGE_BUCKET_ID, item.product.primary_image_id).toString()
+              ? storage.getFileView({ bucketId: STORAGE_BUCKET_ID, fileId: item.product.primary_image_id }).toString()
               : null;
 
             return (

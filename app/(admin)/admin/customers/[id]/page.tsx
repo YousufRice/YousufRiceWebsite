@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuthStore, AdminPermission } from '@/lib/store/auth-store';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import ReadOnlyGuard from '@/components/admin/ReadOnlyGuard';
-import { databases, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID, ADDRESSES_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID, ADDRESSES_TABLE_ID } from "@/lib/appwrite";
 import { Customer, Order, Address } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,21 +52,13 @@ export default function CustomerDetailPage() {
       setLoading(true);
 
       // Fetch customer details
-      const customerDoc = await databases.getDocument(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        customerId
-      ) as unknown as Customer;
+      const customerDoc = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId }) as unknown as Customer;
       setCustomer(customerDoc);
 
       // Fetch customer orders
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        [Query.equal('customer_id', customerId), Query.orderDesc('$createdAt')]
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('customer_id', customerId), Query.orderDesc('$createdAt')] });
 
-      const ordersWithDetails = ordersResponse.documents.map((order: any) => {
+      const ordersWithDetails = ordersResponse.rows.map((order: any) => {
         let statusColor = '';
         let statusIcon = <Clock className="w-4 h-4" />;
 
@@ -99,12 +91,8 @@ export default function CustomerDetailPage() {
       setOrders(ordersWithDetails);
 
       // Fetch customer addresses
-      const addressesResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ADDRESSES_TABLE_ID,
-        [Query.equal('customer_id', customerId)]
-      );
-      setAddresses(addressesResponse.documents as unknown as Address[]);
+      const addressesResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, queries: [Query.equal('customer_id', customerId)] });
+      setAddresses(addressesResponse.rows as unknown as Address[]);
 
     } catch (error) {
       console.error('Error fetching customer data:', error);

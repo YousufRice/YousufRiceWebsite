@@ -20,10 +20,7 @@ export default function ForgotPasswordPage() {
 
     try {
       // Use Appwrite's built-in password recovery
-      await account.createRecovery(
-        email,
-        `${window.location.origin}/auth/reset-password`
-      );
+      await account.createRecovery({ email: email, url: `${window.location.origin}/auth/reset-password` });
 
       toast.success('Password reset link sent to your email! Please check your inbox.');
       

@@ -1,7 +1,7 @@
 "use cache";
 
 import {
-  databases,
+  tablesDB,
   storage,
   DATABASE_ID,
   PRODUCTS_TABLE_ID,
@@ -21,11 +21,8 @@ export async function getCachedProducts() {
   cacheTag("products");
 
   try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      PRODUCTS_TABLE_ID
-    );
-    return response.documents as unknown as Product[];
+    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID });
+    return JSON.parse(JSON.stringify(response.rows)) as Product[];
   } catch (error) {
     console.error("Error fetching products:", error);
     return [];
@@ -41,17 +38,13 @@ export async function getCachedRegularProducts() {
   cacheTag("products", "regular-products");
 
   try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      PRODUCTS_TABLE_ID
-    );
+    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID });
 
     // Filter out products that contain "hotel" or "restaurant" in their name or description
-    const allProducts = response.documents as unknown as Product[];
+    const allProducts = JSON.parse(JSON.stringify(response.rows)) as Product[];
     return allProducts.filter((product) => {
-      const searchText = `${product.name} ${
-        product.description || ""
-      }`.toLowerCase();
+      const searchText = `${product.name} ${product.description || ""
+        }`.toLowerCase();
       return (
         !searchText.includes("hotel") && !searchText.includes("restaurant")
       );
@@ -74,14 +67,10 @@ export async function getCachedProductImages(productIds: string[]) {
 
   try {
     // Fetch all primary images
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      PRODUCT_IMAGES_TABLE_ID,
-      [Query.equal("is_primary", true), Query.limit(100)]
-    );
+    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, queries: [Query.equal("is_primary", true), Query.limit(100)] });
 
     // Filter to only include images for our products
-    const allImages = response.documents as unknown as ProductImage[];
+    const allImages = JSON.parse(JSON.stringify(response.rows)) as ProductImage[];
     return allImages.filter((img) => productIds.includes(img.product_id));
   } catch (error) {
     console.error("Error fetching product images:", error);
@@ -98,12 +87,8 @@ export async function getCachedProduct(id: string) {
   cacheTag("products", `product-${id}`);
 
   try {
-    const product = await databases.getDocument(
-      DATABASE_ID,
-      PRODUCTS_TABLE_ID,
-      id
-    );
-    return product as unknown as Product;
+    const product = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: id });
+    return JSON.parse(JSON.stringify(product)) as Product;
   } catch (error) {
     console.error("Error fetching product:", error);
     return null;
@@ -119,12 +104,8 @@ export async function getCachedProductImagesById(productId: string) {
   cacheTag("product-images", `product-${productId}-images`);
 
   try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      PRODUCT_IMAGES_TABLE_ID,
-      [Query.equal("product_id", productId), Query.orderDesc("$createdAt")]
-    );
-    return response.documents as unknown as ProductImage[];
+    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, queries: [Query.equal("product_id", productId), Query.orderDesc("$createdAt")] });
+    return JSON.parse(JSON.stringify(response.rows)) as ProductImage[];
   } catch (error) {
     console.error("Error fetching product images:", error);
     return [];
@@ -141,18 +122,13 @@ export async function getCachedHotelRestaurantProducts() {
   cacheTag("products", "hotel-restaurant-products");
 
   try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      PRODUCTS_TABLE_ID,
-      [Query.equal("available", true), Query.orderDesc("$createdAt")]
-    );
+    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: [Query.equal("available", true), Query.orderDesc("$createdAt")] });
 
     // Filter products that contain "hotel" or "restaurant" in their name or description
-    const allProducts = response.documents as unknown as Product[];
+    const allProducts = JSON.parse(JSON.stringify(response.rows)) as Product[];
     return allProducts.filter((product) => {
-      const searchText = `${product.name} ${
-        product.description || ""
-      }`.toLowerCase();
+      const searchText = `${product.name} ${product.description || ""
+        }`.toLowerCase();
       return searchText.includes("hotel") || searchText.includes("restaurant");
     });
   } catch (error) {

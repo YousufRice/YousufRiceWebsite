@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   account,
-  databases,
+  tablesDB,
   DATABASE_ID,
   CUSTOMERS_TABLE_ID,
 } from "@/lib/appwrite";
@@ -72,14 +72,10 @@ export default function RegisterForm() {
       const formattedPhone = formatPhoneNumber(cleaned);
 
       // Check if phone number already exists
-      const existingCustomer = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formattedPhone)]
-      );
+      const existingCustomer = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formattedPhone)] });
 
-      if (existingCustomer.documents.length > 0) {
-        const customer = existingCustomer.documents[0];
+      if (existingCustomer.rows.length > 0) {
+        const customer = existingCustomer.rows[0];
         // If customer exists and has a real user_id (not guest), then it's a duplicate
         if (customer.user_id && customer.user_id !== "guest") {
           toast.error("An account with this phone number already exists");
@@ -91,14 +87,10 @@ export default function RegisterForm() {
       }
 
       // Check if email already exists
-      const existingEmail = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal("email", formData.email)]
-      );
+      const existingEmail = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("email", formData.email)] });
 
-      if (existingEmail.documents.length > 0) {
-        const customer = existingEmail.documents[0];
+      if (existingEmail.rows.length > 0) {
+        const customer = existingEmail.rows[0];
         // If customer exists and has a real user_id (not guest), then it's a duplicate
         if (customer.user_id && customer.user_id !== "guest") {
           toast.error("An account with this email already exists");
@@ -171,53 +163,31 @@ export default function RegisterForm() {
       }
 
       // OTP verified - create account
-      const user = await account.create(
-        ID.unique(),
-        formData.email,
-        formData.password,
-        formData.name
-      );
+      const user = await account.create({ userId: ID.unique(), email: formData.email, password: formData.password, name: formData.name });
 
       // Check if customer record exists to link
-      const existingCustomerList = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formatPhoneNumber(cleanedPhone))]
-      );
+      const existingCustomerList = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formatPhoneNumber(cleanedPhone))] });
 
-      if (existingCustomerList.documents.length > 0) {
+      if (existingCustomerList.rows.length > 0) {
         // Update existing customer
-        const customerToUpdate = existingCustomerList.documents[0];
-        await databases.updateDocument(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          customerToUpdate.$id,
-          {
-            user_id: user.$id,
-            full_name: formData.name,
-            email: formData.email,
-          }
-        );
+        const customerToUpdate = existingCustomerList.rows[0];
+        await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerToUpdate.$id, data: {
+                        user_id: user.$id,
+                        full_name: formData.name,
+                        email: formData.email,
+                      } });
       } else {
         // Create customer record
-        await databases.createDocument(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          ID.unique(),
-          {
-            user_id: user.$id,
-            full_name: formData.name,
-            phone: formatPhoneNumber(cleanedPhone),
-            email: formData.email,
-          }
-        );
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: ID.unique(), data: {
+                        user_id: user.$id,
+                        full_name: formData.name,
+                        phone: formatPhoneNumber(cleanedPhone),
+                        email: formData.email,
+                      } });
       }
 
       // Login the user
-      await account.createEmailPasswordSession(
-        formData.email,
-        formData.password
-      );
+      await account.createEmailPasswordSession({ email: formData.email, password: formData.password });
 
       // Update phone number in Appwrite Auth (after session is established)
       await account.updatePhone(

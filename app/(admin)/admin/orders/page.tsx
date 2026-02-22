@@ -7,7 +7,7 @@ import { useAuthStore, AdminPermission } from "@/lib/store/auth-store";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import ReadOnlyGuard from "@/components/admin/ReadOnlyGuard";
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   ORDERS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
@@ -161,34 +161,18 @@ export default function AdminOrdersPage() {
         queries.push(Query.cursorAfter(lastDocumentId));
       }
 
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        queries
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
 
       const ordersWithCustomers = await Promise.all(
-        ordersResponse.documents.map(async (order: any) => {
+        ordersResponse.rows.map(async (order: any) => {
           try {
             // Fetch Customer
-            const customerPromise = databases.getDocument(
-              DATABASE_ID,
-              CUSTOMERS_TABLE_ID,
-              order.customer_id
-            ).catch(() => undefined);
+            const customerPromise = tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: order.customer_id }).catch(() => undefined);
 
             // Fetch Address with Fallback
             const addressPromise = order.address_id
-              ? databases.getDocument(
-                DATABASE_ID,
-                ADDRESSES_TABLE_ID,
-                order.address_id
-              ).catch(() => undefined)
-              : databases.listDocuments(
-                DATABASE_ID,
-                ADDRESSES_TABLE_ID,
-                [Query.equal("order_id", order.$id), Query.limit(1)]
-              ).then((res) => res.documents[0] || undefined).catch(() => undefined);
+              ? tablesDB.getRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: order.address_id }).catch(() => undefined)
+              : tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, queries: [Query.equal("order_id", order.$id), Query.limit(1)] }).then((res) => res.rows[0] || undefined).catch(() => undefined);
 
             const [customer, address] = await Promise.all([customerPromise, addressPromise]);
 
@@ -225,12 +209,12 @@ export default function AdminOrdersPage() {
       }
 
       // Update pagination state
-      if (ordersResponse.documents.length > 0) {
-        setLastDocumentId(ordersResponse.documents[ordersResponse.documents.length - 1].$id);
+      if (ordersResponse.rows.length > 0) {
+        setLastDocumentId(ordersResponse.rows[ordersResponse.rows.length - 1].$id);
       }
 
       // Check if there are more orders to load
-      setHasMore(ordersResponse.documents.length === ORDERS_PER_PAGE);
+      setHasMore(ordersResponse.rows.length === ORDERS_PER_PAGE);
 
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -288,9 +272,9 @@ export default function AdminOrdersPage() {
     setUpdatingOrderIds((prev) => new Set(prev).add(orderId));
 
     try {
-      await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
-        status: newStatus,
-      });
+      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
+                  status: newStatus,
+                } });
 
       // Optimistic update: Update local state immediately
       setOrders((prevOrders) =>
@@ -367,11 +351,7 @@ export default function AdminOrdersPage() {
 
   const handleCopyDetails = async (order: OrderWithCustomer) => {
     try {
-      const { documents: items } = await databases.listDocuments(
-        DATABASE_ID,
-        ORDER_ITEMS_TABLE_ID,
-        [Query.equal("order_id", order.$id), Query.limit(1)]
-      );
+      const { rows: items } = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", order.$id), Query.limit(1)] });
 
       const note = items.length > 0 && items[0].notes ? items[0].notes : "";
       const parts = [

@@ -43,7 +43,7 @@ export function SpecialDealCard({
   const totalPrice = calculatePrice(product, totalKg || 0);
 
   const imageUrl = imageFileId
-    ? storage.getFileView(STORAGE_BUCKET_ID, imageFileId).toString()
+    ? storage.getFileView({ bucketId: STORAGE_BUCKET_ID, fileId: imageFileId }).toString()
     : null;
 
   const handleAddBag = () => {

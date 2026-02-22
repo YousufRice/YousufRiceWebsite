@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import {
-    databases,
+    tablesDB,
     DATABASE_ID,
     ORDERS_TABLE_ID,
     CUSTOMERS_TABLE_ID,
@@ -128,13 +128,9 @@ export default function StaffPerformancePage() {
                     queries.push(Query.cursorAfter(lastId));
                 }
 
-                const response = await databases.listDocuments(
-                    DATABASE_ID,
-                    ORDERS_TABLE_ID,
-                    queries
-                );
+                const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
 
-                const chunk = response.documents as unknown as Order[];
+                const chunk = response.rows as unknown as Order[];
                 if (chunk.length > 0) {
                     allOrders.push(...chunk);
                     lastId = chunk[chunk.length - 1].$id;
@@ -162,11 +158,7 @@ export default function StaffPerformancePage() {
 
                 await Promise.all(batchIds.map(async (customerId) => {
                     try {
-                        const customer = await databases.getDocument(
-                            DATABASE_ID,
-                            CUSTOMERS_TABLE_ID,
-                            customerId
-                        ) as unknown as Customer;
+                        const customer = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId }) as unknown as Customer;
                         customerMap.set(customerId, customer.full_name);
                     } catch (error) {
                         console.error(`Failed to fetch customer ${customerId}`, error);

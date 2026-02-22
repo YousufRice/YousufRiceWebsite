@@ -1,6 +1,6 @@
 import { Query, ID } from "appwrite";
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   ORDERS_TABLE_ID,
   ORDER_ITEMS_TABLE_ID,
@@ -45,11 +45,7 @@ export class OrderService {
       const processedItems = await Promise.all(
         orderRequest.items.map(async (itemRequest) => {
           // Get product details for pricing
-          const product = (await databases.getDocument(
-            DATABASE_ID,
-            PRODUCTS_TABLE_ID,
-            itemRequest.product_id
-          )) as unknown as Product;
+          const product = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: itemRequest.product_id })) as unknown as Product;
 
           // Calculate pricing
           const tierPricing = calculateTierPricing(
@@ -135,49 +131,44 @@ export class OrderService {
           } = processedItem;
 
           const orderItemId = ID.unique();
-          const orderItem = (await databases.createDocument(
-            DATABASE_ID,
-            ORDER_ITEMS_TABLE_ID,
-            orderItemId,
-            {
-              order_id: orderId,
-              product_id: itemRequest.product_id,
+          const orderItem = (await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: orderItemId, data: {
+                            order_id: orderId,
+                            product_id: itemRequest.product_id,
 
-              // Product snapshot
-              product_name: product.name,
-              product_description: product.description || "",
+                            // Product snapshot
+                            product_name: product.name,
+                            product_description: product.description || "",
 
-              // Quantity
-              quantity_kg: itemRequest.quantity_kg,
+                            // Quantity
+                            quantity_kg: itemRequest.quantity_kg,
 
-              // Bag breakdown
-              bags_1kg: itemRequest.bags.kg1,
-              bags_5kg: itemRequest.bags.kg5,
-              bags_10kg: itemRequest.bags.kg10,
-              bags_25kg: itemRequest.bags.kg25,
+                            // Bag breakdown
+                            bags_1kg: itemRequest.bags.kg1,
+                            bags_5kg: itemRequest.bags.kg5,
+                            bags_10kg: itemRequest.bags.kg10,
+                            bags_25kg: itemRequest.bags.kg25,
 
-              // Pricing snapshot
-              price_per_kg_at_order: pricePerKg,
-              base_price_per_kg: product.base_price_per_kg,
-              tier_applied: tierPricing.tierApplied,
+                            // Pricing snapshot
+                            price_per_kg_at_order: pricePerKg,
+                            base_price_per_kg: product.base_price_per_kg,
+                            tier_applied: tierPricing.tierApplied,
 
-              // Discount
-              discount_percentage:
-                product.base_price_per_kg * itemRequest.quantity_kg > 0
-                  ? ((tierDiscountAmount + percentageDiscountAmount) /
-                    (product.base_price_per_kg * itemRequest.quantity_kg)) *
-                  100
-                  : 0,
-              discount_amount: tierDiscountAmount + percentageDiscountAmount,
-              // Totals
-              subtotal_before_discount:
-                product.base_price_per_kg * itemRequest.quantity_kg,
-              total_after_discount: itemTotal.total,
+                            // Discount
+                            discount_percentage:
+                              product.base_price_per_kg * itemRequest.quantity_kg > 0
+                                ? ((tierDiscountAmount + percentageDiscountAmount) /
+                                  (product.base_price_per_kg * itemRequest.quantity_kg)) *
+                                100
+                                : 0,
+                            discount_amount: tierDiscountAmount + percentageDiscountAmount,
+                            // Totals
+                            subtotal_before_discount:
+                              product.base_price_per_kg * itemRequest.quantity_kg,
+                            total_after_discount: itemTotal.total,
 
-              // Metadata
-              notes: itemRequest.notes || orderRequest.notes || "",
-            }
-          )) as unknown as OrderItem;
+                            // Metadata
+                            notes: itemRequest.notes || orderRequest.notes || "",
+                          } })) as unknown as OrderItem;
 
           orderItems.push(orderItem);
           createdItemIds.push(orderItemId);
@@ -189,36 +180,26 @@ export class OrderService {
           orderRequest.address.longitude
         );
 
-        address = (await databases.createDocument(
-            DATABASE_ID,
-            ADDRESSES_TABLE_ID,
-            addressId,
-            {
-            customer_id: orderRequest.customer_id,
-            order_id: orderId,
-            address_line: orderRequest.address.address_line,
-            latitude: orderRequest.address.latitude,
-            longitude: orderRequest.address.longitude,
-            maps_url: mapsUrl,
-            }
-        )) as unknown as Address;
+        address = (await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId, data: {
+                        customer_id: orderRequest.customer_id,
+                        order_id: orderId,
+                        address_line: orderRequest.address.address_line,
+                        latitude: orderRequest.address.latitude,
+                        longitude: orderRequest.address.longitude,
+                        maps_url: mapsUrl,
+                        } })) as unknown as Address;
 
         // Create the order
-        order = (await databases.createDocument(
-          DATABASE_ID,
-          ORDERS_TABLE_ID,
-          orderId,
-          {
-            customer_id: orderRequest.customer_id,
-            address_id: addressId, // Set address_id immediately
-            total_items_count: totalItemsCount,
-            total_weight_kg: totalWeightKg,
-            subtotal_before_discount: subtotalBeforeDiscount,
-            total_discount_amount: totalDiscountAmount,
-            total_price: totalPrice,
-            status: "pending",
-          }
-        )) as unknown as Order;
+        order = (await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
+                        customer_id: orderRequest.customer_id,
+                        address_id: addressId, // Set address_id immediately
+                        total_items_count: totalItemsCount,
+                        total_weight_kg: totalWeightKg,
+                        subtotal_before_discount: subtotalBeforeDiscount,
+                        total_discount_amount: totalDiscountAmount,
+                        total_price: totalPrice,
+                        status: "pending",
+                      } })) as unknown as Order;
       } catch (creationError) {
         console.error("Error during order service creation flow:", creationError);
         
@@ -226,7 +207,7 @@ export class OrderService {
         if (createdItemIds.length > 0) {
           console.log("Rolling back created items in OrderService...");
           Promise.allSettled(
-            createdItemIds.map(id => databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, id))
+            createdItemIds.map(id => tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: id }))
           ).then(() => console.log("Rollback complete"));
         }
         
@@ -234,11 +215,7 @@ export class OrderService {
       }
 
       // Get customer details
-      const customer = (await databases.getDocument(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        orderRequest.customer_id
-      )) as unknown as Customer;
+      const customer = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: orderRequest.customer_id })) as unknown as Customer;
 
       // Process loyalty discount after order creation
       try {
@@ -277,37 +254,21 @@ export class OrderService {
   ): Promise<OrderWithDetails | null> {
     try {
       // Get the main order
-      const order = (await databases.getDocument(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        orderId
-      )) as unknown as Order;
+      const order = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId })) as unknown as Order;
 
       // Get order items
-      const itemsResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDER_ITEMS_TABLE_ID,
-        [Query.equal("order_id", orderId)]
-      );
-      const items = itemsResponse.documents as unknown as OrderItem[];
+      const itemsResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", orderId)] });
+      const items = itemsResponse.rows as unknown as OrderItem[];
 
       // Get customer
-      const customer = (await databases.getDocument(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        order.customer_id
-      )) as unknown as Customer;
+      const customer = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: order.customer_id })) as unknown as Customer;
 
       // Get address
       let address: Address | null = null;
       
       if (order.address_id) {
         try {
-          address = (await databases.getDocument(
-            DATABASE_ID,
-            ADDRESSES_TABLE_ID,
-            order.address_id
-          )) as unknown as Address;
+          address = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: order.address_id })) as unknown as Address;
         } catch (e) {
           console.warn(`Address ${order.address_id} not found for order ${orderId}`);
         }
@@ -316,14 +277,10 @@ export class OrderService {
       // Fallback: If address_id is missing or fetch failed, try to find address by order_id
       if (!address) {
         try {
-          const addressList = await databases.listDocuments(
-            DATABASE_ID,
-            ADDRESSES_TABLE_ID,
-            [Query.equal("order_id", orderId), Query.limit(1)]
-          );
+          const addressList = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, queries: [Query.equal("order_id", orderId), Query.limit(1)] });
           
-          if (addressList.documents.length > 0) {
-             address = addressList.documents[0] as unknown as Address;
+          if (addressList.rows.length > 0) {
+             address = addressList.rows[0] as unknown as Address;
           }
         } catch (e) {
           console.error("Failed to find fallback address for order", orderId);
@@ -350,12 +307,7 @@ export class OrderService {
     status: Order["status"]
   ): Promise<Order> {
     try {
-      const updatedOrder = (await databases.updateDocument(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        orderId,
-        { status }
-      )) as unknown as Order;
+      const updatedOrder = (await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: { status } })) as unknown as Order;
 
       return updatedOrder;
     } catch (error) {
@@ -371,15 +323,11 @@ export class OrderService {
     customerId: string
   ): Promise<OrderWithDetails[]> {
     try {
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        [`customer_id=${customerId}`]
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [`customer_id=${customerId}`] });
 
       const orders: OrderWithDetails[] = [];
 
-      for (const order of ordersResponse.documents as unknown as Order[]) {
+      for (const order of ordersResponse.rows as unknown as Order[]) {
         const orderWithDetails = await this.getOrderWithDetails(order.$id);
         if (orderWithDetails) {
           orders.push(orderWithDetails);
@@ -398,15 +346,11 @@ export class OrderService {
   static async deleteOrder(orderId: string): Promise<void> {
     try {
       // 1. Get all order items for this order
-      const itemsResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDER_ITEMS_TABLE_ID,
-        [Query.equal("order_id", orderId)]
-      );
+      const itemsResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", orderId)] });
 
       // 2. Delete all order items
-      const deleteItemPromises = itemsResponse.documents.map((item) =>
-        databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, item.$id)
+      const deleteItemPromises = itemsResponse.rows.map((item) =>
+        tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: item.$id })
       );
       await Promise.all(deleteItemPromises);
 
@@ -419,7 +363,7 @@ export class OrderService {
       }
 
       // 4. Delete the order itself
-      await databases.deleteDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId);
+      await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId });
     } catch (error) {
       console.error("Error deleting order:", error);
       throw error;

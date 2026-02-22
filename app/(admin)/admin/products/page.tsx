@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
 import {
-  databases,
+  tablesDB,
   storage,
   DATABASE_ID,
   PRODUCTS_TABLE_ID,
@@ -129,12 +129,8 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PRODUCTS_TABLE_ID,
-        [Query.orderDesc("$createdAt")]
-      );
-      const productsList = response.documents as unknown as Product[];
+      const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: [Query.orderDesc("$createdAt")] });
+      const productsList = response.rows as unknown as Product[];
       setProducts(productsList);
       setFilteredProducts(productsList);
     } catch (error) {
@@ -176,21 +172,11 @@ export default function AdminProductsPage() {
       };
 
       if (editingId) {
-        await databases.updateDocument(
-          DATABASE_ID,
-          PRODUCTS_TABLE_ID,
-          editingId,
-          productData
-        );
+        await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: editingId, data: productData });
         toast.success("Product updated successfully!");
       } else {
         const productId = ID.unique();
-        await databases.createDocument(
-          DATABASE_ID,
-          PRODUCTS_TABLE_ID,
-          productId,
-          productData
-        );
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: productId, data: productData });
         toast.success(
           "Product created! Now add images by clicking the 📸 icon."
         );
@@ -227,7 +213,7 @@ export default function AdminProductsPage() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      await databases.deleteDocument(DATABASE_ID, PRODUCTS_TABLE_ID, id);
+      await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: id });
       toast.success("Product deleted successfully!");
       fetchProducts();
       // Clear cache so frontend reflects the deletion
@@ -254,7 +240,7 @@ export default function AdminProductsPage() {
     try {
       await Promise.all(
         selectedProducts.map((id) =>
-          databases.deleteDocument(DATABASE_ID, PRODUCTS_TABLE_ID, id)
+          tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: id })
         )
       );
       toast.success(
@@ -277,9 +263,9 @@ export default function AdminProductsPage() {
     try {
       await Promise.all(
         selectedProducts.map((id) =>
-          databases.updateDocument(DATABASE_ID, PRODUCTS_TABLE_ID, id, {
-            available,
-          })
+          tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: id, data: {
+                            available,
+                          } })
         )
       );
       toast.success(

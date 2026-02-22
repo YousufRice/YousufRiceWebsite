@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { databases, DATABASE_ID, ORDERS_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import { Order } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,13 +79,9 @@ export default function OrdersPage() {
         queries.push(Query.cursorAfter(lastId));
       }
 
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        queries
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
 
-      const newOrders = ordersResponse.documents as unknown as Order[];
+      const newOrders = ordersResponse.rows as unknown as Order[];
 
       if (loadMore) {
         setOrders(prev => [...prev, ...newOrders]);
@@ -185,16 +181,12 @@ export default function OrdersPage() {
     // Actually, let's just do this:
 
     setLoading(true);
-    databases.listDocuments(
-      DATABASE_ID,
-      ORDERS_TABLE_ID,
-      [
-        Query.equal('customer_id', customer!.$id),
-        Query.orderDesc('$createdAt'),
-        Query.limit(PAGE_SIZE)
-      ]
-    ).then((response) => {
-      const newOrders = response.documents as unknown as Order[];
+    tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                  Query.equal('customer_id', customer!.$id),
+                  Query.orderDesc('$createdAt'),
+                  Query.limit(PAGE_SIZE)
+                ] }).then((response) => {
+      const newOrders = response.rows as unknown as Order[];
       setOrders(newOrders);
       if (newOrders.length === PAGE_SIZE) {
         setLastId(newOrders[newOrders.length - 1].$id);

@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { databases, PRODUCTS_TABLE_ID, DATABASE_ID } from '@/lib/appwrite';
+import { tablesDB, PRODUCTS_TABLE_ID, DATABASE_ID } from "@/lib/appwrite";
 import { Product } from '@/lib/types';
 import { Query } from 'appwrite';
 
@@ -18,12 +18,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // This prevents build errors when database isn't accessible during build time
   if (DATABASE_ID && PRODUCTS_TABLE_ID && DATABASE_ID !== 'undefined' && PRODUCTS_TABLE_ID !== 'undefined') {
     try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PRODUCTS_TABLE_ID,
-        [Query.equal('available', true)]
-      );
-      products = response.documents as unknown as Product[];
+      const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: [Query.equal('available', true)] });
+      products = response.rows as unknown as Product[];
     } catch (error) {
       console.error('Error fetching products for sitemap:', error);
       // Return empty products array to allow build to continue

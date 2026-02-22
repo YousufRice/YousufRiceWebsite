@@ -1,4 +1,4 @@
-import { Client, Databases, Storage, Account, ID, Query } from "appwrite";
+import { Client, TablesDB, Storage, Account, ID, Query } from "appwrite";
 
 // Client for browser usage
 const client = new Client()
@@ -7,7 +7,7 @@ const client = new Client()
 
 // Server-side client configuration
 let serverClient: Client | null = null;
-let serverDatabases: Databases | null = null;
+let serverTablesDB: TablesDB | null = null;
 let serverStorage: Storage | null = null;
 
 // Initialize server-side client only when needed and available
@@ -16,7 +16,7 @@ if (typeof window === "undefined" && process.env.APPWRITE_API_KEY) {
     // Use node-appwrite for server-side operations
     const {
       Client: ServerClient,
-      Databases: ServerDatabases,
+      TablesDB: ServerTablesDB,
       Storage: ServerStorage,
     } = require("node-appwrite");
 
@@ -25,7 +25,7 @@ if (typeof window === "undefined" && process.env.APPWRITE_API_KEY) {
       .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
       .setKey(process.env.APPWRITE_API_KEY);
 
-    serverDatabases = new ServerDatabases(serverClient);
+    serverTablesDB = new ServerTablesDB(serverClient);
     serverStorage = new ServerStorage(serverClient);
 
     console.log("✅ Server-side Appwrite client initialized with API key");
@@ -35,7 +35,7 @@ if (typeof window === "undefined" && process.env.APPWRITE_API_KEY) {
 }
 
 // Export the appropriate clients
-export const databases = serverDatabases || new Databases(client);
+export const tablesDB = serverTablesDB || new TablesDB(client);
 export const storage = serverStorage || new Storage(client);
 export const account = new Account(client); // Account always uses client-side for user sessions
 

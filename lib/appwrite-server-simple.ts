@@ -11,13 +11,13 @@ export function createServerClient() {
 
   // Initialize services
   const account = new Account(client);
-  const databases = new Databases(client);
+  const tablesDB = new Databases(client);
   const storage = new Storage(client);
 
   return {
     client,
     account,
-    databases,
+    tablesDB,
     storage
   };
 }
