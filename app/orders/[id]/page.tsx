@@ -475,7 +475,10 @@ export default function OrderDetailPage() {
                   <div className="flex items-start space-x-3">
                     <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
                     <div>
-                      <p className="font-medium">{data.address.address_line}</p>
+                      <p className="font-medium">
+                        {data.address.address_line}
+                        {data.address.city ? `, ${data.address.city}` : ""}
+                      </p>
                       {data.address.latitude != null &&
                         data.address.longitude != null && (
                           <p className="text-sm text-gray-500 mt-1">
@@ -487,7 +490,7 @@ export default function OrderDetailPage() {
                   </div>
 
                   <a
-                    href={data.address.maps_url}
+                    href={data.address.maps_url || undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block"
