@@ -240,7 +240,7 @@ export default function AdminOrdersPage() {
       order.$id,
       order.customer?.full_name || "Unknown",
       order.customer?.phone || "",
-      order.address?.address_line || "No Address",
+      order.address ? `${order.address.address_line}${order.address.city ? `, ${order.address.city}` : ""}` : "No Address",
       order.total_weight_kg || "0",
       new Date(order.$createdAt).toLocaleDateString(),
       order.status,
@@ -272,9 +272,11 @@ export default function AdminOrdersPage() {
     setUpdatingOrderIds((prev) => new Set(prev).add(orderId));
 
     try {
-      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
-                  status: newStatus,
-                } });
+      await tablesDB.updateRow({
+        databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
+          status: newStatus,
+        }
+      });
 
       // Optimistic update: Update local state immediately
       setOrders((prevOrders) =>
@@ -606,8 +608,8 @@ export default function AdminOrdersPage() {
                           <MapPin className="w-3 h-3" />
                           Address
                         </p>
-                        <p className="text-sm text-gray-700 line-clamp-2" title={order.address?.address_line || "No address"}>
-                          {order.address?.address_line || "No address"}
+                        <p className="text-sm text-gray-700 line-clamp-2" title={order.address ? `${order.address.address_line}${order.address.city ? `, ${order.address.city}` : ""}` : "No address"}>
+                          {order.address ? `${order.address.address_line}${order.address.city ? `, ${order.address.city}` : ""}` : "No address"}
                         </p>
                       </div>
                       <div className="md:col-span-1">

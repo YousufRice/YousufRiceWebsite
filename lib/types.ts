@@ -1,3 +1,5 @@
+import type { Addresses } from "../types/appwrite";
+
 export interface Product {
   $id: string;
   name: string;
@@ -77,11 +79,11 @@ export interface Order {
   total_price: number; // final total after all discounts
 
   status:
-    | "pending"
-    | "accepted"
-    | "out_for_delivery"
-    | "delivered"
-    | "returned";
+  | "pending"
+  | "accepted"
+  | "out_for_delivery"
+  | "delivered"
+  | "returned";
   $createdAt: string;
 
   // Navigation properties (not stored in DB, populated by queries)
@@ -99,16 +101,7 @@ export interface Customer {
   $createdAt: string;
 }
 
-export interface Address {
-  $id: string;
-  customer_id: string;
-  order_id: string;
-  address_line: string;
-  latitude: number;
-  longitude: number;
-  maps_url: string;
-  $createdAt: string;
-}
+export interface Address extends Addresses { }
 
 export interface CartItem {
   product: Product;

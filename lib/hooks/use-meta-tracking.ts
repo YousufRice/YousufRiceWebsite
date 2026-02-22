@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import {
-  generateEventId, 
-  getFacebookCookies, 
+  generateEventId,
+  getFacebookCookies,
   sanitizeCustomerNameForMeta,
-  type MetaCustomData 
+  type MetaCustomData
 } from '@/lib/meta';
 
 // Get test event code from environment variable
@@ -93,7 +93,7 @@ export function useMetaTracking() {
       const result = await response.json();
       const testModeIndicator = testEventCode ? ' [TEST MODE]' : '';
       console.log(`[Meta Conversions API] ${eventName} sent with ID: ${eventId}${testModeIndicator}`);
-      
+
       return { success: true, eventId };
     } catch (error) {
       console.error('[Meta Tracking] Error:', error);
@@ -220,6 +220,10 @@ export function useMetaTracking() {
       phone?: string;
       firstName?: string;
       lastName?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
       externalId?: string;
     };
   }) => {

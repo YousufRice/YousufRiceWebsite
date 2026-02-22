@@ -1,8 +1,8 @@
 ===========================================
-META DATASET TRACKING - ENVIRONMENT VARIABLES (2025)
+META DATASET TRACKING - ENVIRONMENT VARIABLES (2026)
 ===========================================
 
-🆕 WHAT'S NEW IN 2025?
+🆕 WHAT'S NEW IN 2026?
 Every Pixel is now part of a Dataset. Use Dataset ID for unified tracking!
 
 Add these to your .env.local file:

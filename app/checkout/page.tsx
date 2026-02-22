@@ -38,7 +38,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotalPrice, clearCart } = useCartStore();
   const { user, customer, checkAuth } = useAuthStore();
-  const { trackInitiateCheckout, trackPurchase } = useMetaTracking();
+  const { trackPurchase } = useMetaTracking();
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
 
@@ -52,6 +52,8 @@ export default function CheckoutPage() {
     phone: "",
     email: "",
     addressLine: "",
+    city: "",
+    otherCity: "",
     notes: "",
     latitude: 0,
     longitude: 0,
@@ -88,27 +90,8 @@ export default function CheckoutPage() {
     // Only redirect if items are empty AND order hasn't been placed
     if (items.length === 0 && !isOrderPlacedRef.current) {
       router.push("/cart");
-    } else if (items.length > 0) {
-      // Track InitiateCheckout when user lands on checkout page
-      // Filter out agent data
-      const safeUser = isAgent ? null : user;
-
-      trackInitiateCheckout({
-        value: getTotalPrice(),
-        currency: "PKR",
-        numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-        contentIds: items.map((item) => item.product.$id),
-        userData: {
-          email: safeUser?.email || formData.email || undefined,
-          phone: safeUser?.phone || formData.phone || undefined,
-          externalId: safeUser?.$id || undefined,
-          firstName: (safeUser?.name || formData.fullName)?.split(' ')[0],
-          lastName: (safeUser?.name || formData.fullName)?.split(' ').slice(1).join(' '),
-          city: "Karachi", // Default to Karachi context if unknown
-        }
-      });
     }
-  }, [items, router, getTotalPrice, trackInitiateCheckout, user, isAgent, formData]);
+  }, [items, router]);
 
   const handleGetLocation = () => {
     setGettingLocation(true);
@@ -412,27 +395,32 @@ export default function CheckoutPage() {
         }
 
         // Update customer info
-        await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
-                        user_id: userIdToSave,
-                        full_name: dbFullName,
-                        email: formData.email || null,
-                        phone: formattedPhone, // Ensure phone is formatted
-                      } });
+        await tablesDB.updateRow({
+          databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+            user_id: userIdToSave,
+            full_name: dbFullName,
+            email: formData.email || null,
+            phone: formattedPhone, // Ensure phone is formatted
+          }
+        });
       } else {
         // Create new customer with phone as the primary identifier
         customerId = ID.unique();
-        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
-                        user_id: user?.$id || "guest",
-                        full_name: dbFullName,
-                        phone: formattedPhone,
-                        email: formData.email || null,
-                      } });
+        await tablesDB.createRow({
+          databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+            user_id: user?.$id || "guest",
+            full_name: dbFullName,
+            phone: formattedPhone,
+            email: formData.email || null,
+          }
+        });
       }
 
       // Create IDs upfront for atomic linking
       const orderId = ID.unique();
       const addressId = ID.unique();
       const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
+      const finalCity = formData.city === "Other City/Town" ? formData.otherCity : formData.city;
 
       const orderItems = formatOrderItems(
         items.map((item) => ({
@@ -512,70 +500,77 @@ export default function CheckoutPage() {
           } = processed;
 
           const itemId = ID.unique();
-          await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: itemId, data: {
-                            order_id: orderId,
-                            product_id: product.$id,
-                            product_name: product.name,
-                            product_description: product.description || "",
+          await tablesDB.createRow({
+            databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: itemId, data: {
+              order_id: orderId,
+              product_id: product.$id,
+              product_name: product.name,
+              product_description: product.description || "",
 
-                            // Quantity info
-                            quantity_kg: item.quantity,
-                            bags_1kg: item.bags?.kg1 || 0,
-                            bags_5kg: item.bags?.kg5 || 0,
-                            bags_10kg: item.bags?.kg10 || 0,
-                            bags_25kg: item.bags?.kg25 || 0,
+              // Quantity info
+              quantity_kg: item.quantity,
+              bags_1kg: item.bags?.kg1 || 0,
+              bags_5kg: item.bags?.kg5 || 0,
+              bags_10kg: item.bags?.kg10 || 0,
+              bags_25kg: item.bags?.kg25 || 0,
 
-                            // Price info
-                            price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
-                            base_price_per_kg: product.base_price_per_kg, // Original base price
+              // Price info
+              price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
+              base_price_per_kg: product.base_price_per_kg, // Original base price
 
-                            // Tier info
-                            tier_applied: tierPricing.tierApplied,
+              // Tier info
+              tier_applied: tierPricing.tierApplied,
 
-                            // Discount info
-                            discount_percentage:
-                              product.base_price_per_kg * item.quantity > 0
-                                ? (totalItemDiscount /
-                                  (product.base_price_per_kg * item.quantity)) *
-                                100
-                                : 0,
-                            discount_amount: roundedItemDiscount, // Includes tier + loyalty discount (Rounded)
+              // Discount info
+              discount_percentage:
+                product.base_price_per_kg * item.quantity > 0
+                  ? (totalItemDiscount /
+                    (product.base_price_per_kg * item.quantity)) *
+                  100
+                  : 0,
+              discount_amount: roundedItemDiscount, // Includes tier + loyalty discount (Rounded)
 
-                            // Totals
-                            subtotal_before_discount: roundedSubtotal, // Rounded
-                            total_after_discount: roundedItemTotal, // Rounded
+              // Totals
+              subtotal_before_discount: roundedSubtotal, // Rounded
+              total_after_discount: roundedItemTotal, // Rounded
 
-                            // Metadata
-                            notes: formData.notes || "",
-                          } });
+              // Metadata
+              notes: formData.notes || "",
+            }
+          });
           createdItemIds.push(itemId);
         }
 
         // Create address FIRST (using pre-generated orderId)
-        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId, data: {
-                        customer_id: customerId,
-                        order_id: orderId,
-                        address_line: formData.addressLine,
-                        latitude: formData.latitude,
-                        longitude: formData.longitude,
-                        maps_url: mapsUrl,
-                      } });
+        await tablesDB.createRow({
+          databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId, data: {
+            customer_id: customerId,
+            order_id: orderId,
+            address_line: formData.addressLine,
+            city: finalCity,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            maps_url: mapsUrl,
+          }
+        });
 
         // Create order with accurate calculated totals AND the pre-generated address_id
-        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
-                      customer_id: customerId,
-                      address_id: addressId, // Set immediately! No update needed.
-                      order_items: orderItems, // CSV string snapshot
+        await tablesDB.createRow({
+          databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
+            customer_id: customerId,
+            address_id: addressId, // Set immediately! No update needed.
+            order_items: orderItems, // CSV string snapshot
 
-                      // Summary fields
-                      total_items_count: totalItemsCount,
-                      total_weight_kg: totalWeightKg,
-                      subtotal_before_discount: subtotalBeforeDiscount,
-                      total_discount_amount: totalDiscountAmount,
-                      total_price: finalTotalPrice,
+            // Summary fields
+            total_items_count: totalItemsCount,
+            total_weight_kg: totalWeightKg,
+            subtotal_before_discount: subtotalBeforeDiscount,
+            total_discount_amount: totalDiscountAmount,
+            total_price: finalTotalPrice,
 
-                      status: "pending",
-                    } });
+            status: "pending",
+          }
+        });
 
       } catch (creationError) {
         console.error("Error during order creation flow:", creationError);
@@ -624,6 +619,7 @@ export default function CheckoutPage() {
           phone: formattedPhone,
           firstName: cleanedName.split(" ")[0],
           lastName: cleanedName.split(" ").slice(1).join(" "),
+          city: finalCity.toLowerCase() === "karachi" ? "Karachi" : undefined,
           externalId: customerId || (!isAgent ? user?.$id : undefined), // CRITICAL: Link to customer/user ID, but NEVER agent ID
         },
       });
@@ -812,22 +808,63 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-bold text-[#27247b] mb-2">
-                        Delivery Address *
-                      </label>
-                      <Input
-                        value={formData.addressLine}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            addressLine: e.target.value,
-                          })
-                        }
-                        required
-                        className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
-                        placeholder="House #, Street, Area, City"
-                      />
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="col-span-1">
+                        <label className="block text-sm font-bold text-[#27247b] mb-2">
+                          City *
+                        </label>
+                        <select
+                          value={formData.city}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData({ ...formData, city: val, otherCity: val !== "Other City/Town" ? "" : formData.otherCity });
+                          }}
+                          required
+                          className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base bg-gray-50 cursor-pointer appearance-none"
+                        >
+                          <option value="" disabled>Select City</option>
+                          <option value="Karachi">Karachi</option>
+                          <option value="Other City/Town">Other City/Town (Delivery Charges Apply)</option>
+                        </select>
+                      </div>
+
+                      {formData.city === "Other City/Town" && (
+                        <div className="col-span-1">
+                          <label className="block text-sm font-bold text-[#27247b] mb-2">
+                            Enter Your City/Town *
+                          </label>
+                          <Input
+                            value={formData.otherCity}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                otherCity: e.target.value,
+                              })
+                            }
+                            required
+                            className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
+                            placeholder="e.g. Lahore, Islamabad"
+                          />
+                        </div>
+                      )}
+
+                      <div className={`col-span-1 ${formData.city === "Other City/Town" ? "md:col-span-2" : "md:col-span-1"}`}>
+                        <label className="block text-sm font-bold text-[#27247b] mb-2">
+                          Delivery Address *
+                        </label>
+                        <Input
+                          value={formData.addressLine}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              addressLine: e.target.value,
+                            })
+                          }
+                          required
+                          className="border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base"
+                          placeholder="House #, Street, Area"
+                        />
+                      </div>
                     </div>
 
                     <div>
