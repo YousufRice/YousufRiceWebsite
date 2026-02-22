@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { databases, DATABASE_ID, ORDERS_TABLE_ID, ORDER_ITEMS_TABLE_ID, Query } from "@/lib/appwrite";
+import { tablesDB, DATABASE_ID, ORDERS_TABLE_ID, ORDER_ITEMS_TABLE_ID, Query } from "@/lib/appwrite";
 import { Order } from "@/lib/types";
 import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
@@ -50,13 +50,9 @@ export default function EditOrderDialog({
             // Fetch existing notes from the first order item
             const fetchNotes = async () => {
                 try {
-                    const items = await databases.listDocuments(
-                        DATABASE_ID,
-                        ORDER_ITEMS_TABLE_ID,
-                        [Query.equal("order_id", order.$id), Query.limit(1)]
-                    );
-                    if (items.documents.length > 0) {
-                        setNotes(items.documents[0].notes || "");
+                    const items = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", order.$id), Query.limit(1)] });
+                    if (items.rows.length > 0) {
+                        setNotes(items.rows[0].notes || "");
                     }
                 } catch (error) {
                     console.error("Error fetching notes:", error);
@@ -78,26 +74,17 @@ export default function EditOrderDialog({
                 return;
             }
 
-            await databases.updateDocument(DATABASE_ID, ORDERS_TABLE_ID, order.$id, {
-                status: status,
-                total_price: price,
-            });
+            await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: order.$id, data: {
+                                status: status,
+                                total_price: price,
+                            } });
 
             // Update notes for all order items
-            const items = await databases.listDocuments(
-                DATABASE_ID,
-                ORDER_ITEMS_TABLE_ID,
-                [Query.equal("order_id", order.$id)]
-            );
+            const items = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", order.$id)] });
 
             await Promise.all(
-                items.documents.map((item) =>
-                    databases.updateDocument(
-                        DATABASE_ID,
-                        ORDER_ITEMS_TABLE_ID,
-                        item.$id,
-                        { notes: notes }
-                    )
+                items.rows.map((item) =>
+                    tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: item.$id, data: { notes: notes } })
                 )
             );
 

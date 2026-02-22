@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databases, DATABASE_ID, ORDERS_TABLE_ID, PRODUCTS_TABLE_ID, CUSTOMERS_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, ORDERS_TABLE_ID, PRODUCTS_TABLE_ID, CUSTOMERS_TABLE_ID } from "@/lib/appwrite";
 import { Query } from 'appwrite';
 import { checkAdminPermissions } from '@/lib/auth-utils';
 
@@ -71,21 +71,21 @@ export async function GET(req: NextRequest) {
       deliveredRes,
       lastMonthOrdersRes
     ] = await Promise.all([
-      databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID),
-      databases.listDocuments(DATABASE_ID, PRODUCTS_TABLE_ID),
-      databases.listDocuments(DATABASE_ID, CUSTOMERS_TABLE_ID),
-      databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [Query.equal('status', 'pending')]),
-      databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [Query.equal('status', 'accepted')]),
-      databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [Query.equal('status', 'out_for_delivery')]),
-      databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [Query.equal('status', 'delivered')]),
-      databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [Query.greaterThan('$createdAt', thirtyDaysAgo.toISOString())])
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('status', 'pending')] }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('status', 'accepted')] }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('status', 'out_for_delivery')] }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('status', 'delivered')] }),
+      tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.greaterThan('$createdAt', thirtyDaysAgo.toISOString())] })
     ]);
 
-    const totalRevenue = ordersRes.documents.reduce((sum: number, order: any) => {
+    const totalRevenue = ordersRes.rows.reduce((sum: number, order: any) => {
       return sum + (order.total_price || 0);
     }, 0);
 
-    const lastMonthRevenue = lastMonthOrdersRes.documents.reduce((sum: number, order: any) => {
+    const lastMonthRevenue = lastMonthOrdersRes.rows.reduce((sum: number, order: any) => {
       return sum + (order.total_price || 0);
     }, 0);
 
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
     const revenueGrowth = previousRevenue > 0 ? ((lastMonthRevenue / previousRevenue) * 100 - 100) : 0;
     const ordersGrowth = ordersRes.total > 0 ? ((lastMonthOrdersRes.total / ordersRes.total) * 100) : 0;
 
-    const availableProducts = (productsRes.documents as any[]).filter((p: any) => p.available).length;
+    const availableProducts = (productsRes.rows as any[]).filter((p: any) => p.available).length;
 
     return NextResponse.json({
       stats: {

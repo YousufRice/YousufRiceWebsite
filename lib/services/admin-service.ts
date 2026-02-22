@@ -1,6 +1,6 @@
 import { Query } from "appwrite";
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   ORDERS_TABLE_ID,
   ORDER_ITEMS_TABLE_ID,
@@ -36,16 +36,12 @@ export class AdminService {
       // If search term is provided, we'll filter after fetching
       // (Appwrite doesn't support complex text search on orders directly)
 
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        queries
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
 
       let allOrders: OrderWithDetails[] = [];
 
       // Get detailed order information
-      for (const order of ordersResponse.documents) {
+      for (const order of ordersResponse.rows) {
         const orderDetails = await OrderService.getOrderWithDetails(order.$id);
         if (orderDetails) {
           allOrders.push(orderDetails);
@@ -129,13 +125,9 @@ export class AdminService {
         queries.push(`$createdAt<=${endDate.toISOString()}`);
       }
 
-      const ordersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDERS_TABLE_ID,
-        queries
-      );
+      const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
 
-      const orders = ordersResponse.documents as any[];
+      const orders = ordersResponse.rows as any[];
 
       // Filter out returned orders for revenue calculations
       const activeOrders = orders.filter(
@@ -170,12 +162,8 @@ export class AdminService {
       let allOrderItems: OrderItem[] = [];
       if (orderItemsQueries.length > 0) {
         // Note: This might need to be done in batches for large datasets
-        const itemsResponse = await databases.listDocuments(
-          DATABASE_ID,
-          ORDER_ITEMS_TABLE_ID,
-          orderItemsQueries.slice(0, 100) // Limit to prevent query overflow
-        );
-        allOrderItems = itemsResponse.documents as any[];
+        const itemsResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: orderItemsQueries.slice(0, 100) });
+        allOrderItems = itemsResponse.rows as any[];
       }
 
       // Top products analysis
@@ -320,11 +308,7 @@ export class AdminService {
   } | null> {
     try {
       // Get customer details
-      const customer = (await databases.getDocument(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        customerId
-      )) as unknown as Customer;
+      const customer = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId })) as unknown as Customer;
 
       // Get customer orders
       const orders = await OrderService.getCustomerOrders(customerId);
@@ -363,28 +347,20 @@ export class AdminService {
   static async searchCustomers(searchTerm: string): Promise<Customer[]> {
     try {
       // Search by phone (exact match)
-      const phoneResults = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", searchTerm)]
-      );
+      const phoneResults = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", searchTerm)] });
 
       // Search by name (this is limited in Appwrite, so we'll get all and filter)
-      const allCustomers = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        []
-      );
+      const allCustomers = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [] });
 
       const searchLower = searchTerm.toLowerCase();
-      const nameResults = allCustomers.documents.filter(
+      const nameResults = allCustomers.rows.filter(
         (customer: any) =>
           customer.full_name.toLowerCase().includes(searchLower) ||
           customer.email?.toLowerCase().includes(searchLower)
       );
 
       // Combine and deduplicate results
-      const allResults = [...phoneResults.documents, ...nameResults];
+      const allResults = [...phoneResults.rows, ...nameResults];
       const uniqueResults = allResults.filter(
         (customer, index, self) =>
           index === self.findIndex((c) => c.$id === customer.$id)
@@ -416,13 +392,9 @@ export class AdminService {
         queries.push(`product_id=${productId}`);
       }
 
-      const orderItemsResponse = await databases.listDocuments(
-        DATABASE_ID,
-        ORDER_ITEMS_TABLE_ID,
-        queries
-      );
+      const orderItemsResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: queries });
 
-      const orderItems = orderItemsResponse.documents as any[];
+      const orderItems = orderItemsResponse.rows as any[];
 
       // Group by product
       const productStats: Record<
@@ -466,11 +438,7 @@ export class AdminService {
       const products = [];
       for (const [productId, stats] of Object.entries(productStats)) {
         try {
-          const product = (await databases.getDocument(
-            DATABASE_ID,
-            PRODUCTS_TABLE_ID,
-            productId
-          )) as unknown as Product;
+          const product = (await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: productId })) as unknown as Product;
 
           products.push({
             product,

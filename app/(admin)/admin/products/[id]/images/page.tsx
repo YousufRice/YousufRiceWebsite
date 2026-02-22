@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { databases, storage, DATABASE_ID, PRODUCT_IMAGES_TABLE_ID, PRODUCTS_TABLE_ID, STORAGE_BUCKET_ID } from '@/lib/appwrite';
+import { tablesDB, storage, DATABASE_ID, PRODUCT_IMAGES_TABLE_ID, PRODUCTS_TABLE_ID, STORAGE_BUCKET_ID } from "@/lib/appwrite";
 import { Product, ProductImage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,16 +36,12 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
   const fetchProductAndImages = async () => {
     try {
       // Fetch product
-      const productData = await databases.getDocument(DATABASE_ID, PRODUCTS_TABLE_ID, productId);
+      const productData = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: productId });
       setProduct(productData as unknown as Product);
 
       // Fetch images for this product
-      const imagesResponse = await databases.listDocuments(
-        DATABASE_ID,
-        PRODUCT_IMAGES_TABLE_ID,
-        [Query.equal('product_id', productId), Query.orderDesc('$createdAt')]
-      );
-      setImages(imagesResponse.documents as unknown as ProductImage[]);
+      const imagesResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, queries: [Query.equal('product_id', productId), Query.orderDesc('$createdAt')] });
+      setImages(imagesResponse.rows as unknown as ProductImage[]);
     } catch (error) {
       console.error('Error fetching product:', error);
       toast.error('Failed to load product');
@@ -67,19 +63,14 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
         const fileId = ID.unique();
         
         // Upload to storage
-        await storage.createFile(STORAGE_BUCKET_ID, fileId, file);
+        await storage.createFile({ bucketId: STORAGE_BUCKET_ID, fileId: fileId, file: file });
         
         // Create database entry
-        await databases.createDocument(
-          DATABASE_ID,
-          PRODUCT_IMAGES_TABLE_ID,
-          ID.unique(),
-          {
-            product_id: productId,
-            file_id: fileId,
-            is_primary: images.length === 0 && i === 0 // First image is primary if no images exist
-          }
-        );
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: ID.unique(), data: {
+                        product_id: productId,
+                        file_id: fileId,
+                        is_primary: images.length === 0 && i === 0 // First image is primary if no images exist
+                      } });
       }
 
       toast.success(`Uploaded ${files.length} image(s) successfully!`);
@@ -97,22 +88,12 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
       // First, set all images to non-primary
       for (const img of images) {
         if (img.is_primary) {
-          await databases.updateDocument(
-            DATABASE_ID,
-            PRODUCT_IMAGES_TABLE_ID,
-            img.$id,
-            { is_primary: false }
-          );
+          await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: img.$id, data: { is_primary: false } });
         }
       }
 
       // Then set the selected image as primary
-      await databases.updateDocument(
-        DATABASE_ID,
-        PRODUCT_IMAGES_TABLE_ID,
-        imageId,
-        { is_primary: true }
-      );
+      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: imageId, data: { is_primary: true } });
 
       toast.success('Primary image updated!');
       fetchProductAndImages();
@@ -127,10 +108,10 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
 
     try {
       // Delete from storage
-      await storage.deleteFile(STORAGE_BUCKET_ID, fileId);
+      await storage.deleteFile({ bucketId: STORAGE_BUCKET_ID, fileId: fileId });
       
       // Delete from database
-      await databases.deleteDocument(DATABASE_ID, PRODUCT_IMAGES_TABLE_ID, imageId);
+      await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: imageId });
       
       toast.success('Image deleted successfully!');
       fetchProductAndImages();
@@ -230,7 +211,7 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map((image) => {
-              const imageUrl = storage.getFileView(STORAGE_BUCKET_ID, image.file_id).toString();
+              const imageUrl = storage.getFileView({ bucketId: STORAGE_BUCKET_ID, fileId: image.file_id }).toString();
               
               return (
                 <Card key={image.$id} className={image.is_primary ? 'ring-2 ring-green-500' : ''}>

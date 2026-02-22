@@ -1,0 +1,105 @@
+app/(admin)/admin/customers/[id]/page.tsx(61,48): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/customers/[id]/page.tsx(95,38): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/customers/page.tsx(71,27): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/customers/page.tsx(75,47): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(167,24): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(175,174): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(194,12): error TS7006: Parameter 'order' implicitly has an 'any' type.
+app/(admin)/admin/orders/page.tsx(212,26): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(213,42): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(213,67): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(217,33): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/orders/page.tsx(354,15): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(116,43): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(140,43): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(151,46): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(178,48): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(198,41): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(202,21): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/page.tsx(212,23): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/products/[id]/images/page.tsx(44,32): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/products/page.tsx(133,37): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/(admin)/admin/staff-performance/page.tsx(133,40): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/api/admin/stats/route.ts(84,36): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/api/admin/stats/route.ts(88,49): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/api/admin/stats/route.ts(96,44): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/api/auth/send-password-reset-otp/route.ts(20,26): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/api/auth/send-password-reset-otp/route.ts(28,39): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/api/auth/update-password/route.ts(26,26): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/auth/register/register-form.tsx(77,28): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/auth/register/register-form.tsx(78,43): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/auth/register/register-form.tsx(92,25): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/auth/register/register-form.tsx(93,40): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/auth/register/register-form.tsx(171,32): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/auth/register/register-form.tsx(173,55): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/checkout/page.tsx(396,35): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/checkout/page.tsx(398,58): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/orders/page.tsx(84,40): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/orders/page.tsx(189,34): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/profile/page.tsx(57,22): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/profile/page.tsx(58,41): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/profile/page.tsx(162,20): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/profile/page.tsx(176,37): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/sitemap.ts(22,27): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/track-order/page.tsx(49,28): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/track-order/page.tsx(57,46): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/track-order/page.tsx(63,32): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/track-order/page.tsx(65,26): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+app/track-order/page.tsx(66,47): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+components/admin/EditOrderDialog.tsx(54,31): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+components/admin/EditOrderDialog.tsx(55,40): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+components/admin/EditOrderDialog.tsx(86,23): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+components/admin/EditOrderDialog.tsx(86,38): error TS7006: Parameter 'item' implicitly has an 'any' type.
+lib/agents/tools/appwriteTools.ts(423,42): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(463,43): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(482,25): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(482,46): error TS7006: Parameter 'order' implicitly has an 'any' type.
+lib/agents/tools/appwriteTools.ts(496,46): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(597,20): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(610,33): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(708,29): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(710,46): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(714,55): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(715,68): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(1243,28): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(1244,51): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/appwriteTools.ts(1510,33): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/loyaltyTools.ts(59,28): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/loyaltyTools.ts(60,39): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/loyaltyTools.ts(61,41): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/agents/tools/loyaltyTools.ts(71,71): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/cached-data.ts(25,47): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/cached-data.ts(44,60): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/cached-data.ts(73,58): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/cached-data.ts(108,47): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/cached-data.ts(128,60): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/admin-service.ts(3,3): error TS2305: Module '"../appwrite"' has no exported member 'databases'.
+lib/services/admin-service.ts(39,36): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(128,36): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(165,37): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(311,31): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(350,34): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(353,34): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(395,40): error TS2304: Cannot find name 'tablesDB'.
+lib/services/admin-service.ts(441,34): error TS2304: Cannot find name 'tablesDB'.
+lib/services/discount-service.ts(160,19): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/discount-service.ts(164,22): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/discount-service.ts(164,36): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+lib/services/loyalty-service.ts(93,27): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(96,12): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(154,19): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(158,37): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(197,19): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(201,22): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(217,19): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(221,22): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/loyalty-service.ts(290,36): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/order-service.ts(261,35): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/order-service.ts(282,27): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/order-service.ts(283,36): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/order-service.ts(330,42): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/order-service.ts(352,48): error TS2339: Property 'documents' does not exist on type 'RowList<DefaultRow>'.
+lib/services/order-service.ts(352,63): error TS7006: Parameter 'item' implicitly has an 'any' type.
+lib/store/auth-store.ts(2,19): error TS2305: Module '"../appwrite"' has no exported member 'databases'.
+lib/store/auth-store.ts(58,40): error TS2304: Cannot find name 'tablesDB'.

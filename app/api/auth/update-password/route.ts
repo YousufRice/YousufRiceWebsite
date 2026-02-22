@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databases, DATABASE_ID, CUSTOMERS_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID } from "@/lib/appwrite";
 import { Query } from 'appwrite';
 
 export async function POST(request: NextRequest) {
@@ -21,13 +21,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the user exists in our database
-    const customerResponse = await databases.listDocuments(
-      DATABASE_ID,
-      CUSTOMERS_TABLE_ID,
-      [Query.equal('user_id', userId), Query.equal('email', email)]
-    );
+    const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal('user_id', userId), Query.equal('email', email)] });
 
-    if (customerResponse.documents.length === 0) {
+    if (customerResponse.rows.length === 0) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }

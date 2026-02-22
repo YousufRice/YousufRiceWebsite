@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   CUSTOMERS_TABLE_ID,
   account,
@@ -52,14 +52,10 @@ export default function ProfilePage() {
         });
 
         // Fetch loyalty discounts for this customer
-        const response = await databases.listDocuments(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          [Query.equal("user_id", user.$id)]
-        );
+        const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("user_id", user.$id)] });
 
-        if (response.documents.length > 0) {
-          const customerData = response.documents[0];
+        if (response.rows.length > 0) {
+          const customerData = response.rows[0];
           await fetchLoyaltyDiscounts(customerData.$id);
         }
       } catch (error) {
@@ -154,11 +150,7 @@ export default function ProfilePage() {
       // But typically we want to try to keep the Customer record in sync even if Auth had minor hiccups
 
       // Find the customer document
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal("user_id", user.$id)]
-      );
+      const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("user_id", user.$id)] });
 
       // Prepare formatted phone for Customer record
       const customerPhone = formatPhoneNumber(formData.phone);
@@ -167,37 +159,27 @@ export default function ProfilePage() {
       const dbPhone = phoneUpdateSuccess ? customerPhone : (user.phone || customerPhone);
 
 
-      if (response.documents.length === 0) {
+      if (response.rows.length === 0) {
         // Customer record not found - create new one
         console.log("Customer record not found, creating new one...");
 
-        await databases.createDocument(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          ID.unique(),
-          {
-            user_id: user.$id,
-            full_name: formData.full_name,
-            email: formData.email,
-            phone: dbPhone
-          }
-        );
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: ID.unique(), data: {
+                        user_id: user.$id,
+                        full_name: formData.full_name,
+                        email: formData.email,
+                        phone: dbPhone
+                      } });
 
         toast.success("Profile updated and synchronized successfully!");
       } else {
         // Existing customer found - update it
-        const customerId = response.documents[0].$id;
+        const customerId = response.rows[0].$id;
 
-        await databases.updateDocument(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          customerId,
-          {
-            full_name: formData.full_name,
-            phone: dbPhone, // Only update if Auth succeeded
-            email: formData.email,
-          }
-        );
+        await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+                        full_name: formData.full_name,
+                        phone: dbPhone, // Only update if Auth succeeded
+                        email: formData.email,
+                      } });
 
         if (updateErrors.length > 0) {
           toast.success("Profile saved (with some restrictions)");

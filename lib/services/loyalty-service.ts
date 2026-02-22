@@ -1,5 +1,5 @@
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   DISCOUNT_MANAGEMENT_TABLE_ID,
   ID,
@@ -86,64 +86,50 @@ export class LoyaltyService {
       const discountCode = this.generateDiscountCode();
 
       // Get existing loyalty record for customer
-      const existingRecords = await databases.listDocuments(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        [Query.equal("customer_id", customerId)]
-      );
+      const existingRecords = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [Query.equal("customer_id", customerId)] });
 
       let loyaltyRecord: LoyaltyDiscount;
 
-      if (existingRecords.documents.length > 0) {
+      if (existingRecords.rows.length > 0) {
         // Update existing record
         const existingRecord = existingRecords
-          .documents[0] as unknown as LoyaltyDiscount;
-        const updatedRecord = await databases.updateDocument(
-          DATABASE_ID,
-          DISCOUNT_MANAGEMENT_TABLE_ID,
-          existingRecord.$id,
-          {
-            total_purchases: existingRecord.total_purchases + 1,
-            total_purchase_amount:
-              existingRecord.total_purchase_amount + orderAmount,
-            eligible_for_extra_discount: true,
-            extra_discount_percentage: 3.0, // 3% loyalty discount
-            discount_code: discountCode,
-            code_status: "active",
-            order_id: orderId, // Track which order generated this discount
-            used_in_order_id: "",
-            code_generated_at: new Date().toISOString(),
-            code_used_at: "",
-            rule_active: true,
-          }
-        );
+          .rows[0] as unknown as LoyaltyDiscount;
+        const updatedRecord = await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, rowId: existingRecord.$id, data: {
+                        total_purchases: existingRecord.total_purchases + 1,
+                        total_purchase_amount:
+                          existingRecord.total_purchase_amount + orderAmount,
+                        eligible_for_extra_discount: true,
+                        extra_discount_percentage: 3.0, // 3% loyalty discount
+                        discount_code: discountCode,
+                        code_status: "active",
+                        order_id: orderId, // Track which order generated this discount
+                        used_in_order_id: "",
+                        code_generated_at: new Date().toISOString(),
+                        code_used_at: "",
+                        rule_active: true,
+                      } });
         loyaltyRecord = updatedRecord as unknown as LoyaltyDiscount;
       } else {
         // Create new record
-        const newRecord = await databases.createDocument(
-          DATABASE_ID,
-          DISCOUNT_MANAGEMENT_TABLE_ID,
-          ID.unique(),
-          {
-            type: "loyalty",
-            customer_id: customerId,
-            customer_name: customerName,
-            card_status: "active",
-            total_purchases: 1,
-            total_purchase_amount: orderAmount,
-            eligible_for_extra_discount: true,
-            extra_discount_percentage: 3.0,
-            rule_name: "Loyalty Discount Program",
-            discount_percentage: 3.0,
-            rule_active: true,
-            discount_code: discountCode,
-            code_status: "active",
-            order_id: orderId, // Track which order generated this discount
-            used_in_order_id: "",
-            code_generated_at: new Date().toISOString(),
-            code_used_at: "",
-          }
-        );
+        const newRecord = await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, rowId: ID.unique(), data: {
+                        type: "loyalty",
+                        customer_id: customerId,
+                        customer_name: customerName,
+                        card_status: "active",
+                        total_purchases: 1,
+                        total_purchase_amount: orderAmount,
+                        eligible_for_extra_discount: true,
+                        extra_discount_percentage: 3.0,
+                        rule_name: "Loyalty Discount Program",
+                        discount_percentage: 3.0,
+                        rule_active: true,
+                        discount_code: discountCode,
+                        code_status: "active",
+                        order_id: orderId, // Track which order generated this discount
+                        used_in_order_id: "",
+                        code_generated_at: new Date().toISOString(),
+                        code_used_at: "",
+                      } });
         loyaltyRecord = newRecord as unknown as LoyaltyDiscount;
       }
 
@@ -163,17 +149,13 @@ export class LoyaltyService {
   ): Promise<LoyaltyDiscount | null> {
     try {
       // Find the discount record
-      const records = await databases.listDocuments(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        [Query.equal("discount_code", discountCode)]
-      );
+      const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [Query.equal("discount_code", discountCode)] });
 
-      if (records.documents.length === 0) {
+      if (records.rows.length === 0) {
         throw new Error("Invalid discount code");
       }
 
-      const loyaltyRecord = records.documents[0] as unknown as LoyaltyDiscount;
+      const loyaltyRecord = records.rows[0] as unknown as LoyaltyDiscount;
 
       // Check if code is already used
       if (loyaltyRecord.code_status === "used") {
@@ -186,16 +168,11 @@ export class LoyaltyService {
       }
 
       // Mark code as used
-      const updatedRecord = await databases.updateDocument(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        loyaltyRecord.$id,
-        {
-          code_status: "used",
-          used_in_order_id: orderId,
-          code_used_at: new Date().toISOString(),
-        }
-      );
+      const updatedRecord = await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, rowId: loyaltyRecord.$id, data: {
+                    code_status: "used",
+                    used_in_order_id: orderId,
+                    code_used_at: new Date().toISOString(),
+                  } });
 
       return updatedRecord as unknown as LoyaltyDiscount;
     } catch (error) {
@@ -211,21 +188,17 @@ export class LoyaltyService {
     customerId: string
   ): Promise<LoyaltyDiscount | null> {
     try {
-      const records = await databases.listDocuments(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        [
-          Query.equal("customer_id", customerId),
-          Query.orderDesc("$createdAt"), // Get the latest one
-          Query.limit(1)
-        ]
-      );
+      const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [
+                    Query.equal("customer_id", customerId),
+                    Query.orderDesc("$createdAt"), // Get the latest one
+                    Query.limit(1)
+                  ] });
 
-      if (records.documents.length === 0) {
+      if (records.rows.length === 0) {
         return null;
       }
 
-      return records.documents[0] as unknown as LoyaltyDiscount;
+      return records.rows[0] as unknown as LoyaltyDiscount;
     } catch (error) {
       console.error("Error getting customer loyalty info:", error);
       throw error;
@@ -239,17 +212,13 @@ export class LoyaltyService {
     discountCode: string
   ): Promise<LoyaltyDiscount | null> {
     try {
-      const records = await databases.listDocuments(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        [Query.equal("discount_code", discountCode)]
-      );
+      const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [Query.equal("discount_code", discountCode)] });
 
-      if (records.documents.length === 0) {
+      if (records.rows.length === 0) {
         return null;
       }
 
-      return records.documents[0] as unknown as LoyaltyDiscount;
+      return records.rows[0] as unknown as LoyaltyDiscount;
     } catch (error) {
       console.error("Error finding loyalty discount by code:", error);
       throw error;
@@ -315,19 +284,11 @@ export class LoyaltyService {
   ): Promise<void> {
     try {
       // Find discount records generated by this order
-      const records = await databases.listDocuments(
-        DATABASE_ID,
-        DISCOUNT_MANAGEMENT_TABLE_ID,
-        [Query.equal("order_id", orderId)]
-      );
+      const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [Query.equal("order_id", orderId)] });
 
       // Delete all matching records
-      for (const record of records.documents) {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          DISCOUNT_MANAGEMENT_TABLE_ID,
-          record.$id
-        );
+      for (const record of records.rows) {
+        await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, rowId: record.$id });
         console.log(
           `Deleted loyalty discount ${record.$id} generated by order ${orderId}`
         );

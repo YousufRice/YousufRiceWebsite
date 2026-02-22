@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { account, databases, DATABASE_ID, CUSTOMERS_TABLE_ID } from '../appwrite';
+import { account, tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID } from '../appwrite';
 import { Models, Query } from 'appwrite';
 import { Customer } from '../types';
 
@@ -55,13 +55,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // Fetch customer record linked to this user
       let customer: Customer | null = null;
       try {
-        const customerResponse = await databases.listDocuments(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          [Query.equal('user_id', user.$id)]
-        );
-        if (customerResponse.documents.length > 0) {
-          customer = customerResponse.documents[0] as unknown as Customer;
+        const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal('user_id', user.$id)] });
+        if (customerResponse.rows.length > 0) {
+          customer = customerResponse.rows[0] as unknown as Customer;
         }
       } catch (error) {
         console.error('Error fetching customer:', error);
@@ -89,7 +85,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   
   logout: async () => {
     try {
-      await account.deleteSession('current');
+      await account.deleteSession({ sessionId: 'current' });
       set({ 
         user: null, 
         customer: null, 

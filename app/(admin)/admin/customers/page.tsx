@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { databases, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import { Customer, Order } from '@/lib/types';
 import { Card, CardContent, } from '@/components/ui/card';
@@ -62,25 +62,17 @@ export default function AdminCustomersPage() {
 
   const fetchCustomers = async () => {
     try {
-      const customersResponse = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [
-          Query.orderDesc('$createdAt'),
-          Query.limit(5000)
-        ]
-      );
+      const customersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [
+                    Query.orderDesc('$createdAt'),
+                    Query.limit(5000)
+                  ] });
 
       const customersWithStats = await Promise.all(
-        customersResponse.documents.map(async (customer: any) => {
+        customersResponse.rows.map(async (customer: any) => {
           try {
-            const ordersResponse = await databases.listDocuments(
-              DATABASE_ID,
-              ORDERS_TABLE_ID,
-              [Query.equal('customer_id', customer.$id)]
-            );
+            const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [Query.equal('customer_id', customer.$id)] });
 
-            const totalSpent = ordersResponse.documents.reduce((sum: number, order: any) => {
+            const totalSpent = ordersResponse.rows.reduce((sum: number, order: any) => {
               // Exclude returned orders from revenue calculation
               if (order.status === 'returned') return sum;
               return sum + (order.total_price || 0);

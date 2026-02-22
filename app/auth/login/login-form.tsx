@@ -57,7 +57,7 @@ export default function LoginForm() {
 
       if (isEmail) {
         // Direct email login
-        await account.createEmailPasswordSession(emailOrPhone, password);
+        await account.createEmailPasswordSession({ email: emailOrPhone, password: password });
       } else {
         // Validate phone number
         const validation = validatePakistaniPhoneNumber(emailOrPhone);
@@ -81,7 +81,7 @@ export default function LoginForm() {
         }
 
         // Login with the retrieved email
-        await account.createEmailPasswordSession(email, password);
+        await account.createEmailPasswordSession({ email: email, password: password });
       }
 
       await checkAuth();

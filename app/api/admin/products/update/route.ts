@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databases, DATABASE_ID, PRODUCTS_TABLE_ID } from '@/lib/appwrite';
+import { tablesDB, DATABASE_ID, PRODUCTS_TABLE_ID } from "@/lib/appwrite";
 import { checkAdminPermissions, withAdminAuth } from '@/lib/auth-utils';
 
 /**
@@ -25,12 +25,7 @@ export async function PUT(req: NextRequest) {
     }
     
     // Update the product in the database
-    const updatedProduct = await databases.updateDocument(
-      DATABASE_ID,
-      PRODUCTS_TABLE_ID,
-      id,
-      updateData
-    );
+    const updatedProduct = await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: id, data: updateData });
     
     // Revalidate products cache
     const { updateTag } = await import('next/cache');
@@ -73,11 +68,7 @@ export async function DELETE(req: NextRequest) {
     }
     
     // Delete the product from the database
-    await databases.deleteDocument(
-      DATABASE_ID,
-      PRODUCTS_TABLE_ID,
-      id
-    );
+    await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: id });
     
     // Revalidate products cache
     const { updateTag } = await import('next/cache');

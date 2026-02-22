@@ -1,4 +1,9 @@
-import { Client, Account, Databases, Storage } from 'appwrite';
+import {
+  Client,
+  Account,
+  TablesDB,
+  Storage,
+} from "node-appwrite";
 // Use a different approach for cookies in Next.js 16
 
 /**
@@ -16,13 +21,13 @@ export function createClient() {
 
   // Initialize services
   const account = new Account(client);
-  const databases = new Databases(client);
+  const tablesDB = new TablesDB(client);
   const storage = new Storage(client);
 
   return {
     client,
     account,
-    databases,
+    tablesDB,
     storage
   };
 }

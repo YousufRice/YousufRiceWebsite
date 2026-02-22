@@ -37,7 +37,7 @@ class ServerSessionManager {
   async getOrCreateSession(userId: string): Promise<{ sessionId: string; openaiSession: OpenAIConversationsSession }> {
     // Check if user has an active session
     const existingSession = this.findActiveSessionByUserId(userId);
-    
+
     if (existingSession) {
       // Update last accessed time and extend expiration
       this.updateSessionAccess(existingSession.sessionId);
@@ -66,9 +66,9 @@ class ServerSessionManager {
     };
 
     this.sessions.set(sessionId, serverSession);
-    
+
     console.log(`Created new session ${sessionId} for user ${userId}`);
-    
+
     return {
       sessionId,
       openaiSession
@@ -80,7 +80,7 @@ class ServerSessionManager {
    */
   getSession(sessionId: string): { sessionId: string; openaiSession: OpenAIConversationsSession } | null {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return null;
     }
@@ -93,7 +93,7 @@ class ServerSessionManager {
 
     // Update last accessed time
     this.updateSessionAccess(sessionId);
-    
+
     return {
       sessionId: session.sessionId,
       openaiSession: session.openaiSession
@@ -105,13 +105,13 @@ class ServerSessionManager {
    */
   private findActiveSessionByUserId(userId: string): ServerSession | null {
     const now = new Date();
-    
+
     for (const session of this.sessions.values()) {
       if (session.userId === userId && now <= session.expiresAt) {
         return session;
       }
     }
-    
+
     return null;
   }
 
@@ -143,18 +143,18 @@ class ServerSessionManager {
    */
   deleteUserSessions(userId: string): number {
     let deletedCount = 0;
-    
+
     for (const [sessionId, session] of this.sessions.entries()) {
       if (session.userId === userId) {
         this.sessions.delete(sessionId);
         deletedCount++;
       }
     }
-    
+
     if (deletedCount > 0) {
       console.log(`Deleted ${deletedCount} sessions for user ${userId}`);
     }
-    
+
     return deletedCount;
   }
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth-store";
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   ORDERS_TABLE_ID,
   ORDER_ITEMS_TABLE_ID,
@@ -84,36 +84,36 @@ export default function AdminDashboard() {
 
           orderItemsRes,
         ] = await Promise.all([
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.limit(5000),
-            Query.orderDesc("$createdAt"),
-          ]),
-          databases.listDocuments(DATABASE_ID, PRODUCTS_TABLE_ID),
-          databases.listDocuments(DATABASE_ID, CUSTOMERS_TABLE_ID),
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.equal("status", "pending"),
-          ]),
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.equal("status", "accepted"),
-          ]),
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.equal("status", "out_for_delivery"),
-          ]),
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.equal("status", "delivered"),
-          ]),
-          databases.listDocuments(DATABASE_ID, ORDERS_TABLE_ID, [
-            Query.orderDesc("$createdAt"),
-            Query.limit(5),
-          ]),
-          databases.listDocuments(DATABASE_ID, ORDER_ITEMS_TABLE_ID, [
-            Query.limit(5000),
-          ]),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                            Query.limit(5000),
+                            Query.orderDesc("$createdAt"),
+                          ] }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                          Query.equal("status", "pending"),
+                        ] }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                          Query.equal("status", "accepted"),
+                        ] }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                          Query.equal("status", "out_for_delivery"),
+                        ] }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                          Query.equal("status", "delivered"),
+                        ] }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
+                          Query.orderDesc("$createdAt"),
+                          Query.limit(5),
+                        ] }),
+          tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [
+                          Query.limit(5000),
+                        ] }),
         ]);
 
 
         // Calculate Lifetime Revenue
-        const lifetimeRevenue = ordersRes.documents.reduce(
+        const lifetimeRevenue = ordersRes.rows.reduce(
           (sum: number, order: any) => {
             if (order.status === "returned") return sum;
             return sum + (order.total_price || 0);
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
         const lastMonthEnd = new Date(currentYear, currentMonth - 1, compareDate, 23, 59, 59, 999);
 
         // Filter for This Month (MTD)
-        const thisMonthOrders = ordersRes.documents.filter((order: any) => {
+        const thisMonthOrders = ordersRes.rows.filter((order: any) => {
           const orderDate = new Date(order.$createdAt);
           return orderDate >= thisMonthStart && orderDate < nextMonthStart;
         });
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
         }, 0);
 
         // Filter for Last Month (MTD equivalent)
-        const lastMonthOrdersMTD = ordersRes.documents.filter((order: any) => {
+        const lastMonthOrdersMTD = ordersRes.rows.filter((order: any) => {
           const orderDate = new Date(order.$createdAt);
           return orderDate >= lastMonthStart && orderDate <= lastMonthEnd;
         });
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
             ? ((thisMonthOrdersCount - lastMonthOrdersCountMTD) / lastMonthOrdersCountMTD) * 100
             : 0;
 
-        const availableProducts = (productsRes.documents as any[]).filter(
+        const availableProducts = (productsRes.rows as any[]).filter(
           (p: any) => p.available
         ).length;
 
@@ -195,11 +195,11 @@ export default function AdminDashboard() {
           ordersGrowth: Math.round(ordersGrowth * 10) / 10,
         });
 
-        setRecentOrders(recentOrdersRes.documents as unknown as Order[]);
+        setRecentOrders(recentOrdersRes.rows as unknown as Order[]);
 
         // Create product lookup map for names
         const productLookup: { [key: string]: string } = {};
-        productsRes.documents.forEach((product: any) => {
+        productsRes.rows.forEach((product: any) => {
           productLookup[product.$id] = product.name;
         });
 
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
           [key: string]: { count: number; revenue: number; name: string };
         } = {};
 
-        orderItemsRes.documents.forEach((item: any) => {
+        orderItemsRes.rows.forEach((item: any) => {
           const productId = item.product_id;
           const quantity = item.quantity_kg || 0;
           const total = item.total_after_discount || 0;

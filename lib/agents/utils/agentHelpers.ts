@@ -139,5 +139,5 @@ export async function logAgentInteraction(data: {
   });
   
   // Could also store in Appwrite for analytics
-  // await databases.createDocument('analytics', 'interactions', ID.unique(), data);
+  // await tablesDB.createRow('analytics', 'interactions', ID.unique(), data);
 }

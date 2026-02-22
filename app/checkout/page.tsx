@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  databases,
+  tablesDB,
   DATABASE_ID,
   ORDERS_TABLE_ID,
   CUSTOMERS_TABLE_ID,
@@ -389,17 +389,13 @@ export default function CheckoutPage() {
       // ---------------------------------------------------------
 
       // Check if a customer with this phone number already exists
-      const existingCustomerByPhone = await databases.listDocuments(
-        DATABASE_ID,
-        CUSTOMERS_TABLE_ID,
-        [Query.equal("phone", formattedPhone)]
-      );
+      const existingCustomerByPhone = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formattedPhone)] });
 
       let customerId: string;
 
-      if (existingCustomerByPhone.documents.length > 0) {
+      if (existingCustomerByPhone.rows.length > 0) {
         // Use existing customer with this phone number
-        const existingCustomer = existingCustomerByPhone.documents[0];
+        const existingCustomer = existingCustomerByPhone.rows[0];
         customerId = existingCustomer.$id;
 
         // Determine correct user_id to save
@@ -416,31 +412,21 @@ export default function CheckoutPage() {
         }
 
         // Update customer info
-        await databases.updateDocument(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          customerId,
-          {
-            user_id: userIdToSave,
-            full_name: dbFullName,
-            email: formData.email || null,
-            phone: formattedPhone, // Ensure phone is formatted
-          }
-        );
+        await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+                        user_id: userIdToSave,
+                        full_name: dbFullName,
+                        email: formData.email || null,
+                        phone: formattedPhone, // Ensure phone is formatted
+                      } });
       } else {
         // Create new customer with phone as the primary identifier
         customerId = ID.unique();
-        await databases.createDocument(
-          DATABASE_ID,
-          CUSTOMERS_TABLE_ID,
-          customerId,
-          {
-            user_id: user?.$id || "guest",
-            full_name: dbFullName,
-            phone: formattedPhone,
-            email: formData.email || null,
-          }
-        );
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+                        user_id: user?.$id || "guest",
+                        full_name: dbFullName,
+                        phone: formattedPhone,
+                        email: formData.email || null,
+                      } });
       }
 
       // Create IDs upfront for atomic linking
@@ -526,80 +512,70 @@ export default function CheckoutPage() {
           } = processed;
 
           const itemId = ID.unique();
-          await databases.createDocument(
-            DATABASE_ID,
-            ORDER_ITEMS_TABLE_ID,
-            itemId,
-            {
-              order_id: orderId,
-              product_id: product.$id,
-              product_name: product.name,
-              product_description: product.description || "",
+          await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: itemId, data: {
+                            order_id: orderId,
+                            product_id: product.$id,
+                            product_name: product.name,
+                            product_description: product.description || "",
 
-              // Quantity info
-              quantity_kg: item.quantity,
-              bags_1kg: item.bags?.kg1 || 0,
-              bags_5kg: item.bags?.kg5 || 0,
-              bags_10kg: item.bags?.kg10 || 0,
-              bags_25kg: item.bags?.kg25 || 0,
+                            // Quantity info
+                            quantity_kg: item.quantity,
+                            bags_1kg: item.bags?.kg1 || 0,
+                            bags_5kg: item.bags?.kg5 || 0,
+                            bags_10kg: item.bags?.kg10 || 0,
+                            bags_25kg: item.bags?.kg25 || 0,
 
-              // Price info
-              price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
-              base_price_per_kg: product.base_price_per_kg, // Original base price
+                            // Price info
+                            price_per_kg_at_order: tierPricing.pricePerKg, // Tier price (effective unit price)
+                            base_price_per_kg: product.base_price_per_kg, // Original base price
 
-              // Tier info
-              tier_applied: tierPricing.tierApplied,
+                            // Tier info
+                            tier_applied: tierPricing.tierApplied,
 
-              // Discount info
-              discount_percentage:
-                product.base_price_per_kg * item.quantity > 0
-                  ? (totalItemDiscount /
-                    (product.base_price_per_kg * item.quantity)) *
-                  100
-                  : 0,
-              discount_amount: roundedItemDiscount, // Includes tier + loyalty discount (Rounded)
+                            // Discount info
+                            discount_percentage:
+                              product.base_price_per_kg * item.quantity > 0
+                                ? (totalItemDiscount /
+                                  (product.base_price_per_kg * item.quantity)) *
+                                100
+                                : 0,
+                            discount_amount: roundedItemDiscount, // Includes tier + loyalty discount (Rounded)
 
-              // Totals
-              subtotal_before_discount: roundedSubtotal, // Rounded
-              total_after_discount: roundedItemTotal, // Rounded
+                            // Totals
+                            subtotal_before_discount: roundedSubtotal, // Rounded
+                            total_after_discount: roundedItemTotal, // Rounded
 
-              // Metadata
-              notes: formData.notes || "",
-            }
-          );
+                            // Metadata
+                            notes: formData.notes || "",
+                          } });
           createdItemIds.push(itemId);
         }
 
         // Create address FIRST (using pre-generated orderId)
-        await databases.createDocument(
-          DATABASE_ID,
-          ADDRESSES_TABLE_ID,
-          addressId,
-          {
-            customer_id: customerId,
-            order_id: orderId,
-            address_line: formData.addressLine,
-            latitude: formData.latitude,
-            longitude: formData.longitude,
-            maps_url: mapsUrl,
-          }
-        );
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId, data: {
+                        customer_id: customerId,
+                        order_id: orderId,
+                        address_line: formData.addressLine,
+                        latitude: formData.latitude,
+                        longitude: formData.longitude,
+                        maps_url: mapsUrl,
+                      } });
 
         // Create order with accurate calculated totals AND the pre-generated address_id
-        await databases.createDocument(DATABASE_ID, ORDERS_TABLE_ID, orderId, {
-          customer_id: customerId,
-          address_id: addressId, // Set immediately! No update needed.
-          order_items: orderItems, // CSV string snapshot
+        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
+                      customer_id: customerId,
+                      address_id: addressId, // Set immediately! No update needed.
+                      order_items: orderItems, // CSV string snapshot
 
-          // Summary fields
-          total_items_count: totalItemsCount,
-          total_weight_kg: totalWeightKg,
-          subtotal_before_discount: subtotalBeforeDiscount,
-          total_discount_amount: totalDiscountAmount,
-          total_price: finalTotalPrice,
+                      // Summary fields
+                      total_items_count: totalItemsCount,
+                      total_weight_kg: totalWeightKg,
+                      subtotal_before_discount: subtotalBeforeDiscount,
+                      total_discount_amount: totalDiscountAmount,
+                      total_price: finalTotalPrice,
 
-          status: "pending",
-        });
+                      status: "pending",
+                    } });
 
       } catch (creationError) {
         console.error("Error during order creation flow:", creationError);
@@ -612,14 +588,14 @@ export default function CheckoutPage() {
         if (createdItemIds.length > 0) {
           console.log("Rolling back created items...");
           await Promise.allSettled(
-            createdItemIds.map(id => databases.deleteDocument(DATABASE_ID, ORDER_ITEMS_TABLE_ID, id))
+            createdItemIds.map(id => tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: id }))
           );
         }
 
         // 2. Delete Address (if it was created but order failed)
         // We can try to delete the addressId just in case. If it doesn't exist, it will just fail silently or throw (we catch).
         try {
-          await databases.deleteDocument(DATABASE_ID, ADDRESSES_TABLE_ID, addressId);
+          await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId });
           console.log("Rolled back address");
         } catch (ignored) {
           // Address might not have been created yet, or delete failed. 
