@@ -3,6 +3,7 @@
 import Script from 'next/script';
 import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useMetaTracking } from '@/lib/hooks/use-meta-tracking';
 
 // 2025: Use Dataset ID for unified browser + server tracking
 const META_DATASET_ID = process.env.NEXT_PUBLIC_META_DATASET_ID;
@@ -11,14 +12,14 @@ function MetaPixelContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const { trackPageView } = useMetaTracking();
+
   useEffect(() => {
     if (!META_DATASET_ID) return;
 
     // Track page views on route change
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'PageView');
-    }
-  }, [pathname, searchParams]);
+    trackPageView();
+  }, [pathname, searchParams, trackPageView]);
 
   if (!META_DATASET_ID) {
     console.warn('NEXT_PUBLIC_META_DATASET_ID not found in environment variables');
@@ -41,7 +42,6 @@ function MetaPixelContent() {
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '${META_DATASET_ID}');
-            fbq('track', 'PageView');
           `,
         }}
       />

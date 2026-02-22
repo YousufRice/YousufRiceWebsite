@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useCartStore } from "@/lib/store/cart-store";
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, getPricePerKg } from "@/lib/utils";
+import { formatCurrency, getPricePerKg, calculatePrice } from "@/lib/utils";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { useBagSelection } from "@/lib/hooks/use-bag-selection";
 import Link from "next/link";
@@ -33,7 +33,8 @@ export default function ProductDetailClient({
   const [selectedImageIndex, setSelectedImageIndex] =
     useState(primaryImageIndex);
   const [isBuyNowHovered, setIsBuyNowHovered] = useState(false);
-  const { trackViewContent, trackAddToCart } = useMetaTracking();
+  const { trackViewContent, trackAddToCart, trackInitiateCheckout } = useMetaTracking();
+  const hasTrackedViewRef = useRef(false);
   const { user } = useAuthStore();
   const { items: cartItems } = useCartStore();
 
@@ -54,6 +55,8 @@ export default function ProductDetailClient({
 
   // Track ViewContent event when product page loads
   useEffect(() => {
+    if (hasTrackedViewRef.current) return;
+
     // Don't send user data if it's an agent
     const userData = (user && !isAgent) ? {
       email: user.email,
@@ -71,7 +74,34 @@ export default function ProductDetailClient({
       currency: "PKR",
       userData,
     });
+
+    hasTrackedViewRef.current = true;
   }, [product.$id, product.name, totalPrice, trackViewContent, user, isAgent]);
+
+  // Wrapper for handleAddBag with AddToCart tracking
+  const onAddBag = (weight: 1 | 5 | 10 | 25) => {
+    const newTotalKg = totalKg + weight;
+    const newTotalPrice = calculatePrice(product, newTotalKg);
+
+    const userData = (user && !isAgent) ? {
+      email: user.email,
+      phone: user.phone,
+      externalId: user.$id,
+      firstName: user.name?.split(' ')[0],
+      lastName: user.name?.split(' ').slice(1).join(' '),
+    } : undefined;
+
+    trackAddToCart({
+      contentName: product.name,
+      contentId: product.$id,
+      value: newTotalPrice,
+      currency: "PKR",
+      quantity: newTotalKg,
+      userData,
+    });
+
+    handleAddBag(weight);
+  };
 
   // Wrapper for handleBuyNow with analytics tracking
   const handleBuyNow = () => {
@@ -88,13 +118,12 @@ export default function ProductDetailClient({
       lastName: user.name?.split(' ').slice(1).join(' '),
     } : undefined;
 
-    // Track AddToCart event
-    trackAddToCart({
-      contentName: product.name,
-      contentId: product.$id,
+    // Track InitiateCheckout event
+    trackInitiateCheckout({
       value: totalPrice,
       currency: "PKR",
-      quantity: totalKg,
+      numItems: totalKg,
+      contentIds: [product.$id],
       userData,
     });
 
@@ -362,7 +391,7 @@ export default function ProductDetailClient({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleAddBag(1)}
+                        onClick={() => onAddBag(1)}
                         disabled={!product.available}
                         className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
                       >
@@ -406,7 +435,7 @@ export default function ProductDetailClient({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleAddBag(5)}
+                      onClick={() => onAddBag(5)}
                       disabled={!product.available}
                       className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
                     >
@@ -449,7 +478,7 @@ export default function ProductDetailClient({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleAddBag(10)}
+                      onClick={() => onAddBag(10)}
                       disabled={!product.available}
                       className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
                     >
@@ -493,7 +522,7 @@ export default function ProductDetailClient({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleAddBag(25)}
+                      onClick={() => onAddBag(25)}
                       disabled={!product.available}
                       className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-lg"
                     >
