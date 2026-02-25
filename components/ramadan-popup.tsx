@@ -8,18 +8,11 @@ export function RamadanPopup() {
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {
-        const hasSeenPopup = localStorage.getItem('ramadan-popup-seen')
-        const lastShown = localStorage.getItem('ramadan-popup-last-shown')
-        const now = Date.now()
-
-        if (!hasSeenPopup || (lastShown && now - parseInt(lastShown) > 24 * 60 * 60 * 1000)) {
-            const timer = setTimeout(() => {
-                setOpen(true)
-                localStorage.setItem('ramadan-popup-seen', 'true')
-                localStorage.setItem('ramadan-popup-last-shown', now.toString())
-            }, 1500)
-            return () => clearTimeout(timer)
-        }
+        // Show popup on every visit, delayed slightly to not block initial render/hydration
+        const timer = setTimeout(() => {
+            setOpen(true)
+        }, 1500)
+        return () => clearTimeout(timer)
     }, [])
 
     const handleClose = () => setOpen(false)
@@ -71,11 +64,14 @@ export function RamadanPopup() {
                     background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #064e3b 100%) !important;
                     border: 2px solid rgba(251, 191, 36, 0.4) !important;
                     box-shadow: 0 0 60px rgba(251, 191, 36, 0.2), 0 30px 80px rgba(0,0,0,0.6) !important;
+                    /* Hardware acceleration for modal */
+                    will-change: transform, opacity;
                 }
 
                 .moon-icon {
                     animation: moonGlow 2.5s ease-in-out infinite;
                     display: inline-block;
+                    will-change: transform, text-shadow;
                 }
 
                 .star-1 { animation: starFloat 3s ease-in-out infinite; }
@@ -101,7 +97,9 @@ export function RamadanPopup() {
                     animation: slideUp 0.7s ease-out 0.5s both;
                     background: rgba(255,255,255,0.06);
                     border: 1px solid rgba(251, 191, 36, 0.25);
-                    backdrop-filter: blur(12px);
+                    backdrop-filter: blur(8px); /* Reduced blur for performance */
+                    -webkit-backdrop-filter: blur(8px);
+                    will-change: transform, opacity;
                 }
 
                 .point-row {
@@ -109,6 +107,7 @@ export function RamadanPopup() {
                     border: 1px solid rgba(251, 191, 36, 0.2);
                     border-radius: 14px;
                     transition: background 0.2s, transform 0.2s;
+                    will-change: transform;
                 }
                 .point-row:hover {
                     background: rgba(251, 191, 36, 0.15);
@@ -122,6 +121,7 @@ export function RamadanPopup() {
                     box-shadow: 0 6px 30px rgba(245, 158, 11, 0.5);
                     transition: transform 0.2s, box-shadow 0.2s;
                     animation: slideUp 0.7s ease-out 1s both;
+                    will-change: transform, box-shadow;
                 }
                 .cta-btn:hover {
                     transform: translateY(-3px) scale(1.02);
@@ -142,6 +142,8 @@ export function RamadanPopup() {
                     position: absolute;
                     border-radius: 50%;
                     border: 2px solid rgba(251, 191, 36, 0.6);
+                    /* Optimize animation performance */
+                    will-change: transform, opacity;
                     animation: pulseRing 2s ease-out infinite;
                 }
 
