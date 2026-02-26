@@ -619,7 +619,7 @@ export default function CheckoutPage() {
           phone: formattedPhone,
           firstName: cleanedName.split(" ")[0],
           lastName: cleanedName.split(" ").slice(1).join(" "),
-          city: finalCity.toLowerCase() === "karachi" ? "Karachi" : undefined,
+          city: finalCity || undefined,
           externalId: customerId || (!isAgent ? user?.$id : undefined), // CRITICAL: Link to customer/user ID, but NEVER agent ID
         },
       });
