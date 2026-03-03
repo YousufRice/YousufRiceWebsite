@@ -307,14 +307,26 @@ export default function OrderDetailPage() {
                   className="flex justify-between items-center py-2 border-b last:border-b-0"
                 >
                   <div>
-                    <p className="font-medium">{item.product_name}</p>
+                    <p className="font-medium flex items-center gap-2">
+                      {item.product_name}
+                      {item.notes?.includes("Next Cola Deal") && (
+                        <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
+                          Bundle Deal
+                        </span>
+                      )}
+                    </p>
                     <p className="text-sm text-gray-500">
                       {item.quantity_kg} kg
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 mb-1">
                       {formatCurrency(item.price_per_kg_at_order)}/kg • Total:{" "}
                       {formatCurrency(item.total_after_discount)}
                     </p>
+                    {item.notes?.includes("Next Cola Deal") && (
+                      <p className="text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded inline-block shadow-sm">
+                        🎁 Includes: {item.quantity_kg >= 10 ? Math.floor(item.quantity_kg / 10) : 0}x Free Next Cola 1L
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}

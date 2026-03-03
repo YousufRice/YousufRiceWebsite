@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
  * Custom hook for managing bag selection logic
  * Shared between ProductCard and ProductDetailClient components
  */
-export function useBagSelection(product: Product) {
+export function useBagSelection(product: Product, isBundle: boolean = false) {
   const items = useCartStore((state) => state.items);
   const addBag = useCartStore((state) => state.addBag);
   const removeBag = useCartStore((state) => state.removeBag);
@@ -17,7 +17,7 @@ export function useBagSelection(product: Product) {
 
   // DERIVE state from cart store instead of local state
   // This ensures we are always in sync with what's actually in the cart (and persisted)
-  const cartItem = items.find((item) => item.product.$id === product.$id);
+  const cartItem = items.find((item) => item.product.$id === product.$id && !!item.isNextcolaBundle === isBundle);
   
   const bagCounts = cartItem?.bags || { kg1: 0, kg5: 0, kg10: 0, kg25: 0 };
 
@@ -31,7 +31,7 @@ export function useBagSelection(product: Product) {
    */
   const handleAddBag = (size: 1 | 5 | 10 | 25) => {
     // We don't need to update local state anymore, the store update will trigger a re-render
-    addBag(product, size);
+    addBag(product, size, isBundle);
     toast.success(`Added ${size}kg bag of ${product.name} to cart!`);
   };
 
@@ -41,7 +41,7 @@ export function useBagSelection(product: Product) {
   const handleRemoveBag = (size: 1 | 5 | 10 | 25) => {
     const key = `kg${size}` as keyof typeof bagCounts;
     if (bagCounts[key] > 0) {
-      removeBag(product.$id, size);
+      removeBag(product.$id, size, isBundle);
       toast.success(`Removed ${size}kg bag from cart!`);
     }
   };

@@ -112,6 +112,7 @@ export interface CartItem {
     kg10: number; // count of 10kg bags
     kg25: number; // count of 25kg bags
   };
+  isNextcolaBundle?: boolean;
 }
 
 // For order creation

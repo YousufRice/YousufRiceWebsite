@@ -22,6 +22,7 @@ import {
   calculateSavings,
   calculateTierPricing,
   calculateItemTotal,
+  calculatePrice,
   formatPhoneNumber,
   formatPhoneNumberForDisplay,
   validatePakistaniPhoneNumber,
@@ -444,7 +445,8 @@ export default function CheckoutPage() {
         const tierPricing = calculateTierPricing(product, item.quantity);
 
         // Calculate item totals with loyalty discount if applicable
-        const loyaltyDiscountPercent = appliedDiscount?.extra_discount_percentage || 0;
+        // Disallow loyalty discount on Next Cola bundles
+        const loyaltyDiscountPercent = (appliedDiscount?.extra_discount_percentage || 0) * (item.isNextcolaBundle ? 0 : 1);
         const itemCalculations = calculateItemTotal(
           tierPricing.pricePerKg,
           item.quantity,
@@ -454,7 +456,8 @@ export default function CheckoutPage() {
         // Calculate total discount for this item (Tier Discount + Loyalty Discount)
         // Tier Discount = (Base Price - Tier Price) * Quantity
         // Loyalty Discount = itemCalculations.discountAmount
-        const tierDiscountAmount = tierPricing.discountAmount;
+        // No tier discount for Next Cola bundles
+        const tierDiscountAmount = item.isNextcolaBundle ? 0 : tierPricing.discountAmount;
         const totalItemDiscount = tierDiscountAmount + itemCalculations.discountAmount;
 
         // Round values for Appwrite (requires integer)
@@ -535,7 +538,7 @@ export default function CheckoutPage() {
               total_after_discount: roundedItemTotal, // Rounded
 
               // Metadata
-              notes: formData.notes || "",
+              notes: (formData.notes || "") + (item.isNextcolaBundle && item.quantity >= 10 ? `\n(Next Cola Deal Qualified` : ""),
             }
           });
           createdItemIds.push(itemId);
@@ -686,6 +689,7 @@ export default function CheckoutPage() {
                   savings: savingsInfo.savings,
                   savingsPercentage: savingsInfo.savingsPercentage,
                   tierApplied: savingsInfo.tierApplied,
+                  isNextcolaBundle: item.isNextcolaBundle,
                 };
               }),
               totalPrice: getTotalPrice(),
@@ -997,72 +1001,74 @@ export default function CheckoutPage() {
 
           <div className="lg:col-span-1 space-y-6">
             {/* Discount Code Section */}
-            <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
-              <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
-                <CardTitle className="text-xl font-bold text-white flex items-center">
-                  <Gift className="w-5 h-5 mr-2 text-[#ffff03]" />
-                  Discount Code
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {!appliedDiscount ? (
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Enter code (e.g. LOYALTY...)"
-                        value={discountCode}
-                        onChange={(e) => {
-                          setDiscountCode(e.target.value.toUpperCase());
-                          setDiscountError("");
-                        }}
-                        className="uppercase"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleApplyDiscount}
-                        disabled={validatingDiscount || !discountCode}
-                        className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold"
-                      >
-                        {validatingDiscount ? "..." : "Apply"}
-                      </Button>
-                    </div>
-                    {discountError && (
-                      <p className="text-red-500 text-sm flex items-center">
-                        <X className="w-4 h-4 mr-1" />
-                        {discountError}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="text-green-800 font-bold flex items-center">
-                          <Check className="w-4 h-4 mr-1" />
-                          Code Applied!
-                        </p>
-                        <p className="text-sm text-green-600 font-mono mt-1">
-                          {appliedDiscount.discount_code}
-                        </p>
+            {!items.some((item) => item.isNextcolaBundle) && (
+              <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
+                <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
+                  <CardTitle className="text-xl font-bold text-white flex items-center">
+                    <Gift className="w-5 h-5 mr-2 text-[#ffff03]" />
+                    Discount Code
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {!appliedDiscount ? (
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter code (e.g. LOYALTY...)"
+                          value={discountCode}
+                          onChange={(e) => {
+                            setDiscountCode(e.target.value.toUpperCase());
+                            setDiscountError("");
+                          }}
+                          className="uppercase"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleApplyDiscount}
+                          disabled={validatingDiscount || !discountCode}
+                          className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold"
+                        >
+                          {validatingDiscount ? "..." : "Apply"}
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRemoveDiscount}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto p-1"
-                      >
-                        Remove
-                      </Button>
+                      {discountError && (
+                        <p className="text-red-500 text-sm flex items-center">
+                          <X className="w-4 h-4 mr-1" />
+                          {discountError}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-sm text-green-700">
-                      {appliedDiscount.extra_discount_percentage}% Loyalty Extra discount will be
-                      applied to your total.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="text-green-800 font-bold flex items-center">
+                            <Check className="w-4 h-4 mr-1" />
+                            Code Applied!
+                          </p>
+                          <p className="text-sm text-green-600 font-mono mt-1">
+                            {appliedDiscount.discount_code}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveDiscount}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto p-1"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <p className="text-sm text-green-700">
+                        {appliedDiscount.extra_discount_percentage}% Loyalty Extra discount will be
+                        applied to your total.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="sticky top-20 border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader className="bg-linear-to-r from-[#ffff03] to-[#ffff03]/90 p-6">
@@ -1171,12 +1177,16 @@ export default function CheckoutPage() {
                   <div className="border-t-2 border-[#ffff03] pt-4 bg-[#ffff03]/10 -mx-6 px-6 py-4">
                     {appliedDiscount && (
                       <div className="flex justify-between items-center mb-2 text-green-700">
-                        <span className="font-semibold">Loyalty Discount ({appliedDiscount.extra_discount_percentage}%)</span>
+                        <span className="font-semibold">
+                          Loyalty Discount ({appliedDiscount.extra_discount_percentage}%)
+                        </span>
                         <span className="font-bold">
                           -
                           {formatCurrency(
-                            (totalPrice * appliedDiscount.extra_discount_percentage) /
-                            100
+                            items.reduce((acc, item) => {
+                              if (item.isNextcolaBundle) return acc;
+                              return acc + (calculatePrice(item.product, item.quantity) * appliedDiscount.extra_discount_percentage) / 100;
+                            }, 0)
                           )}
                         </span>
                       </div>
@@ -1188,10 +1198,10 @@ export default function CheckoutPage() {
                       <span className="text-3xl font-bold text-[#27247b]">
                         {formatCurrency(
                           appliedDiscount
-                            ? totalPrice -
-                            (totalPrice *
-                              appliedDiscount.extra_discount_percentage) /
-                            100
+                            ? totalPrice - items.reduce((acc, item) => {
+                              if (item.isNextcolaBundle) return acc;
+                              return acc + (calculatePrice(item.product, item.quantity) * appliedDiscount.extra_discount_percentage) / 100;
+                            }, 0)
                             : totalPrice
                         )}
                       </span>

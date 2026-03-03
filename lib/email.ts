@@ -29,6 +29,7 @@ interface OrderItem {
   savings?: number;
   savingsPercentage?: number;
   tierApplied?: string | null;
+  isNextcolaBundle?: boolean;
 }
 
 interface OrderConfirmationData {
@@ -81,10 +82,15 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <div>${item.productName}</div>
-        ${item.savings && item.savings > 0 ? `
+        ${item.savings && item.savings > 0 && !item.isNextcolaBundle ? `
           <div style="font-size: 12px; color: #059669; margin-top: 4px;">
             💰 Saved Rs. ${item.savings.toLocaleString()} (${item.savingsPercentage?.toFixed(0)}% off)
-            ${item.tierApplied ? `<br>🎯 ${item.tierApplied} applied` : ''}
+            ${item.tierApplied && !item.isNextcolaBundle ? `<br>🎯 ${item.tierApplied} applied` : ''}
+          </div>
+        ` : ''}
+        ${item.isNextcolaBundle && item.quantity >= 10 ? `
+          <div style="font-size: 11px; color: #dc2626; margin-top: 4px; font-weight: bold; background-color: #fee2e2; padding: 4px; border-radius: 4px; display: inline-block;">
+            🎁 Includes ${Math.floor(item.quantity / 10)}x Free Next Cola 1L
           </div>
         ` : ''}
       </td>
@@ -172,12 +178,12 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
                   <td style="padding: 20px;">
                     <div style="margin-bottom: 10px;">
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <span style="color: #6b7280; font-size: 14px;">Original Total:</span>
+                        <span style="color: #6b7280; font-size: 14px;">Original Total (Excl. bundles):</span>
                         <span style="color: #9ca3af; font-size: 14px; text-decoration: line-through;">Rs. ${totalOriginalPrice.toLocaleString()}</span>
                       </div>
                       <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #15803d; font-size: 16px; font-weight: 600;">You Save:</span>
-                        <span style="color: #15803d; font-size: 16px; font-weight: bold;">-Rs. ${totalSavings.toLocaleString()} (${((totalSavings / totalOriginalPrice) * 100).toFixed(0)}% off)</span>
+                        <span style="color: #15803d; font-size: 16px; font-weight: bold;">-Rs. ${totalSavings.toLocaleString()} (${totalOriginalPrice > 0 ? ((totalSavings / totalOriginalPrice) * 100).toFixed(0) : 0}% off)</span>
                       </div>
                     </div>
                   </td>
