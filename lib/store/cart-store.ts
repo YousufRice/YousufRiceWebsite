@@ -7,11 +7,11 @@ type BagSize = 1 | 5 | 10 | 25;
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product, quantity: number) => void;
-  addBag: (product: Product, bagSize: BagSize) => void;
-  removeBag: (productId: string, bagSize: BagSize) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Product, quantity: number, isNextcolaBundle?: boolean) => void;
+  addBag: (product: Product, bagSize: BagSize, isNextcolaBundle?: boolean) => void;
+  removeBag: (productId: string, bagSize: BagSize, isNextcolaBundle?: boolean) => void;
+  removeItem: (productId: string, isNextcolaBundle?: boolean) => void;
+  updateQuantity: (productId: string, quantity: number, isNextcolaBundle?: boolean) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
@@ -34,16 +34,16 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product, quantity) => {
+      addItem: (product, quantity, isNextcolaBundle = false) => {
         set((state) => {
           const existingItem = state.items.find(
-            (item) => item.product.$id === product.$id
+            (item) => item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
           );
 
           if (existingItem) {
             return {
               items: state.items.map((item) =>
-                item.product.$id === product.$id
+                item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
                   ? { ...item, quantity: item.quantity + quantity }
                   : item
               ),
@@ -57,16 +57,17 @@ export const useCartStore = create<CartStore>()(
                 product,
                 quantity,
                 bags: { kg1: 0, kg5: 0, kg10: 0, kg25: 0 },
+                isNextcolaBundle,
               },
             ],
           };
         });
       },
 
-      addBag: (product, bagSize) => {
+      addBag: (product, bagSize, isNextcolaBundle = false) => {
         set((state) => {
           const existingItem = state.items.find(
-            (item) => item.product.$id === product.$id
+            (item) => item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
           );
 
           if (existingItem) {
@@ -82,7 +83,7 @@ export const useCartStore = create<CartStore>()(
 
             return {
               items: state.items.map((item) =>
-                item.product.$id === product.$id
+                item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
                   ? { ...item, bags: newBags, quantity: newQuantity }
                   : item
               ),
@@ -100,16 +101,17 @@ export const useCartStore = create<CartStore>()(
                 product,
                 quantity: bagSize,
                 bags,
+                isNextcolaBundle,
               },
             ],
           };
         });
       },
 
-      removeBag: (productId, bagSize) => {
+      removeBag: (productId, bagSize, isNextcolaBundle = false) => {
         set((state) => {
           const existingItem = state.items.find(
-            (item) => item.product.$id === productId
+            (item) => item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle
           );
 
           if (!existingItem) return state;
@@ -131,14 +133,14 @@ export const useCartStore = create<CartStore>()(
           if (newQuantity === 0) {
             return {
               items: state.items.filter(
-                (item) => item.product.$id !== productId
+                (item) => !(item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle)
               ),
             };
           }
 
           return {
             items: state.items.map((item) =>
-              item.product.$id === productId
+              item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle
                 ? { ...item, bags: newBags, quantity: newQuantity }
                 : item
             ),
@@ -146,16 +148,16 @@ export const useCartStore = create<CartStore>()(
         });
       },
 
-      removeItem: (productId) => {
+      removeItem: (productId, isNextcolaBundle = false) => {
         set((state) => ({
-          items: state.items.filter((item) => item.product.$id !== productId),
+          items: state.items.filter((item) => !(item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle)),
         }));
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, isNextcolaBundle = false) => {
         set((state) => ({
           items: state.items.map((item) =>
-            item.product.$id === productId ? { ...item, quantity } : item
+            item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle ? { ...item, quantity } : item
           ),
         }));
       },

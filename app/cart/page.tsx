@@ -135,12 +135,25 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
                         {item.product.name}
+                        {item.isNextcolaBundle && (
+                          <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-sm">
+                            + NEXT COLA
+                          </span>
+                        )}
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
                         {formatCurrency(pricePerKg)}/kg • Total: {item.quantity}kg
                       </p>
+
+                      {/* Info on Next Cola Deal */}
+                      {item.isNextcolaBundle && item.quantity >= 10 && (
+                        <div className="bg-red-50 text-red-700 text-xs font-semibold p-1.5 rounded mb-2 inline-flex items-center gap-1.5 border border-red-100 shadow-sm">
+                          <span>🎁</span>
+                          {Math.floor(item.quantity / 10)} Free Next Cola (1L) Included
+                        </div>
+                      )}
 
                       {/* Bag Controls */}
                       <div className="space-y-1.5 mb-2">
@@ -202,7 +215,7 @@ export default function CartPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => removeBag(item.product.$id, 10)}
+                                onClick={() => removeBag(item.product.$id, 10, item.isNextcolaBundle)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Minus className="w-3 h-3" />
@@ -210,7 +223,7 @@ export default function CartPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => addBag(item.product, 10)}
+                                onClick={() => addBag(item.product, 10, item.isNextcolaBundle)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Plus className="w-3 h-3" />
@@ -270,7 +283,7 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeItem(item.product.$id)}
+                      onClick={() => removeItem(item.product.$id, item.isNextcolaBundle)}
                       className="self-start"
                     >
                       <Trash2 className="w-5 h-5 text-red-500" />
@@ -291,7 +304,7 @@ export default function CartPage() {
                 {items.map((item) => (
                   <div key={item.product.$id} className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      {item.product.name} ({item.quantity}kg)
+                      {item.product.name} {item.isNextcolaBundle ? '(Bundle)' : ''} ({item.quantity}kg)
                     </span>
                     <span className="font-medium">
                       {formatCurrency(calculatePrice(item.product, item.quantity))}

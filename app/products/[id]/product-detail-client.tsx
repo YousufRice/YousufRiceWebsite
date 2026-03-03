@@ -18,6 +18,7 @@ import { formatCurrency, getPricePerKg, calculatePrice } from "@/lib/utils";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { useBagSelection } from "@/lib/hooks/use-bag-selection";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface ProductDetailClientProps {
   product: Product;
@@ -43,6 +44,9 @@ export default function ProductDetailClient({
     ['saima', 'kiran'].includes(label.toLowerCase())
   );
 
+  const searchParams = useSearchParams();
+  const isNextcolaBundle = searchParams?.get('bundle') === 'nextcola';
+
   const {
     bagCounts,
     totalKg,
@@ -51,7 +55,7 @@ export default function ProductDetailClient({
     handleAddBag,
     handleRemoveBag,
     handleBuyNow: buyNow,
-  } = useBagSelection(product);
+  } = useBagSelection(product, isNextcolaBundle);
 
   // Track ViewContent event when product page loads
   useEffect(() => {
@@ -236,8 +240,13 @@ export default function ProductDetailClient({
             <div className="bg-linear-to-br from-white via-white to-[#ffff03]/5 rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-4 md:p-5 border-2 border-[#ffff03]/20 hover:border-[#ffff03]/50 transition-all duration-300">
               <div className="flex items-start justify-between mb-3 gap-2 sm:gap-3">
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-linear-to-r from-[#27247b] via-[#1a1854] to-[#27247b] bg-clip-text text-transparent leading-tight mb-2 wrap-break-word">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-linear-to-r from-[#27247b] via-[#1a1854] to-[#27247b] bg-clip-text text-transparent leading-tight mb-2 wrap-break-word flex flex-col sm:flex-row sm:items-center gap-2">
                     {product.name}
+                    {isNextcolaBundle && (
+                      <span className="text-sm bg-linear-to-r from-red-600 to-red-700 text-white px-3 py-1 rounded-full font-black tracking-wide shadow-md whitespace-nowrap mt-1 sm:mt-0 self-start">
+                        + Next Cola Bundle 🥤
+                      </span>
+                    )}
                   </h1>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1"></div>
@@ -327,8 +336,25 @@ export default function ProductDetailClient({
                 )}
               </div>
 
+              {/* Deal Announcement - replaces Ramadan Offer for bundles */}
+              {isNextcolaBundle && (
+                <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-red-500 bg-linear-to-r from-red-50 to-white shadow-md relative overflow-hidden">
+                  <div className="flex items-start gap-3 relative z-10">
+                    <span className="text-3xl sm:text-4xl">🥤</span>
+                    <div>
+                      <h3 className="font-extrabold text-red-700 mb-1 text-sm sm:text-base">
+                        Exlusive Bundle Deal
+                      </h3>
+                      <p className="text-xs sm:text-sm text-red-900 font-medium">
+                        You get <strong className="text-red-600 bg-red-100 px-1 py-0.5 rounded">1 FREE Next Cola (1L)</strong> for <strong>EVERY 10kg</strong> you buy!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Ramadan Offer Banner */}
-              {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
+              {!isNextcolaBundle && process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
                 // Calculate total weight from cart (cart already includes current product if added)
                 const cartWeight = cartItems.reduce((acc, item) => acc + item.quantity, 0);
                 const freeKg = Math.floor(cartWeight / 15);
@@ -360,7 +386,7 @@ export default function ProductDetailClient({
 
               <div className="space-y-2 sm:space-y-3">
                 {/* 1kg Bag */}
-                {!product.name.toLowerCase().includes("every") && (
+                {!isNextcolaBundle && !product.name.toLowerCase().includes("every") && (
                   <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
@@ -402,47 +428,49 @@ export default function ProductDetailClient({
                 )}
 
                 {/* 5kg Bag */}
-                <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
-                      5kg
+                {!isNextcolaBundle && (
+                  <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
+                        5kg
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base flex items-center gap-1 flex-wrap">
+                          5kg Bag
+                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">
+                            Popular
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-600 font-medium">
+                          {formatCurrency(getPricePerKg(product, 5))}/kg
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base flex items-center gap-1 flex-wrap">
-                        5kg Bag
-                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">
-                          Popular
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-600 font-medium">
-                        {formatCurrency(getPricePerKg(product, 5))}/kg
-                      </p>
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRemoveBag(5)}
+                        disabled={!product.available || bagCounts.kg5 === 0}
+                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
+                      </Button>
+                      <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
+                        {bagCounts.kg5}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onAddBag(5)}
+                        disabled={!product.available}
+                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
+                      >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b]" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRemoveBag(5)}
-                      disabled={!product.available || bagCounts.kg5 === 0}
-                      className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
-                    </Button>
-                    <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
-                      {bagCounts.kg5}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onAddBag(5)}
-                      disabled={!product.available}
-                      className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b]" />
-                    </Button>
-                  </div>
-                </div>
+                )}
 
                 {/* 10kg Bag */}
                 <div className="group flex items-center justify-between bg-linear-to-r from-white to-blue-50 p-2 sm:p-3 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all duration-300">
@@ -453,9 +481,15 @@ export default function ProductDetailClient({
                     <div className="min-w-0">
                       <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base flex items-center gap-1 flex-wrap">
                         10kg Bag
-                        <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">
-                          Great Deal
-                        </span>
+                        {isNextcolaBundle ? (
+                          <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold shadow-sm whitespace-nowrap">
+                            + 1L Next Cola FREE
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">
+                            Great Deal
+                          </span>
+                        )}
                       </p>
                       <p className="text-xs text-gray-600 font-medium">
                         {formatCurrency(getPricePerKg(product, 10))}/kg
@@ -488,48 +522,50 @@ export default function ProductDetailClient({
                 </div>
 
                 {/* 25kg Bag */}
-                <div className="group flex items-center justify-between bg-linear-to-r from-[#ffff03]/20 via-[#ffff03]/10 to-white p-2 sm:p-3 rounded-lg border-2 border-[#ffff03] hover:border-[#ffd700] hover:shadow-lg transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-linear-to-l from-[#ffff03] to-transparent w-24 h-full opacity-20"></div>
-                  <div className="flex items-center gap-2 min-w-0 relative z-10">
-                    <div className="bg-linear-to-br from-[#27247b] via-[#1a1854] to-[#27247b] text-[#ffff03] w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-lg group-hover:scale-105 transition-transform duration-300 border-2 border-[#ffff03]/30 shrink-0">
-                      25kg
+                {!isNextcolaBundle && (
+                  <div className="group flex items-center justify-between bg-linear-to-r from-[#ffff03]/20 via-[#ffff03]/10 to-white p-2 sm:p-3 rounded-lg border-2 border-[#ffff03] hover:border-[#ffd700] hover:shadow-lg transition-all duration-300 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-linear-to-l from-[#ffff03] to-transparent w-24 h-full opacity-20"></div>
+                    <div className="flex items-center gap-2 min-w-0 relative z-10">
+                      <div className="bg-linear-to-br from-[#27247b] via-[#1a1854] to-[#27247b] text-[#ffff03] w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-lg group-hover:scale-105 transition-transform duration-300 border-2 border-[#ffff03]/30 shrink-0">
+                        25kg
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base flex items-center gap-1 flex-wrap">
+                          25kg Bag
+                          <span className="text-xs bg-linear-to-r from-[#ffff03] to-[#ffd700] text-[#27247b] px-2 py-0.5 rounded-full font-bold shadow-md">
+                            ⭐ Best Value
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-700 font-bold">
+                          {formatCurrency(getPricePerKg(product, 25))}/kg
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base flex items-center gap-1 flex-wrap">
-                        25kg Bag
-                        <span className="text-xs bg-linear-to-r from-[#ffff03] to-[#ffd700] text-[#27247b] px-2 py-0.5 rounded-full font-bold shadow-md">
-                          ⭐ Best Value
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-700 font-bold">
-                        {formatCurrency(getPricePerKg(product, 25))}/kg
-                      </p>
+                    <div className="flex items-center gap-1 sm:gap-2 relative z-10 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRemoveBag(25)}
+                        disabled={!product.available || bagCounts.kg25 === 0}
+                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
+                      </Button>
+                      <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
+                        {bagCounts.kg25}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onAddBag(25)}
+                        disabled={!product.available}
+                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-lg"
+                      >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b] font-bold" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-2 relative z-10 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRemoveBag(25)}
-                      disabled={!product.available || bagCounts.kg25 === 0}
-                      className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
-                    </Button>
-                    <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
-                      {bagCounts.kg25}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onAddBag(25)}
-                      disabled={!product.available}
-                      className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-lg"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b] font-bold" />
-                    </Button>
-                  </div>
-                </div>
+                )}
               </div>
 
               {totalKg > 0 && (
