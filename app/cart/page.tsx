@@ -137,9 +137,9 @@ export default function CartPage() {
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
                         {item.product.name}
-                        {item.isNextcolaBundle && (
-                          <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-sm">
-                            + NEXT COLA
+                        {item.isColdDrinkBundle && (
+                          <span className="text-[10px] sm:text-xs bg-linear-to-r from-cyan-400 to-blue-500 text-white font-black px-2 py-0.5 rounded shadow-md animate-pulse">
+                            + FREE COLD DRINK 🥤
                           </span>
                         )}
                       </h3>
@@ -147,11 +147,11 @@ export default function CartPage() {
                         {formatCurrency(pricePerKg)}/kg • Total: {item.quantity}kg
                       </p>
 
-                      {/* Info on Next Cola Deal */}
-                      {item.isNextcolaBundle && item.quantity >= 10 && (
-                        <div className="bg-red-50 text-red-700 text-xs font-semibold p-1.5 rounded mb-2 inline-flex items-center gap-1.5 border border-red-100 shadow-sm">
-                          <span>🎁</span>
-                          {Math.floor(item.quantity / 10)} Free Next Cola (1L) Included
+                      {/* Info on Free Cold Drink Deal */}
+                      {item.isColdDrinkBundle && item.quantity >= 10 && (
+                        <div className="bg-linear-to-r from-[#27247b] to-blue-800 text-white text-xs font-bold p-2 rounded mb-2 inline-flex items-center gap-2 border border-cyan-400/50 shadow-md transform hover:scale-[1.02] transition-transform">
+                          <span className="animate-bounce">🎁</span>
+                          <span className="text-cyan-300 drop-shadow-sm">{Math.floor(item.quantity / 10)} Free Cold Drink (1L) Included</span>
                         </div>
                       )}
 
@@ -215,7 +215,7 @@ export default function CartPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => removeBag(item.product.$id, 10, item.isNextcolaBundle)}
+                                onClick={() => removeBag(item.product.$id, 10, item.isColdDrinkBundle)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Minus className="w-3 h-3" />
@@ -223,7 +223,7 @@ export default function CartPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => addBag(item.product, 10, item.isNextcolaBundle)}
+                                onClick={() => addBag(item.product, 10, item.isColdDrinkBundle)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Plus className="w-3 h-3" />
@@ -283,7 +283,7 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeItem(item.product.$id, item.isNextcolaBundle)}
+                      onClick={() => removeItem(item.product.$id, item.isColdDrinkBundle)}
                       className="self-start"
                     >
                       <Trash2 className="w-5 h-5 text-red-500" />
@@ -304,7 +304,7 @@ export default function CartPage() {
                 {items.map((item) => (
                   <div key={item.product.$id} className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      {item.product.name} {item.isNextcolaBundle ? '(Bundle)' : ''} ({item.quantity}kg)
+                      {item.product.name} {item.isColdDrinkBundle ? '(Bundle)' : ''} ({item.quantity}kg)
                     </span>
                     <span className="font-medium">
                       {formatCurrency(calculatePrice(item.product, item.quantity))}

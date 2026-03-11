@@ -17,7 +17,7 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
 
   // DERIVE state from cart store instead of local state
   // This ensures we are always in sync with what's actually in the cart (and persisted)
-  const cartItem = items.find((item) => item.product.$id === product.$id && !!item.isNextcolaBundle === isBundle);
+  const cartItem = items.find((item) => item.product.$id === product.$id && !!item.isColdDrinkBundle === isBundle);
   
   const bagCounts = cartItem?.bags || { kg1: 0, kg5: 0, kg10: 0, kg25: 0 };
 
