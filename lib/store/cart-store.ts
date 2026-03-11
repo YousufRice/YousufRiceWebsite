@@ -7,11 +7,11 @@ type BagSize = 1 | 5 | 10 | 25;
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product, quantity: number, isNextcolaBundle?: boolean) => void;
-  addBag: (product: Product, bagSize: BagSize, isNextcolaBundle?: boolean) => void;
-  removeBag: (productId: string, bagSize: BagSize, isNextcolaBundle?: boolean) => void;
-  removeItem: (productId: string, isNextcolaBundle?: boolean) => void;
-  updateQuantity: (productId: string, quantity: number, isNextcolaBundle?: boolean) => void;
+  addItem: (product: Product, quantity: number, isColdDrinkBundle?: boolean) => void;
+  addBag: (product: Product, bagSize: BagSize, isColdDrinkBundle?: boolean) => void;
+  removeBag: (productId: string, bagSize: BagSize, isColdDrinkBundle?: boolean) => void;
+  removeItem: (productId: string, isColdDrinkBundle?: boolean) => void;
+  updateQuantity: (productId: string, quantity: number, isColdDrinkBundle?: boolean) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
@@ -34,16 +34,16 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product, quantity, isNextcolaBundle = false) => {
+      addItem: (product, quantity, isColdDrinkBundle = false) => {
         set((state) => {
           const existingItem = state.items.find(
-            (item) => item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
+            (item) => item.product.$id === product.$id && !!item.isColdDrinkBundle === isColdDrinkBundle
           );
 
           if (existingItem) {
             return {
               items: state.items.map((item) =>
-                item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
+                item.product.$id === product.$id && !!item.isColdDrinkBundle === isColdDrinkBundle
                   ? { ...item, quantity: item.quantity + quantity }
                   : item
               ),
@@ -57,17 +57,17 @@ export const useCartStore = create<CartStore>()(
                 product,
                 quantity,
                 bags: { kg1: 0, kg5: 0, kg10: 0, kg25: 0 },
-                isNextcolaBundle,
+                isColdDrinkBundle,
               },
             ],
           };
         });
       },
 
-      addBag: (product, bagSize, isNextcolaBundle = false) => {
+      addBag: (product, bagSize, isColdDrinkBundle = false) => {
         set((state) => {
           const existingItem = state.items.find(
-            (item) => item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
+            (item) => item.product.$id === product.$id && !!item.isColdDrinkBundle === isColdDrinkBundle
           );
 
           if (existingItem) {
@@ -83,7 +83,7 @@ export const useCartStore = create<CartStore>()(
 
             return {
               items: state.items.map((item) =>
-                item.product.$id === product.$id && !!item.isNextcolaBundle === isNextcolaBundle
+                item.product.$id === product.$id && !!item.isColdDrinkBundle === isColdDrinkBundle
                   ? { ...item, bags: newBags, quantity: newQuantity }
                   : item
               ),
@@ -101,17 +101,17 @@ export const useCartStore = create<CartStore>()(
                 product,
                 quantity: bagSize,
                 bags,
-                isNextcolaBundle,
+                isColdDrinkBundle,
               },
             ],
           };
         });
       },
 
-      removeBag: (productId, bagSize, isNextcolaBundle = false) => {
+      removeBag: (productId, bagSize, isColdDrinkBundle = false) => {
         set((state) => {
           const existingItem = state.items.find(
-            (item) => item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle
+            (item) => item.product.$id === productId && !!item.isColdDrinkBundle === isColdDrinkBundle
           );
 
           if (!existingItem) return state;
@@ -133,14 +133,14 @@ export const useCartStore = create<CartStore>()(
           if (newQuantity === 0) {
             return {
               items: state.items.filter(
-                (item) => !(item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle)
+                (item) => !(item.product.$id === productId && !!item.isColdDrinkBundle === isColdDrinkBundle)
               ),
             };
           }
 
           return {
             items: state.items.map((item) =>
-              item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle
+              item.product.$id === productId && !!item.isColdDrinkBundle === isColdDrinkBundle
                 ? { ...item, bags: newBags, quantity: newQuantity }
                 : item
             ),
@@ -148,16 +148,16 @@ export const useCartStore = create<CartStore>()(
         });
       },
 
-      removeItem: (productId, isNextcolaBundle = false) => {
+      removeItem: (productId, isColdDrinkBundle = false) => {
         set((state) => ({
-          items: state.items.filter((item) => !(item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle)),
+          items: state.items.filter((item) => !(item.product.$id === productId && !!item.isColdDrinkBundle === isColdDrinkBundle)),
         }));
       },
 
-      updateQuantity: (productId, quantity, isNextcolaBundle = false) => {
+      updateQuantity: (productId, quantity, isColdDrinkBundle = false) => {
         set((state) => ({
           items: state.items.map((item) =>
-            item.product.$id === productId && !!item.isNextcolaBundle === isNextcolaBundle ? { ...item, quantity } : item
+            item.product.$id === productId && !!item.isColdDrinkBundle === isColdDrinkBundle ? { ...item, quantity } : item
           ),
         }));
       },

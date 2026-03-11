@@ -1,5 +1,5 @@
 import { ProductCard } from "@/components/product-card";
-import { NextcolaBundleCard } from "@/components/nextcola-bundle-card";
+import { ColdDrinkBundleCard } from "@/components/cold-drink-bundle-card";
 import {
   getCachedRegularProducts,
   getCachedProductImages,
@@ -96,35 +96,42 @@ export async function AsyncProductsList() {
         </p>
       </div>
 
-      {/* Next Cola Bundles Section */}
-      <div className="mb-16 w-full">
-        <div className="mb-8 mt-8">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-0.5 bg-linear-to-r from-transparent via-[#DC2626] to-[#DC2626]"></div>
-            <h3 className="text-2xl md:text-3xl font-black text-[#DC2626] whitespace-nowrap flex items-center gap-2">
-              <span className="text-3xl">🥤</span> Exclusive Next Cola Bundles
-            </h3>
-            <div className="flex-1 h-0.5 bg-linear-to-l from-transparent via-[#DC2626] to-[#DC2626]"></div>
+      {/* Free Cold Drink Bundles Section */}
+      {process.env.NEXT_PUBLIC_ENABLE_COLD_DRINK_BUNDLE === "true" && (
+        <div className="mb-16 w-full">
+          <div className="mb-8 mt-8">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 h-0.5 bg-linear-to-r from-transparent via-blue-500 to-blue-500"></div>
+              <h3 className="text-2xl md:text-3xl font-black text-blue-600 whitespace-nowrap flex items-center gap-2">
+                <span className="text-3xl">🥤</span> Exclusive Free Cold Drink Deals
+              </h3>
+              <div className="flex-1 h-0.5 bg-linear-to-l from-transparent via-blue-500 to-blue-500"></div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-center w-full">
-          <div className="grid gap-6 justify-center grid-cols-[repeat(auto-fit,minmax(250px,1fr))] max-w-5xl w-full">
-            {sortedProducts
-              .filter(p => p.name.toLowerCase().includes('ultimate sella') || p.name.toLowerCase().includes('x-steam') || p.name.toLowerCase().includes('x steam'))
-              .map((product) => (
-                <div key={`bundle-${product.$id}`} className="flex justify-center">
-                  <div className="w-full max-w-sm">
-                    <NextcolaBundleCard
-                      product={product}
-                      imageFileId={imageMap.get(product.$id)}
-                    />
+          <div className="flex justify-center w-full">
+            <div className="grid gap-6 justify-center grid-cols-[repeat(auto-fit,minmax(250px,1fr))] max-w-5xl w-full">
+              {sortedProducts
+                .filter(
+                  (p) =>
+                    p.name.toLowerCase().includes("ultimate sella") ||
+                    p.name.toLowerCase().includes("x-steam") ||
+                    p.name.toLowerCase().includes("x steam")
+                )
+                .map((product) => (
+                  <div key={`bundle-${product.$id}`} className="flex justify-center">
+                    <div className="w-full max-w-sm">
+                      <ColdDrinkBundleCard
+                        product={product}
+                        imageFileId={imageMap.get(product.$id)}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Products Grid with Category Headings */}
       <div className="mb-16 w-full">

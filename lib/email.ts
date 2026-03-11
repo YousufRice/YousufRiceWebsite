@@ -29,7 +29,7 @@ interface OrderItem {
   savings?: number;
   savingsPercentage?: number;
   tierApplied?: string | null;
-  isNextcolaBundle?: boolean;
+  isColdDrinkBundle?: boolean;
 }
 
 interface OrderConfirmationData {
@@ -82,15 +82,15 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <div>${item.productName}</div>
-        ${item.savings && item.savings > 0 && !item.isNextcolaBundle ? `
+        ${item.savings && item.savings > 0 && !item.isColdDrinkBundle ? `
           <div style="font-size: 12px; color: #059669; margin-top: 4px;">
             💰 Saved Rs. ${item.savings.toLocaleString()} (${item.savingsPercentage?.toFixed(0)}% off)
-            ${item.tierApplied && !item.isNextcolaBundle ? `<br>🎯 ${item.tierApplied} applied` : ''}
+            ${item.tierApplied && !item.isColdDrinkBundle ? `<br>🎯 ${item.tierApplied} applied` : ''}
           </div>
         ` : ''}
-        ${item.isNextcolaBundle && item.quantity >= 10 ? `
-          <div style="font-size: 11px; color: #dc2626; margin-top: 4px; font-weight: bold; background-color: #fee2e2; padding: 4px; border-radius: 4px; display: inline-block;">
-            🎁 Includes ${Math.floor(item.quantity / 10)}x Free Next Cola 1L
+        ${item.isColdDrinkBundle && item.quantity >= 10 ? `
+          <div style="font-size: 11px; color: #2563eb; margin-top: 4px; font-weight: bold; background-color: #dbeafe; padding: 4px; border-radius: 4px; display: inline-block;">
+            🎁 Includes ${Math.floor(item.quantity / 10)}x Free Cold Drink 1L
           </div>
         ` : ''}
       </td>

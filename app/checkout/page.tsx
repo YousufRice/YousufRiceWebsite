@@ -445,8 +445,8 @@ export default function CheckoutPage() {
         const tierPricing = calculateTierPricing(product, item.quantity);
 
         // Calculate item totals with loyalty discount if applicable
-        // Disallow loyalty discount on Next Cola bundles
-        const loyaltyDiscountPercent = (appliedDiscount?.extra_discount_percentage || 0) * (item.isNextcolaBundle ? 0 : 1);
+        // Disallow loyalty discount on Cold Drink bundles
+        const loyaltyDiscountPercent = (appliedDiscount?.extra_discount_percentage || 0) * (item.isColdDrinkBundle ? 0 : 1);
         const itemCalculations = calculateItemTotal(
           tierPricing.pricePerKg,
           item.quantity,
@@ -456,8 +456,8 @@ export default function CheckoutPage() {
         // Calculate total discount for this item (Tier Discount + Loyalty Discount)
         // Tier Discount = (Base Price - Tier Price) * Quantity
         // Loyalty Discount = itemCalculations.discountAmount
-        // No tier discount for Next Cola bundles
-        const tierDiscountAmount = item.isNextcolaBundle ? 0 : tierPricing.discountAmount;
+        // No tier discount for Cold Drink bundles
+        const tierDiscountAmount = item.isColdDrinkBundle ? 0 : tierPricing.discountAmount;
         const totalItemDiscount = tierDiscountAmount + itemCalculations.discountAmount;
 
         // Round values for Appwrite (requires integer)
@@ -538,7 +538,7 @@ export default function CheckoutPage() {
               total_after_discount: roundedItemTotal, // Rounded
 
               // Metadata
-              notes: (formData.notes || "") + (item.isNextcolaBundle && item.quantity >= 10 ? `\n(Next Cola Deal Qualified` : ""),
+              notes: (formData.notes || "") + (item.isColdDrinkBundle && item.quantity >= 10 ? `\n(Free Cold Drink Deal Qualified)` : ""),
             }
           });
           createdItemIds.push(itemId);
@@ -689,7 +689,7 @@ export default function CheckoutPage() {
                   savings: savingsInfo.savings,
                   savingsPercentage: savingsInfo.savingsPercentage,
                   tierApplied: savingsInfo.tierApplied,
-                  isNextcolaBundle: item.isNextcolaBundle,
+                  isColdDrinkBundle: item.isColdDrinkBundle,
                 };
               }),
               totalPrice: getTotalPrice(),
@@ -1001,7 +1001,7 @@ export default function CheckoutPage() {
 
           <div className="lg:col-span-1 space-y-6">
             {/* Discount Code Section */}
-            {!items.some((item) => item.isNextcolaBundle) && (
+            {!items.some((item) => item.isColdDrinkBundle) && (
               <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
                 <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
                   <CardTitle className="text-xl font-bold text-white flex items-center">
@@ -1184,7 +1184,7 @@ export default function CheckoutPage() {
                           -
                           {formatCurrency(
                             items.reduce((acc, item) => {
-                              if (item.isNextcolaBundle) return acc;
+                              if (item.isColdDrinkBundle) return acc;
                               return acc + (calculatePrice(item.product, item.quantity) * appliedDiscount.extra_discount_percentage) / 100;
                             }, 0)
                           )}
@@ -1199,7 +1199,7 @@ export default function CheckoutPage() {
                         {formatCurrency(
                           appliedDiscount
                             ? totalPrice - items.reduce((acc, item) => {
-                              if (item.isNextcolaBundle) return acc;
+                              if (item.isColdDrinkBundle) return acc;
                               return acc + (calculatePrice(item.product, item.quantity) * appliedDiscount.extra_discount_percentage) / 100;
                             }, 0)
                             : totalPrice
