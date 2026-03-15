@@ -6,7 +6,7 @@ import { Package, Globe, Award, TrendingUp, CheckCircle } from 'lucide-react';
 
 export default function AboutPage() {
   // Direct image URL for mill facility
-  const millImageUrl = 'https://sgp.cloud.appwrite.io/v1/storage/buckets/691d585f003acdc55cc8/files/691d58e700252d9a5326/view?project=6915f70f003815538919&mode=admin';
+  const millImageUrl = 'https://yousufricemill.com/v1/storage/buckets/69b54a6f001d2c036ee4/files/69b54a83003010a40e38/view?project=69b54919003a3b212c96&mode=admin';
 
   const stats = [
     { icon: Package, label: 'Export Capacity', value: '150+', subtitle: 'Containers per month' },
