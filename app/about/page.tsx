@@ -5,8 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Package, Globe, Award, TrendingUp, CheckCircle } from 'lucide-react';
 
 export default function AboutPage() {
-  // Direct image URL for mill facility
-  const millImageUrl = 'https://yousufricemill.com/v1/storage/buckets/69b54a6f001d2c036ee4/files/69b54a83003010a40e38/view?project=69b54919003a3b212c96&mode=admin';
+  // Direct image URL for mill facility (public view)
+  const millImageUrl = 'https://yousufricemill.com/v1/storage/buckets/69b54a6f001d2c036ee4/files/69b54a83003010a40e38/view?project=69b54919003a3b212c96';
 
   const stats = [
     { icon: Package, label: 'Export Capacity', value: '150+', subtitle: 'Containers per month' },
@@ -96,7 +96,6 @@ export default function AboutPage() {
                 fill
                 className="object-cover p-2"
                 sizes="(max-width: 768px) 100vw, 50vw"
-                unoptimized
               />
             </div>
           </div>
