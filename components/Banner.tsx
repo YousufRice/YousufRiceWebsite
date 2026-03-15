@@ -51,7 +51,7 @@ const Banner: React.FC<BannerProps> = ({
     if (imageId.startsWith('http')) {
       return imageId;
     }
-    return `https://sgp.cloud.appwrite.io/v1/storage/buckets/${bucketId}/files/${imageId}/view?project=${projectId}`;
+    return `https://yousufricemill.com/v1/storage/buckets/${bucketId}/files/${imageId}/view?project=${projectId}`;
   };
 
   if (!images || images.length === 0) {
