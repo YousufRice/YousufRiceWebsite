@@ -27,6 +27,7 @@ export type ProductImages = Models.Row & {
     file_id: string;
     product_id: string;
     is_primary: boolean | null;
+    is_cold_drink_bundle: boolean | null;
 }
 
 export type Customers = Models.Row & {

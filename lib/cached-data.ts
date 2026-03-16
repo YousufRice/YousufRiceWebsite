@@ -66,12 +66,14 @@ export async function getCachedProductImages(productIds: string[]) {
   if (productIds.length === 0) return [];
 
   try {
-    // Fetch all primary images
-    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, queries: [Query.equal("is_primary", true), Query.limit(100)] });
+    // Fetch a larger set of images since we need both primary and bundle images
+    const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, queries: [Query.limit(200)] });
 
-    // Filter to only include images for our products
+    // Filter to only include images for our products that are either primary or a bundle image
     const allImages = JSON.parse(JSON.stringify(response.rows)) as ProductImage[];
-    return allImages.filter((img) => productIds.includes(img.product_id));
+    return allImages.filter((img) => 
+      productIds.includes(img.product_id) && (img.is_primary || img.is_cold_drink_bundle)
+    );
   } catch (error) {
     console.error("Error fetching product images:", error);
     return [];

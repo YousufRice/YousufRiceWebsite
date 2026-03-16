@@ -64,7 +64,15 @@ export async function AsyncProductsList() {
 
   const productIds = sortedProducts.map((p) => p.$id);
   const images = await getCachedProductImages(productIds);
-  const imageMap = new Map(images.map((img) => [img.product_id, img.file_id]));
+  // Map primary images for regular product cards
+  const imageMap = new Map(
+    images.filter(img => img.is_primary).map((img) => [img.product_id, img.file_id])
+  );
+  
+  // Map cold drink bundle images specifically for the bundle cards
+  const bundleImageMap = new Map(
+    images.filter(img => img.is_cold_drink_bundle).map((img) => [img.product_id, img.file_id])
+  );
 
   if (products.length === 0) {
     return (
@@ -123,7 +131,7 @@ export async function AsyncProductsList() {
                     <div className="w-full max-w-sm">
                       <ColdDrinkBundleCard
                         product={product}
-                        imageFileId={imageMap.get(product.$id)}
+                        imageFileId={bundleImageMap.get(product.$id) || imageMap.get(product.$id)}
                       />
                     </div>
                   </div>
