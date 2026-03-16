@@ -80,26 +80,34 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
     .map(
       (item) => `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-        <div>${item.productName}</div>
+      <td style="padding: 15px; border-bottom: 1px solid #e5e7eb;">
+        <div style="font-weight: 600; font-size: 15px; color: #111827;">${item.productName}</div>
         ${item.savings && item.savings > 0 && !item.isColdDrinkBundle ? `
-          <div style="font-size: 12px; color: #059669; margin-top: 4px;">
+          <div style="font-size: 12px; color: #059669; margin-top: 6px; display: inline-block; background-color: #d1fae5; padding: 3px 8px; border-radius: 4px; font-weight: 500;">
             💰 Saved Rs. ${item.savings.toLocaleString()} (${item.savingsPercentage?.toFixed(0)}% off)
             ${item.tierApplied && !item.isColdDrinkBundle ? `<br>🎯 ${item.tierApplied} applied` : ''}
           </div>
         ` : ''}
         ${item.isColdDrinkBundle && item.quantity >= 10 ? `
-          <div style="font-size: 11px; color: #2563eb; margin-top: 4px; font-weight: bold; background-color: #dbeafe; padding: 4px; border-radius: 4px; display: inline-block;">
-            🎁 Includes ${Math.floor(item.quantity / 10)}x Free Cold Drink 1L
+          <div style="margin-top: 10px; background: linear-gradient(to right, #f0fdfa, #ecfeff); border: 1px solid #99f6e4; padding: 10px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px;">🥤</span>
+              <div>
+                <div style="font-size: 10px; color: #0f766e; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 2px;">Bundle Offer</div>
+                <div style="font-size: 13px; color: #115e59; font-weight: bold;">
+                  Includes ${Math.floor(item.quantity / 10)}x Free 1L Cold Drink
+                </div>
+              </div>
+            </div>
           </div>
         ` : ''}
       </td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity} kg</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+      <td style="padding: 15px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: 500; font-size: 15px;">${item.quantity} kg</td>
+      <td style="padding: 15px; border-bottom: 1px solid #e5e7eb; text-align: right;">
         ${item.originalPrice && item.savings && item.savings > 0 ? `
-          <div style="text-decoration: line-through; color: #9ca3af; font-size: 12px;">Rs. ${item.originalPrice.toLocaleString()}</div>
+          <div style="text-decoration: line-through; color: #9ca3af; font-size: 13px;">Rs. ${item.originalPrice.toLocaleString()}</div>
         ` : ''}
-        <div style="font-weight: bold;">Rs. ${item.price.toLocaleString()}</div>
+        <div style="font-weight: bold; font-size: 15px; color: #111827;">Rs. ${item.price.toLocaleString()}</div>
       </td>
     </tr>
   `
