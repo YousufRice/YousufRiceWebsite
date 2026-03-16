@@ -19,6 +19,7 @@ export interface ProductImage {
   product_id: string;
   file_id: string;
   is_primary: boolean;
+  is_cold_drink_bundle?: boolean;
   $createdAt: string;
 }
 

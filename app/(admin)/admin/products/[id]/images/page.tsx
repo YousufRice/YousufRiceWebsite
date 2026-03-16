@@ -103,6 +103,26 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleSetColdDrinkBundle = async (imageId: string) => {
+    try {
+      // First, set all images to not-bundle-image
+      for (const img of images) {
+        if (img.is_cold_drink_bundle) {
+          await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: img.$id, data: { is_cold_drink_bundle: false } });
+        }
+      }
+
+      // Then set the selected image as the bundle image
+      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: imageId, data: { is_cold_drink_bundle: true } });
+
+      toast.success('Cold Drink Bundle image updated!');
+      fetchProductAndImages();
+    } catch (error) {
+      console.error('Error setting bundle image:', error);
+      toast.error('Failed to set bundle image');
+    }
+  };
+
   const handleDeleteImage = async (imageId: string, fileId: string) => {
     if (!confirm('Are you sure you want to delete this image?')) return;
 
@@ -161,7 +181,7 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
 
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">Manage Images</h1>
-        <p className="text-lg text-gray-600">{product.name}</p>
+        <p className="text-2xl font-bold text-blue-800">{product.name}</p>
       </div>
 
       {/* Upload Section */}
@@ -225,9 +245,15 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                       />
                       {image.is_primary && (
-                        <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center">
+                        <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center shadow-sm">
                           <Star className="w-3 h-3 mr-1 fill-current" />
                           Primary
+                        </div>
+                      )}
+                      {image.is_cold_drink_bundle && (
+                        <div className="absolute bottom-2 left-2 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center shadow-lg transform -rotate-2">
+                          <span className="mr-1 text-sm">🥤</span>
+                          Bundle Image
                         </div>
                       )}
                     </div>
@@ -242,6 +268,18 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
                         >
                           <Star className="w-4 h-4 mr-2" />
                           Set as Primary
+                        </Button>
+                      )}
+                      
+                      {product.name && (product.name.toLowerCase().includes('x-steam') || product.name.toLowerCase().includes('ultimate sella')) && !image.is_cold_drink_bundle && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
+                          onClick={() => handleSetColdDrinkBundle(image.$id)}
+                        >
+                          <span className="mr-2">🥤</span>
+                          Set as Bundle Image
                         </Button>
                       )}
                       <Button

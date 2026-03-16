@@ -87,15 +87,16 @@ async function ProductDetailContent({ productId }: { productId: string }) {
     `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKET_ID}/files/${img.file_id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
   );
 
-  // Find the primary image index
+  // Find the primary and bundle image indices
   const primaryImageIndex = images.findIndex((img) => img.is_primary);
-  // If no primary image is found, default to the first image (index 0)
+  const bundleImageIndex = images.findIndex((img) => img.is_cold_drink_bundle);
 
   return (
     <ProductDetailClient
       product={product}
       imageUrls={imageUrls}
       primaryImageIndex={primaryImageIndex >= 0 ? primaryImageIndex : 0}
+      bundleImageIndex={bundleImageIndex >= 0 ? bundleImageIndex : undefined}
     />
   );
 }

@@ -24,15 +24,15 @@ interface ProductDetailClientProps {
   product: Product;
   imageUrls: string[];
   primaryImageIndex: number;
+  bundleImageIndex?: number;
 }
 
 export default function ProductDetailClient({
   product,
   imageUrls,
   primaryImageIndex,
+  bundleImageIndex,
 }: ProductDetailClientProps) {
-  const [selectedImageIndex, setSelectedImageIndex] =
-    useState(primaryImageIndex);
   const [isBuyNowHovered, setIsBuyNowHovered] = useState(false);
   const { trackViewContent, trackAddToCart, trackInitiateCheckout } = useMetaTracking();
   const hasTrackedViewRef = useRef(false);
@@ -48,6 +48,9 @@ export default function ProductDetailClient({
   const isColdDrinkBundle =
     searchParams?.get("bundle") === "colddrink" &&
     process.env.NEXT_PUBLIC_ENABLE_COLD_DRINK_BUNDLE === "true";
+
+  const [selectedImageIndex, setSelectedImageIndex] =
+    useState(isColdDrinkBundle && bundleImageIndex !== undefined ? bundleImageIndex : primaryImageIndex);
 
   const {
     bagCounts,
@@ -229,6 +232,11 @@ export default function ProductDetailClient({
                     {index === primaryImageIndex && (
                       <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 bg-[#ffff03] text-[#27247b] text-xs px-1.5 sm:px-2 py-0.5 rounded font-bold">
                         Primary
+                      </div>
+                    )}
+                    {index === bundleImageIndex && (
+                      <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1 bg-blue-600 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-bold shadow-sm transform -rotate-3">
+                        🥤 Bundle
                       </div>
                     )}
                   </button>
