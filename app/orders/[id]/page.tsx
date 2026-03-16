@@ -304,29 +304,34 @@ export default function OrderDetailPage() {
               {data.items.map((item: OrderItem, index: number) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center py-2 border-b last:border-b-0"
+                  className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0"
                 >
-                  <div>
-                    <p className="font-medium flex items-center gap-2">
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
                       {item.product_name}
-                      {item.notes?.includes("Next Cola Deal") && (
-                        <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">
-                          Bundle Deal
-                        </span>
-                      )}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {item.quantity_kg} kg
+                    <p className="text-sm text-gray-600 mb-1">
+                      <span className="font-medium">{item.quantity_kg} kg</span>
                     </p>
-                    <p className="text-xs text-gray-400 mb-1">
-                      {formatCurrency(item.price_per_kg_at_order)}/kg • Total:{" "}
-                      {formatCurrency(item.total_after_discount)}
+                    <p className="text-xs text-gray-500 mb-1">
+                      {formatCurrency(item.price_per_kg_at_order)}/kg
                     </p>
-                    {item.notes?.includes("Next Cola Deal") && (
-                      <p className="text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded inline-block shadow-sm">
-                        🎁 Includes: {item.quantity_kg >= 10 ? Math.floor(item.quantity_kg / 10) : 0}x Free Next Cola 1L
-                      </p>
+                    
+                    {/* Bundle Deal Styling */}
+                    {(item.notes?.includes("Next Cola Deal") || item.notes?.includes("Cold Drink Bundle") || item.notes?.includes("colddrink") || item.notes?.includes("Free Cold Drink Deal Qualified")) && (
+                      <div className="mt-2 inline-flex items-center gap-2 bg-linear-to-r from-teal-50 to-cyan-50 border border-teal-200 px-3 py-1.5 rounded-lg shadow-sm">
+                        <span className="text-lg">🥤</span>
+                        <div>
+                          <p className="text-[10px] font-bold text-teal-700 uppercase tracking-widest leading-none mb-0.5">Bundle Offer</p>
+                          <p className="text-xs text-teal-900 font-bold leading-none">
+                            Includes {item.quantity_kg >= 10 ? Math.floor(item.quantity_kg / 10) : 0}x Free 1L Cold Drink
+                          </p>
+                        </div>
+                      </div>
                     )}
+                  </div>
+                  <div className="text-right">
+                      <p className="text-base font-bold text-gray-900">{formatCurrency(item.total_after_discount)}</p>
                   </div>
                 </div>
               ))}

@@ -1114,14 +1114,28 @@ export default function CheckoutPage() {
                     );
                     return (
                       <div
-                        key={item.product.$id}
+                        key={`${item.product.$id}-${item.isColdDrinkBundle ? 'bundle' : 'standard'}`}
                         className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200"
                       >
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-[#27247b]">
+                          <span className="text-sm font-medium text-[#27247b] flex items-center gap-2">
                             {item.product.name}
                           </span>
-                          {itemSavings.savings > 0 && (
+                          
+                          {/* Bundle Deal Styling */}
+                          {item.isColdDrinkBundle && (
+                            <div className="mt-1 inline-flex items-center gap-1.5 bg-linear-to-r from-teal-50 to-cyan-50 border border-teal-200 px-2 py-1 rounded-md shadow-sm w-fit">
+                              <span className="text-sm">🥤</span>
+                              <div>
+                                <p className="text-[9px] font-bold text-teal-700 uppercase tracking-widest leading-none mb-0.5">Bundle Offer</p>
+                                <p className="text-[10px] text-teal-900 font-bold leading-none">
+                                  {item.quantity >= 10 ? Math.floor(item.quantity / 10) : 0}x Free 1L Cold Drink
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {itemSavings.savings > 0 && !item.isColdDrinkBundle && (
                             <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full w-fit mt-1">
                               {itemSavings.savingsPercentage.toFixed(0)}% OFF
                             </span>

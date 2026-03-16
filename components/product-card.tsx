@@ -21,13 +21,13 @@ export function ProductCard({ product, imageFileId }: ProductCardSimpleProps) {
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-2 border-transparent hover:border-[#ffff03] bg-white group h-full cursor-pointer">
         <div className="flex flex-col h-full">
           {/* Image Section */}
-          <div className="relative w-full h-48 md:h-56 bg-linear-to-br from-[#27247b]/5 to-[#ffff03]/10 group-hover:from-[#27247b]/20 group-hover:to-[#ffff03]/30 transition-all duration-500 overflow-hidden">
+          <div className="relative w-full h-80 md:h-96 bg-linear-to-br from-[#27247b]/5 to-[#ffff03]/10 group-hover:from-[#27247b]/20 group-hover:to-[#ffff03]/30 transition-all duration-500 overflow-hidden">
             {imageUrl ? (
               <Image
                 src={imageUrl}
                 alt={product.name}
                 fill
-                className="object-contain p-3 group-hover:scale-110 transition-transform duration-700 ease-out"
+                className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out z-10"
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
             ) : (
