@@ -23,9 +23,9 @@ export default function OrdersPage() {
   // Filtering and Pagination State
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [lastId, setLastId] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     checkAuth();
@@ -48,15 +48,26 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, customer, authLoading, router]);
 
-  const fetchOrders = async (loadMore: boolean = false) => {
+  // Handle page changes
+  useEffect(() => {
+    if (user && customer && (currentPage > 1 || orders.length > 0)) {
+      fetchOrders(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  const fetchOrders = async (reset: boolean = false) => {
     if (!customer) return;
 
     setLoading(true);
     try {
+      const isInitialLoad = reset || currentPage === 1;
+
       const queries = [
         Query.equal('customer_id', customer.$id),
         Query.orderDesc('$createdAt'),
-        Query.limit(PAGE_SIZE)
+        Query.limit(PAGE_SIZE),
+        Query.offset((reset ? 0 : currentPage - 1) * PAGE_SIZE)
       ];
 
       // Apply Date Filters
@@ -74,40 +85,29 @@ export default function OrdersPage() {
         queries.push(Query.lessThanEqual('$createdAt', end.toISOString()));
       }
 
-      // Apply Pagination Cursor
-      if (loadMore && lastId) {
-        queries.push(Query.cursorAfter(lastId));
-      }
-
       const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
 
       const newOrders = ordersResponse.rows as unknown as Order[];
 
-      if (loadMore) {
-        setOrders(prev => [...prev, ...newOrders]);
-      } else {
+      if (isInitialLoad) {
         setOrders(newOrders);
         if (newOrders.length > 0) {
           toast.success(`Found ${ordersResponse.total} order(s)`, {
             id: 'orders-found',
           });
-        } else if (!loadMore) {
+        } else if (!isInitialLoad) {
           // Only show "No orders found" if it's a fresh search/filter, not just loading more
           // But we handle empty state in UI, so maybe just a toast if filtering?
           if (startDate || endDate) {
             toast('No orders found for the selected dates', { icon: '🔍' });
           }
         }
+      } else {
+        setOrders(newOrders);
       }
 
       // Update pagination state
-      if (newOrders.length === PAGE_SIZE) {
-        setLastId(newOrders[newOrders.length - 1].$id);
-        setHasMore(true);
-      } else {
-        setLastId(null);
-        setHasMore(false);
-      }
+      setTotalPages(Math.max(1, Math.ceil(ordersResponse.total / PAGE_SIZE)));
 
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -118,62 +118,17 @@ export default function OrdersPage() {
   };
 
   const handleFilter = () => {
-    setLastId(null);
-    setHasMore(false);
-    fetchOrders(false);
+    setCurrentPage(1);
+    fetchOrders(true);
   };
 
-  const handleClearFilters = () => {
-    setStartDate('');
-    setEndDate('');
-    setLastId(null);
-    setHasMore(false);
-    // We need to trigger fetch after state update, but state update is async.
-    // So we can pass empty strings directly to a helper or just rely on the next render if we used useEffect, 
-    // but here explicit call is better.
-    // Actually, let's just reset state and call fetch with empty values manually or wait for effect?
-    // Better to just call fetchOrders with cleared values logic, but fetchOrders reads from state.
-    // So we must wait for state to update or pass overrides.
-    // Simplest: clear state, then call a version of fetch that uses params or just wait for user to click apply?
-    // UX: Clear button should probably auto-refresh.
 
-    // Hack: force a fetch with empty values by temporarily overriding or just setting state and using a timeout/effect?
-    // Let's just set state and then call fetchOrders. Note: fetchOrders uses the state values which might be stale in this closure.
-    // So we should probably pass filters as arguments to fetchOrders or use a ref.
-    // For simplicity, I'll just reload the page or use a useEffect on filters? No, that triggers on every keystroke.
-
-    // Let's modify fetchOrders to accept optional overrides, or just use a timeout.
-    // Or better: split the fetch logic to take arguments.
-
-    // Re-implementation:
-    // I will just set the state to empty strings, and then call a separate internal function or just use setTimeout(..., 0) to let React flush state.
-    // Actually, let's just pass the values to fetchOrders.
-
-    // But wait, I can't easily pass values to fetchOrders without changing its signature significantly.
-    // Let's just reload the initial state.
-
-    // Correct approach:
-    // 1. Set state
-    // 2. Call fetchOrders but we need it to see new state.
-    // Let's just do:
-    setTimeout(() => {
-      // This runs after state update is scheduled
-      // But with React batching it might still be tricky.
-      // Let's just reload the page? No that's bad.
-
-      // Let's just manually trigger a fetch with "empty" logic
-      // But fetchOrders reads state.
-
-      // Okay, I will make fetchOrders read from args if provided, else state.
-    }, 0);
-  };
 
   // Better Clear Handler
   const clearAndRefetch = () => {
     setStartDate('');
     setEndDate('');
-    setLastId(null);
-    setHasMore(false);
+    setCurrentPage(1);
 
     // Manually fetch with cleared values
     // We can't easily reuse fetchOrders as is if it reads state.
@@ -184,17 +139,12 @@ export default function OrdersPage() {
     tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
                   Query.equal('customer_id', customer!.$id),
                   Query.orderDesc('$createdAt'),
-                  Query.limit(PAGE_SIZE)
+                  Query.limit(PAGE_SIZE),
+                  Query.offset(0)
                 ] }).then((response) => {
       const newOrders = response.rows as unknown as Order[];
       setOrders(newOrders);
-      if (newOrders.length === PAGE_SIZE) {
-        setLastId(newOrders[newOrders.length - 1].$id);
-        setHasMore(true);
-      } else {
-        setLastId(null);
-        setHasMore(false);
-      }
+      setTotalPages(Math.max(1, Math.ceil(response.total / PAGE_SIZE)));
       toast.success('Filters cleared');
     }).catch(err => {
       console.error(err);
@@ -334,7 +284,7 @@ export default function OrdersPage() {
           ) : (
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Your Orders ({orders.length}{hasMore ? '+' : ''})
+                Your Orders (Page {currentPage} of {totalPages})
               </h2>
 
               <div className="space-y-4">
@@ -383,17 +333,27 @@ export default function OrdersPage() {
                 ))}
               </div>
 
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="mt-8 text-center">
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-4 mt-8">
                   <Button
-                    onClick={() => fetchOrders(true)}
-                    variant="secondary"
-                    size="lg"
-                    disabled={loading}
-                    className="min-w-50"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
                   >
-                    {loading ? 'Loading...' : 'Load More Orders'}
+                    Previous
+                  </Button>
+                  <div className="text-sm font-medium text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Next
                   </Button>
                 </div>
               )}
