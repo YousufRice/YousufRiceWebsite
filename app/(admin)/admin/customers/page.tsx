@@ -39,9 +39,13 @@ export default function AdminCustomersPage() {
 
     // Apply search filter
     if (searchQuery) {
+      const isPakistaniPhoneSearch = searchQuery.startsWith('0');
+      const formattedPhoneSearch = isPakistaniPhoneSearch ? '+92' + searchQuery.slice(1) : searchQuery;
+
       filtered = filtered.filter(c =>
         c.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.phone.includes(searchQuery) ||
+        (isPakistaniPhoneSearch && c.phone.includes(formattedPhoneSearch)) ||
         (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }

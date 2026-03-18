@@ -77,12 +77,14 @@ export default function AdminOrdersPage() {
   const [filter, setFilter] = useState<"all" | Order["status"]>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<
-    "all" | "today" | "week" | "month"
+    "all" | "today" | "week" | "month" | "custom"
   >("all");
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [sortBy, setSortBy] = useState<"date" | "amount">("date");
-  const [lastDocumentId, setLastDocumentId] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const ORDERS_PER_PAGE = 30;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const ORDERS_PER_PAGE = 50;
 
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -98,25 +100,34 @@ export default function AdminOrdersPage() {
     // Reset pagination and reload when filter changes
     setOrders([]);
     setFilteredOrders([]);
-    setLastDocumentId(null);
-    setHasMore(true);
+    setCurrentPage(1);
     fetchOrders(true);
   }, [filter]);
 
   useEffect(() => {
     // When search, date filter, or sort changes, reset and reload
-    if (orders.length > 0) {
+    if (dateFilter === "custom" && (!customDateRange.start || !customDateRange.end)) {
+      return;
+    }
+    if (orders.length > 0 || filteredOrders.length > 0) {
       setOrders([]);
       setFilteredOrders([]);
-      setLastDocumentId(null);
-      setHasMore(true);
+      setCurrentPage(1);
       fetchOrders(true);
     }
-  }, [searchQuery, dateFilter, sortBy]);
+  }, [searchQuery, dateFilter, sortBy, customDateRange.start, customDateRange.end]);
+
+  // Handle page changes
+  useEffect(() => {
+    if (currentPage > 1 || orders.length > 0) {
+      fetchOrders(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const fetchOrders = async (reset: boolean = false) => {
     try {
-      const isInitialLoad = reset || !lastDocumentId;
+      const isInitialLoad = reset || currentPage === 1;
 
       if (isInitialLoad) {
         setLoading(true);
@@ -126,6 +137,7 @@ export default function AdminOrdersPage() {
 
       const queries: string[] = [
         Query.limit(ORDERS_PER_PAGE),
+        Query.offset((reset ? 0 : currentPage - 1) * ORDERS_PER_PAGE),
       ];
 
       // Add status filter
@@ -140,13 +152,21 @@ export default function AdminOrdersPage() {
 
         if (dateFilter === "today") {
           filterDate.setHours(0, 0, 0, 0);
+          queries.push(Query.greaterThanEqual("$createdAt", filterDate.toISOString()));
         } else if (dateFilter === "week") {
           filterDate.setDate(now.getDate() - 7);
+          queries.push(Query.greaterThanEqual("$createdAt", filterDate.toISOString()));
         } else if (dateFilter === "month") {
           filterDate.setMonth(now.getMonth() - 1);
+          queries.push(Query.greaterThanEqual("$createdAt", filterDate.toISOString()));
+        } else if (dateFilter === "custom" && customDateRange.start && customDateRange.end) {
+          const startDate = new Date(customDateRange.start);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(customDateRange.end);
+          endDate.setHours(23, 59, 59, 999);
+          queries.push(Query.greaterThanEqual("$createdAt", startDate.toISOString()));
+          queries.push(Query.lessThanEqual("$createdAt", endDate.toISOString()));
         }
-
-        queries.push(Query.greaterThanEqual("$createdAt", filterDate.toISOString()));
       }
 
       // Add sorting
@@ -154,11 +174,6 @@ export default function AdminOrdersPage() {
         queries.push(Query.orderDesc("total_price"));
       } else {
         queries.push(Query.orderDesc("$createdAt"));
-      }
-
-      // Add cursor for pagination (only if not resetting)
-      if (!isInitialLoad && lastDocumentId) {
-        queries.push(Query.cursorAfter(lastDocumentId));
       }
 
       const ordersResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: queries });
@@ -190,13 +205,17 @@ export default function AdminOrdersPage() {
       // Apply client-side search filter if needed (since Appwrite doesn't support full-text search easily)
       let finalOrders = ordersWithCustomers;
       if (searchQuery) {
+        const isPakistaniPhoneSearch = searchQuery.startsWith('0');
+        const formattedPhoneSearch = isPakistaniPhoneSearch ? '+92' + searchQuery.slice(1) : searchQuery;
+
         finalOrders = ordersWithCustomers.filter(
           (order) =>
             order.$id.toLowerCase().includes(searchQuery.toLowerCase()) ||
             order.customer?.full_name
               .toLowerCase()
               .includes(searchQuery.toLowerCase()) ||
-            order.customer?.phone.includes(searchQuery)
+            order.customer?.phone.includes(searchQuery) ||
+            (isPakistaniPhoneSearch && order.customer?.phone?.includes(formattedPhoneSearch))
         );
       }
 
@@ -204,17 +223,14 @@ export default function AdminOrdersPage() {
         setOrders(finalOrders);
         setFilteredOrders(finalOrders);
       } else {
-        setOrders((prev) => [...prev, ...finalOrders]);
-        setFilteredOrders((prev) => [...prev, ...finalOrders]);
+        // Page changes replace the list instead of appending
+        setOrders(finalOrders);
+        setFilteredOrders(finalOrders);
       }
 
       // Update pagination state
-      if (ordersResponse.rows.length > 0) {
-        setLastDocumentId(ordersResponse.rows[ordersResponse.rows.length - 1].$id);
-      }
-
-      // Check if there are more orders to load
-      setHasMore(ordersResponse.rows.length === ORDERS_PER_PAGE);
+      setTotalOrders(ordersResponse.total);
+      setTotalPages(Math.max(1, Math.ceil(ordersResponse.total / ORDERS_PER_PAGE)));
 
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -463,21 +479,42 @@ export default function AdminOrdersPage() {
                     className="pl-10"
                   />
                 </div>
-                <Select
-                  value={dateFilter}
-                  onValueChange={(value: any) => setDateFilter(value)}
-                >
-                  <SelectTrigger className="w-full md:w-48">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">Last 7 Days</SelectItem>
-                    <SelectItem value="month">Last 30 Days</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col md:flex-row gap-2">
+                  <Select
+                    value={dateFilter}
+                    onValueChange={(value: any) => setDateFilter(value)}
+                  >
+                    <SelectTrigger className="w-full md:w-48">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">Last 7 Days</SelectItem>
+                      <SelectItem value="month">Last 30 Days</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {dateFilter === "custom" && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={customDateRange.start}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                        className="w-auto h-10"
+                      />
+                      <span className="text-gray-500">to</span>
+                      <Input
+                        type="date"
+                        value={customDateRange.end}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                        className="w-auto h-10"
+                      />
+                    </div>
+                  )}
+                </div>
                 <Select
                   value={sortBy}
                   onValueChange={(value: any) => setSortBy(value)}
@@ -786,17 +823,27 @@ export default function AdminOrdersPage() {
               ))}
             </div>
 
-            {/* Show More Button */}
-            {hasMore && !loading && (
-              <div className="flex justify-center mt-6">
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && (
+              <div className="flex items-center justify-center space-x-4 mt-8">
                 <Button
-                  onClick={() => fetchOrders(false)}
                   variant="outline"
-                  size="lg"
-                  className="min-w-50"
-                  disabled={loadingMore}
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || loadingMore}
                 >
-                  {loadingMore ? "Loading..." : "Show More"}
+                  Previous
+                </Button>
+                <div className="text-sm font-medium text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || loadingMore}
+                >
+                  Next
                 </Button>
               </div>
             )}
