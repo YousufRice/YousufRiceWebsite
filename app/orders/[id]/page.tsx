@@ -465,12 +465,12 @@ export default function OrderDetailPage() {
               <Card className="border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white">
                 <CardHeader>
                   <CardTitle className="flex items-center text-[#ffff03]">
-                    <span className="mr-2">🌙</span> Ramadan Gift Qualified
+                    <span className="mr-2">🎉</span> Post-Eid Gift Qualified
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-white/90">
-                    This order qualifies for the Ramadan Special Offer! <strong className="text-[#ffff03]">{freeKg}kg Free Rice</strong> will be included in your delivery.
+                    This order qualifies for the Post-Eid Special Offer (ends March 31st)! <strong className="text-[#ffff03]">{freeKg}kg Free Rice</strong> will be included in your delivery.
                   </p>
                 </CardContent>
               </Card>

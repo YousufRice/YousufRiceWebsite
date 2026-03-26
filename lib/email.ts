@@ -235,7 +235,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
                     </div>
                     <div style="position: relative; z-index: 10;">
                       <h3 style="margin: 0 0 8px 0; color: #ffff03; font-size: 18px; font-weight: bold;">
-                        🌙 Ramadan Special
+                        ⏳ Post-Eid Special (Ends March 31st)
                       </h3>
                       ${(() => {
                         const freeKg = Math.floor(totalWeight / 15);
