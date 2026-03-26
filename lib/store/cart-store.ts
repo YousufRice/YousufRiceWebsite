@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { CartItem, Product } from "../types";
 import { calculatePrice } from "../utils";
 
-type BagSize = 1 | 5 | 10 | 25;
+type BagSize = 3 | 5 | 10 | 25;
 
 interface CartStore {
   items: CartItem[];
@@ -23,7 +23,7 @@ const migrateLegacyCartItem = (item: any): CartItem => {
     // Legacy item without bags - convert quantity to bags
     return {
       ...item,
-      bags: { kg1: 0, kg5: 0, kg10: 0, kg25: 0 },
+      bags: { kg3: 0, kg5: 0, kg10: 0, kg25: 0 },
     };
   }
   return item as CartItem;
@@ -56,7 +56,7 @@ export const useCartStore = create<CartStore>()(
               {
                 product,
                 quantity,
-                bags: { kg1: 0, kg5: 0, kg10: 0, kg25: 0 },
+                bags: { kg3: 0, kg5: 0, kg10: 0, kg25: 0 },
                 isColdDrinkBundle,
               },
             ],
@@ -76,7 +76,7 @@ export const useCartStore = create<CartStore>()(
             newBags[bagKey] += 1;
 
             const newQuantity =
-              newBags.kg1 * 1 +
+              newBags.kg3 * 3 +
               newBags.kg5 * 5 +
               newBags.kg10 * 10 +
               newBags.kg25 * 25;
@@ -90,7 +90,7 @@ export const useCartStore = create<CartStore>()(
             };
           }
 
-          const bags = { kg1: 0, kg5: 0, kg10: 0, kg25: 0 };
+          const bags = { kg3: 0, kg5: 0, kg10: 0, kg25: 0 };
           const bagKey = `kg${bagSize}` as keyof typeof bags;
           bags[bagKey] = 1;
 
@@ -124,7 +124,7 @@ export const useCartStore = create<CartStore>()(
           }
 
           const newQuantity =
-            newBags.kg1 * 1 +
+            newBags.kg3 * 3 +
             newBags.kg5 * 5 +
             newBags.kg10 * 10 +
             newBags.kg25 * 25;
@@ -176,7 +176,7 @@ export const useCartStore = create<CartStore>()(
       getTotalItems: () => {
         const { items } = get();
         return items.reduce((total, item) => {
-          // Sum up all the bags (1kg, 5kg, 10kg, 25kg)
+          // Sum up all the bags (3kg, 5kg, 10kg, 25kg)
           const totalBags = Object.values(item.bags || {}).reduce(
             (sum, count) => sum + count,
             0

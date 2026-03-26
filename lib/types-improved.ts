@@ -36,7 +36,7 @@ export interface OrderItem {
   quantity_kg: number;
 
   // Bag breakdown for inventory tracking
-  bags_1kg: number;
+  bags_3kg: number;
   bags_5kg: number;
   bags_10kg: number;
   bags_25kg: number;
@@ -115,7 +115,7 @@ export interface CartItem {
   product: Product;
   quantity: number; // in kg (calculated from bags)
   bags: {
-    kg1: number; // count of 1kg bags
+    kg3: number; // count of 3kg bags
     kg5: number; // count of 5kg bags
     kg10: number; // count of 10kg bags
     kg25: number; // count of 25kg bags
@@ -139,7 +139,7 @@ export interface CreateOrderItemRequest {
   product_id: string;
   quantity_kg: number;
   bags: {
-    kg1: number;
+    kg3: number;
     kg5: number;
     kg10: number;
     kg25: number;

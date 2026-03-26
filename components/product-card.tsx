@@ -68,12 +68,12 @@ export function ProductCard({ product, imageFileId }: ProductCardSimpleProps) {
               </p>
             )}
 
-            {/* View Details Link */}
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-xs font-semibold text-[#27247b] transition-colors flex items-center gap-1">
-                View Details
+            {/* Order Now Button */}
+            <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+              <div className="w-full bg-[#27247b] text-white group-hover:bg-[#ffff03] group-hover:text-[#27247b] text-sm font-bold px-4 py-2.5 rounded-full shadow-md flex items-center justify-center gap-2 transition-all duration-300">
+                Order Now
                 <svg
-                  className="w-3 h-3 transform group-hover:translate-x-1 transition-transform"
+                  className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -85,7 +85,7 @@ export function ProductCard({ product, imageFileId }: ProductCardSimpleProps) {
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-              </p>
+              </div>
             </div>
           </CardContent>
         </div>

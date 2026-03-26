@@ -168,7 +168,7 @@ export function calculateItemTotal(
 }
 
 export function calculateBagsFromQuantity(quantity: number): {
-  kg1: number;
+  kg3: number;
   kg5: number;
   kg10: number;
   kg25: number;
@@ -184,18 +184,18 @@ export function calculateBagsFromQuantity(quantity: number): {
   const kg5 = Math.floor(remaining / 5);
   remaining = remaining % 5;
 
-  const kg1 = remaining;
+  const kg3 = Math.floor(remaining / 3);
 
-  return { kg1, kg5, kg10, kg25 };
+  return { kg3, kg5, kg10, kg25 };
 }
 
 export function calculateQuantityFromBags(bags: {
-  kg1: number;
+  kg3: number;
   kg5: number;
   kg10: number;
   kg25: number;
 }): number {
-  return bags.kg1 * 1 + bags.kg5 * 5 + bags.kg10 * 10 + bags.kg25 * 25;
+  return bags.kg3 * 3 + bags.kg5 * 5 + bags.kg10 * 10 + bags.kg25 * 25;
 }
 
 export function validatePakistaniPhoneNumber(phone: string): {
