@@ -183,7 +183,7 @@ export function RamadanPopup() {
                             </div>
 
                             <h2 className="title-text text-4xl font-black leading-tight mb-1">
-                                Ramadan<br />Mubarak!
+                                Post-Eid<br />Special Offer!
                             </h2>
                             <p className="text-yellow-300/80 text-sm font-medium tracking-widest uppercase mt-1">Exclusive Offer Inside</p>
                         </div>
@@ -224,7 +224,7 @@ export function RamadanPopup() {
                                 </div>
                                 <div>
                                     <p className="text-white font-bold text-base leading-tight">Up to 24% Discount</p>
-                                    <p className="text-yellow-300 font-semibold text-sm mt-0.5" style={{ textShadow: '0 0 10px rgba(251,191,36,0.6)' }}>✨ Ramadan special pricing</p>
+                                    <p className="text-yellow-300 font-semibold text-sm mt-0.5" style={{ textShadow: '0 0 10px rgba(251,191,36,0.6)' }}>✨ Post-Eid special pricing</p>
                                 </div>
                             </div>
                         </div>
@@ -240,7 +240,7 @@ export function RamadanPopup() {
                         </a>
 
                         <p className="text-center text-yellow-300/40 text-xs mt-4 tracking-widest uppercase">
-                            رمضان مبارک ✦ Ramazan Mubarak
+                            ⏳ HURRY! BEST OFFERS END MARCH 31ST ⏳
                         </p>
                     </div>
                 </DialogContent>

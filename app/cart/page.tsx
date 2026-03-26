@@ -66,7 +66,7 @@ export default function CartPage() {
               <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="space-y-2 text-center sm:text-left">
                   <h3 className="text-xl font-bold text-[#ffff03] flex items-center justify-center sm:justify-start gap-2">
-                    <span>🌙</span> Ramadan Special Offer
+                    <span>⏳</span> Post-Eid Special (Ends Mar 31)
                   </h3>
                   {freeKg > 0 ? (
                     <div className="space-y-1">

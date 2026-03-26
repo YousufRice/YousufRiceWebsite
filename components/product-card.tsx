@@ -48,7 +48,7 @@ export function ProductCard({ product, imageFileId }: ProductCardSimpleProps) {
             {product.available && process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (
               <div className="absolute top-2 left-2 z-10">
                 <span className="bg-[#ffff03] text-[#27247b] text-[10px] md:text-xs font-bold px-2 py-1 rounded-full shadow-md flex items-center gap-1">
-                  <span>🌙</span> Ramadan Offer
+                  <span>⏳</span> Post-Eid Special (Ends Mar 31)
                 </span>
               </div>
             )}
