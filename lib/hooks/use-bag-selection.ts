@@ -19,17 +19,17 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
   // This ensures we are always in sync with what's actually in the cart (and persisted)
   const cartItem = items.find((item) => item.product.$id === product.$id && !!item.isColdDrinkBundle === isBundle);
   
-  const bagCounts = cartItem?.bags || { kg1: 0, kg5: 0, kg10: 0, kg25: 0 };
+  const bagCounts = cartItem?.bags || { kg3: 0, kg5: 0, kg10: 0, kg25: 0 };
 
   // Calculate totals based on the derived bag counts
-  const totalKg = bagCounts.kg1 * 1 + bagCounts.kg5 * 5 + bagCounts.kg10 * 10 + bagCounts.kg25 * 25;
+  const totalKg = bagCounts.kg3 * 3 + bagCounts.kg5 * 5 + bagCounts.kg10 * 10 + bagCounts.kg25 * 25;
   const pricePerKg = getPricePerKg(product, totalKg || 1);
   const totalPrice = calculatePrice(product, totalKg || 0);
 
   /**
    * Add a bag of specified size to cart
    */
-  const handleAddBag = (size: 1 | 5 | 10 | 25) => {
+  const handleAddBag = (size: 3 | 5 | 10 | 25) => {
     // We don't need to update local state anymore, the store update will trigger a re-render
     addBag(product, size, isBundle);
     toast.success(`Added ${size}kg bag of ${product.name} to cart!`);
@@ -38,7 +38,7 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
   /**
    * Remove a bag of specified size from cart
    */
-  const handleRemoveBag = (size: 1 | 5 | 10 | 25) => {
+  const handleRemoveBag = (size: 3 | 5 | 10 | 25) => {
     const key = `kg${size}` as keyof typeof bagCounts;
     if (bagCounts[key] > 0) {
       removeBag(product.$id, size, isBundle);

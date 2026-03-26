@@ -157,15 +157,15 @@ export default function CartPage() {
 
                       {/* Bag Controls */}
                       <div className="space-y-1.5 mb-2">
-                        {/* 1kg bags */}
-                        {item.bags.kg1 > 0 && (
+                        {/* 3kg bags */}
+                        {item.bags.kg3 > 0 && (
                           <div className="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
-                            <span className="text-xs text-gray-600">1kg bags: {item.bags.kg1}</span>
+                            <span className="text-xs text-gray-600">3kg bags: {item.bags.kg3}</span>
                             <div className="flex items-center gap-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => removeBag(item.product.$id, 1)}
+                                onClick={() => removeBag(item.product.$id, 3)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Minus className="w-3 h-3" />
@@ -173,7 +173,7 @@ export default function CartPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => addBag(item.product, 1)}
+                                onClick={() => addBag(item.product, 3)}
                                 className="h-6 w-6 p-0"
                               >
                                 <Plus className="w-3 h-3" />

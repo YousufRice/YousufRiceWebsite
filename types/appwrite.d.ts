@@ -67,7 +67,7 @@ export type OrderItems = Models.Row & {
     product_name: string;
     product_description: string | null;
     quantity_kg: number;
-    bags_1kg: number | null;
+    bags_3kg: number | null;
     bags_5kg: number | null;
     bags_10kg: number | null;
     bags_25kg: number | null;

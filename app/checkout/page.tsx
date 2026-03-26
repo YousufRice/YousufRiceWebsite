@@ -512,7 +512,7 @@ export default function CheckoutPage() {
 
               // Quantity info
               quantity_kg: item.quantity,
-              bags_1kg: item.bags?.kg1 || 0,
+              bags_3kg: item.bags?.kg3 || 0,
               bags_5kg: item.bags?.kg5 || 0,
               bags_10kg: item.bags?.kg10 || 0,
               bags_25kg: item.bags?.kg25 || 0,

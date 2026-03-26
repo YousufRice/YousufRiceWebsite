@@ -143,7 +143,7 @@ export class OrderService {
                             quantity_kg: itemRequest.quantity_kg,
 
                             // Bag breakdown
-                            bags_1kg: itemRequest.bags.kg1,
+                            bags_3kg: itemRequest.bags.kg3,
                             bags_5kg: itemRequest.bags.kg5,
                             bags_10kg: itemRequest.bags.kg10,
                             bags_25kg: itemRequest.bags.kg25,
