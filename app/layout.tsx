@@ -111,6 +111,11 @@ export const metadata: Metadata = {
     description:
       "Order premium quality rice online with tier-based pricing and free delivery",
   },
+  verification: {
+    other: {
+      "facebook-domain-verification": "r6916j8ribq3asb275o4dejdttfgqy",
+    },
+  },
   robots: {
     index: true,
     follow: true,
