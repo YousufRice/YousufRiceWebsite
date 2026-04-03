@@ -19,6 +19,10 @@ import { Loader2 } from "lucide-react";
 
 interface DeleteOrderDialogProps {
     orderId: string;
+    customerName?: string;
+    customerPhone?: string;
+    address?: string;
+    totalWeightKg?: number | string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
@@ -26,6 +30,10 @@ interface DeleteOrderDialogProps {
 
 export default function DeleteOrderDialog({
     orderId,
+    customerName,
+    customerPhone,
+    address,
+    totalWeightKg,
     open,
     onOpenChange,
     onSuccess,
@@ -53,10 +61,40 @@ export default function DeleteOrderDialog({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the order
-                        <span className="font-mono font-bold mx-1">{orderId}</span>
-                        and remove it from the database.
+                    <AlertDialogDescription asChild>
+                        <div className="space-y-3">
+                            <p>This action cannot be undone. This will permanently delete the following order from the database.</p>
+                            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 space-y-1">
+                                {customerName && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-red-600 font-semibold">Customer:</span>
+                                        <span className="font-medium">{customerName}</span>
+                                    </div>
+                                )}
+                                {customerPhone && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-red-600 font-semibold">Phone:</span>
+                                        <span className="font-medium">{customerPhone}</span>
+                                    </div>
+                                )}
+                                {address && (
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-red-600 font-semibold shrink-0">Address:</span>
+                                        <span className="font-medium">{address}</span>
+                                    </div>
+                                )}
+                                {totalWeightKg !== undefined && totalWeightKg !== null && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-red-600 font-semibold">Order Size:</span>
+                                        <span className="font-medium">{totalWeightKg} kg</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-red-600 font-semibold">Order ID:</span>
+                                    <span className="font-mono text-xs">{orderId}</span>
+                                </div>
+                            </div>
+                        </div>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
