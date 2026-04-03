@@ -470,7 +470,7 @@ export default function OrderDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-white/90">
-                    This order qualifies for the Post-Eid Special Offer (ends March 31st)! <strong className="text-[#ffff03]">{freeKg}kg Free Rice</strong> will be included in your delivery.
+                    This order qualifies for the Post-Eid Special Offer (ends soon)! <strong className="text-[#ffff03]">{freeKg}kg Free Rice</strong> will be included in your delivery.
                   </p>
                 </CardContent>
               </Card>

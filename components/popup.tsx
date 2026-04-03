@@ -4,7 +4,7 @@ import * as React from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { X } from "lucide-react"
 
-export function RamadanPopup() {
+export function Popup() {
     const [open, setOpen] = React.useState(false)
 
     React.useEffect(() => {
@@ -240,7 +240,7 @@ export function RamadanPopup() {
                         </a>
 
                         <p className="text-center text-yellow-300/40 text-xs mt-4 tracking-widest uppercase">
-                            ⏳ HURRY! BEST OFFERS END MARCH 31ST ⏳
+                            ⏳ HURRY! BEST OFFERS END SOON ⏳
                         </p>
                     </div>
                 </DialogContent>
