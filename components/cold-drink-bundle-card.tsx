@@ -65,8 +65,8 @@ export function ColdDrinkBundleCard({ product, imageFileId }: ColdDrinkBundleCar
                         <div className="absolute bottom-3 left-3 z-20 bg-linear-to-r from-teal-500 to-cyan-600 text-white px-3.5 py-2 rounded-xl shadow-[0_8px_25px_rgba(20,184,166,0.4)] border border-cyan-300/50 flex items-center gap-2 transform group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-400">
                             <span className="text-xl animate-pulse delay-75">🧊</span>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-cyan-100 uppercase tracking-widest leading-none mb-1">Refreshing Deal</span>
-                                <span className="text-sm font-black leading-none drop-shadow-sm">1 Free Drink (1L)</span>
+                                <span className="text-[10px] font-bold text-cyan-100 uppercase tracking-widest leading-none mb-1">With Every Bundle</span>
+                                <span className="text-sm font-black leading-none drop-shadow-sm">1 Litre Bottle Free</span>
                             </div>
                         </div>
                     </div>
