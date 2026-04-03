@@ -32,6 +32,8 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
   const handleAddBag = (size: 3 | 5 | 10 | 25) => {
     // We don't need to update local state anymore, the store update will trigger a re-render
     addBag(product, size, isBundle);
+    useCartStore.getState().setIsOpen(true);
+    useCartStore.getState().highlightCart();
     toast.success(`Added ${size}kg bag of ${product.name} to cart!`);
   };
 
@@ -57,6 +59,8 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
       return;
     }
     
+    useCartStore.getState().setIsOpen(true);
+    useCartStore.getState().highlightCart();
     // Items are already in the store/local storage because handleAddBag adds them immediately
     // So we just show the success message
     toast.success(`Cart updated: ${totalKg}kg of ${product.name}`, {
@@ -79,7 +83,10 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
       return;
     }
     
-    toast.success('Proceeding to checkout!', {
+    useCartStore.getState().setIsOpen(true);
+    useCartStore.getState().highlightCart();
+    
+    toast.success('Review cart! Proceeding to checkout shortly...', {
       icon: '🚀',
       style: {
         borderRadius: '12px',
@@ -88,7 +95,13 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
         fontWeight: 'bold',
       },
     });
-    router.push('/checkout');
+
+    // Wait 3 seconds, close drawer, highlight cart icon again, and route
+    setTimeout(() => {
+      useCartStore.getState().setIsOpen(false);
+      useCartStore.getState().highlightCart();
+      router.push('/checkout');
+    }, 3000);
   };
 
   return {

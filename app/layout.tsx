@@ -11,6 +11,7 @@ import AnnocementBar from "@/components/annoucement-bar";
 import { Suspense } from "react";
 import { ImageProtection } from "@/components/image-protection";
 import { Popup } from "@/components/popup";
+import { CartDrawer } from "@/components/cart-drawer";
 import { Playfair_Display, Poppins } from "next/font/google";
 
 const playfair = Playfair_Display({
@@ -192,6 +193,9 @@ export default function RootLayout({
         </Suspense>
         <Suspense fallback={null}>
           <Popup />
+        </Suspense>
+        <Suspense fallback={null}>
+          <CartDrawer />
         </Suspense>
         <ImageProtection />
         <script

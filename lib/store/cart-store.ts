@@ -15,6 +15,10 @@ interface CartStore {
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  isHighlighted: boolean;
+  highlightCart: () => void;
 }
 
 // Helper function to ensure cart items have bags structure
@@ -33,6 +37,13 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      isOpen: false,
+      setIsOpen: (isOpen) => set({ isOpen }),
+      isHighlighted: false,
+      highlightCart: () => {
+        set({ isHighlighted: true });
+        setTimeout(() => set({ isHighlighted: false }), 1000);
+      },
 
       addItem: (product, quantity, isColdDrinkBundle = false) => {
         set((state) => {
@@ -187,6 +198,7 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: "cart-storage",
+      partialize: (state) => ({ items: state.items } as CartStore),
       onRehydrateStorage: () => (state) => {
         // Migrate legacy cart items when loading from storage
         if (state?.items) {

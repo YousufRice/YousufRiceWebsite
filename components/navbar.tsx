@@ -21,6 +21,7 @@ export function Navbar() {
   const { user, isAdmin, isReadOnly, checkAuth, logout } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+  const [isHighlighted, setIsHighlighted] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,9 +42,11 @@ export function Navbar() {
   // Prevent hydration mismatch by only reading cart on client
   useEffect(() => {
     setTotalItems(useCartStore.getState().getTotalItems());
+    setIsHighlighted(useCartStore.getState().isHighlighted);
 
     const unsubscribe = useCartStore.subscribe((state) => {
       setTotalItems(state.getTotalItems());
+      setIsHighlighted(state.isHighlighted);
     });
 
     return unsubscribe;
@@ -109,16 +112,32 @@ export function Navbar() {
         {/* Right Side Actions */}
         <div className="relative z-20 flex items-center space-x-2">
           {/* Cart */}
-          <Link href="/cart" className="relative inline-block">
-            <button className="relative p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white  ">
-              <ShoppingCart className="w-5 h-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#ffff03] text-[#27247b] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center pointer-events-none z-10">
-                  {totalItems}
-                </span>
+          <div className="relative inline-block">
+            <button 
+              onClick={() => useCartStore.getState().setIsOpen(true)}
+              className={`relative z-10 flex items-center justify-center p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white transition-all duration-300 rounded-full overflow-hidden ${
+                totalItems > 0 && !isHighlighted ? "shadow-md bg-white border border-[#ffff03]/50" : ""
+              } ${
+                isHighlighted ? "scale-125 ring-2 ring-[#ffff03] bg-yellow-100 dark:bg-yellow-900/30 shadow-lg" : ""
+              }`}
+            >
+              {totalItems > 0 && !isHighlighted && (
+                <div className="absolute inset-0 pointer-events-none -z-10 bg-white">
+                  <div className="adobe-fluid-bg">
+                    <div className="adobe-blob-1"></div>
+                    <div className="adobe-blob-2"></div>
+                    <div className="adobe-blob-3"></div>
+                  </div>
+                </div>
               )}
+              <ShoppingCart className="w-5 h-5 relative z-10 text-zinc-600" />
             </button>
-          </Link>
+            {totalItems > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-[#ffff03] text-[#27247b] border-2 border-white dark:border-neutral-900 text-[10px] sm:text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center pointer-events-none z-20 transition-transform shadow-sm">
+                {totalItems}
+              </span>
+            )}
+          </div>
 
           {/* Auth Section */}
           {user ? (
@@ -187,16 +206,32 @@ export function Navbar() {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-2">
             {/* Cart */}
-            <Link href="/cart" className="relative inline-block    ">
-              <button className="relative p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white      ">
-                <ShoppingCart className="w-5 h-5    " />
-                {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#ffff03] text-[#27247b] text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center pointer-events-none z-10 border border-white dark:border-neutral-800 shadow-sm">
-                    {totalItems}
-                  </span>
+            <div className="relative inline-block">
+              <button 
+                onClick={() => useCartStore.getState().setIsOpen(true)}
+                className={`relative z-10 flex items-center justify-center p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white transition-all duration-300 rounded-full overflow-hidden ${
+                  totalItems > 0 && !isHighlighted ? "shadow-md bg-white border border-[#ffff03]/50" : ""
+                } ${
+                  isHighlighted ? "scale-125 ring-2 ring-[#ffff03] bg-yellow-100 dark:bg-yellow-900/30 shadow-lg" : ""
+                }`}
+              >
+                {totalItems > 0 && !isHighlighted && (
+                  <div className="absolute inset-0 pointer-events-none -z-10 bg-white">
+                    <div className="adobe-fluid-bg">
+                      <div className="adobe-blob-1"></div>
+                      <div className="adobe-blob-2"></div>
+                      <div className="adobe-blob-3"></div>
+                    </div>
+                  </div>
                 )}
+                <ShoppingCart className="w-5 h-5 relative z-10 text-[#27247b]" />
               </button>
-            </Link>
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#ffff03] text-[#27247b] border-2 border-white dark:border-neutral-900 text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center pointer-events-none z-20 shadow-sm transition-transform">
+                  {totalItems}
+                </span>
+              )}
+            </div>
 
             {/* Mobile Menu Toggle */}
             <MobileNavToggle

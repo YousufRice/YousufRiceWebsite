@@ -49,6 +49,8 @@ export function SpecialDealCard({
   const handleAddBag = () => {
     setBagCount((prev) => prev + 1);
     addBag(product, 25);
+    useCartStore.getState().setIsOpen(true);
+    useCartStore.getState().highlightCart();
     toast.success(`Added 25kg bag of ${product.name} to cart!`, {
       icon: "🎉",
       style: {
@@ -73,7 +75,11 @@ export function SpecialDealCard({
       toast.error("Please add at least one 25kg bag to continue!");
       return;
     }
-    toast.success("Proceeding to checkout!", {
+    
+    useCartStore.getState().setIsOpen(true);
+    useCartStore.getState().highlightCart();
+    
+    toast.success("Review cart! Proceeding to checkout shortly...", {
       icon: "🚀",
       style: {
         borderRadius: "12px",
@@ -82,7 +88,12 @@ export function SpecialDealCard({
         fontWeight: "bold",
       },
     });
-    router.push("/checkout");
+    
+    setTimeout(() => {
+      useCartStore.getState().setIsOpen(false);
+      useCartStore.getState().highlightCart();
+      router.push("/checkout");
+    }, 3000);
   };
 
   return (
@@ -96,7 +107,7 @@ export function SpecialDealCard({
         </div>
 
         {/* Image Container */}
-        <div className="h-[400px] md:h-[500px] lg:h-[550px] relative flex items-center justify-center p-8 md:p-12 pb-20 md:pb-24">
+        <div className="h-100 md:h-125 lg:h-137.5 relative flex items-center justify-center p-8 md:p-12 pb-20 md:pb-24">
           {imageUrl ? (
             <div className="relative w-full h-full">
               <Image
@@ -323,21 +334,20 @@ export function SpecialDealCard({
               <Button
                 onClick={handleBuyNow}
                 disabled={!product.available}
-                className="h-14 md:h-16 lg:h-[72px] bg-linear-to-r from-[#27247b] via-[#2d2a85] to-[#1a1854] hover:from-[#1a1854] hover:to-[#27247b] text-white font-bold text-base md:text-lg rounded-xl shadow-2xl hover:shadow-[#ffff03]/50 transition-all duration-300 hover:scale-[1.02] border-2 border-[#ffff03] order-2 sm:order-1"
+                className="h-14 md:h-16 lg:h-18 bg-linear-to-r from-[#27247b] via-[#2d2a85] to-[#1a1854] hover:from-[#1a1854] hover:to-[#27247b] text-white font-bold text-base md:text-lg rounded-xl shadow-2xl hover:shadow-[#ffff03]/50 transition-all duration-300 hover:scale-[1.02] border-2 border-[#ffff03] order-2 sm:order-1"
               >
                 <Zap className="w-5 h-5 md:w-6 md:h-6 mr-2 text-[#ffff03]" />
                 Buy Now
               </Button>
 
-              <Link href="/cart" className="order-1 sm:order-2">
-                <Button
-                  variant="outline"
-                  className="w-full h-14 md:h-16 lg:h-[72px] border-2 border-[#27247b] text-[#27247b] hover:bg-[#27247b] hover:text-white hover:border-[#27247b] font-bold text-base md:text-lg rounded-xl transition-all hover:scale-[1.02]"
-                >
-                  <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 mr-2" />
-                  Cart ({bagCount})
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                className="order-1 sm:order-2 w-full h-14 md:h-16 lg:h-18 border-2 border-[#27247b] text-[#27247b] hover:bg-[#27247b] hover:text-white hover:border-[#27247b] font-bold text-base md:text-lg rounded-xl transition-all hover:scale-[1.02]"
+                onClick={() => useCartStore.getState().setIsOpen(true)}
+              >
+                <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+                Cart ({bagCount})
+              </Button>
             </div>
           </div>
         )}

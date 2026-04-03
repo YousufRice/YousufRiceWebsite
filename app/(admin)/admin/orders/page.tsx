@@ -852,6 +852,10 @@ export default function AdminOrdersPage() {
 
         <DeleteOrderDialog
           orderId={selectedOrder?.$id || ""}
+          customerName={selectedOrder?.customer?.full_name}
+          customerPhone={selectedOrder?.customer?.phone}
+          address={selectedOrder?.address ? `${selectedOrder.address.address_line}${selectedOrder.address.city ? `, ${selectedOrder.address.city}` : ""}` : undefined}
+          totalWeightKg={selectedOrder?.total_weight_kg}
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onSuccess={fetchOrders}

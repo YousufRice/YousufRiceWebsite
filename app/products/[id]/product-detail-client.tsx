@@ -161,9 +161,9 @@ export default function ProductDetailClient({
           <span className="text-sm sm:text-base">Back to Products</span>
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12 items-start">
           {/* Image Gallery */}
-          <div className="space-y-3 sm:space-y-4 lg:sticky lg:top-4 h-fit">
+          <div className="space-y-3 sm:space-y-4 lg:sticky lg:top-24 h-fit">
             <div className="relative aspect-square bg-linear-to-br from-[#27247b]/5 to-[#ffff03]/10 rounded-lg sm:rounded-2xl overflow-hidden shadow-lg border-2 border-transparent hover:border-[#ffff03]/40 transition-all duration-300">
               {imageUrls.length > 0 ? (
                 <>

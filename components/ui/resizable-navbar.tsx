@@ -96,10 +96,10 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
   return (
     <motion.div
       animate={{
-        backdropFilter: visible ? "blur(16px)" : "none",
+        backdropFilter: visible ? "blur(16px)" : "blur(0px)",
         // Use type assertion to fix TypeScript error
         ...({
-          WebkitBackdropFilter: visible ? "blur(16px)" : "none",
+          WebkitBackdropFilter: visible ? "blur(16px)" : "blur(0px)",
         } as any),
         boxShadow: visible ? "0 8px 24px rgba(0, 0, 0, 0.06)" : "none",
         width: visible ? "85%" : "100%",
@@ -167,10 +167,10 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (
     <motion.div
       animate={{
-        backdropFilter: visible ? "blur(16px)" : "none",
+        backdropFilter: visible ? "blur(16px)" : "blur(0px)",
         // Use type assertion to fix TypeScript error
         ...({
-          WebkitBackdropFilter: visible ? "blur(16px)" : "none",
+          WebkitBackdropFilter: visible ? "blur(16px)" : "blur(0px)",
         } as any),
         boxShadow: visible ? "0 8px 24px rgba(0, 0, 0, 0.06)" : "none",
         width: visible ? "92%" : "100%",
