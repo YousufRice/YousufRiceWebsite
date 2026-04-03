@@ -32,7 +32,7 @@ export default function AnnocementBar() {
         <p className="text-xs sm:text-sm/6 text-gray-900">
           <strong className="font-semibold">
             {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true'
-              ? '⏳ HURRY! Offer Ends March 31st: Get 1kg FREE Rice for every 15kg! Free Delivery & up to 24% OFF.'
+              ? '⏳ HURRY! Offer Ends Soon: Get 1kg FREE Rice for every 15kg! Free Delivery & up to 24% OFF.'
               : 'Yousuf Rice 2026 - Now delivering premium rice with Free Delivery across Karachi!'}
           </strong>
         </p>
