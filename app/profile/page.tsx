@@ -334,7 +334,7 @@ export default function ProfilePage() {
       </Card>
 
       {/* Loyalty Discounts Section */}
-      {loyaltyDiscounts.length > 0 && (
+      {process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true' && loyaltyDiscounts.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">

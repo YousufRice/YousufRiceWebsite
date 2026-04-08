@@ -242,6 +242,11 @@ export default function CheckoutPage() {
   };
 
   const handleApplyDiscount = async () => {
+    if (process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT !== 'true') {
+      toast.error("Loyalty discounts are currently disabled");
+      return;
+    }
+
     if (!discountCode.trim()) {
       setDiscountError("Please enter a discount code");
       return;
@@ -1001,7 +1006,7 @@ export default function CheckoutPage() {
 
           <div className="lg:col-span-1 space-y-6">
             {/* Discount Code Section */}
-            {!items.some((item) => item.isColdDrinkBundle) && (
+            {process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true' && !items.some((item) => item.isColdDrinkBundle) && (
               <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
                 <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
                   <CardTitle className="text-xl font-bold text-white flex items-center">

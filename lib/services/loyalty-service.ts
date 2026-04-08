@@ -147,6 +147,11 @@ export class LoyaltyService {
     discountCode: string,
     orderId: string
   ): Promise<LoyaltyDiscount | null> {
+    const isLoyaltyEnabled = process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true';
+    if (!isLoyaltyEnabled) {
+      throw new Error("Loyalty discount feature is currently disabled");
+    }
+
     try {
       // Find the discount record
       const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [Query.equal("discount_code", discountCode)] });
@@ -187,6 +192,11 @@ export class LoyaltyService {
   static async getCustomerLoyaltyInfo(
     customerId: string
   ): Promise<LoyaltyDiscount | null> {
+    const isLoyaltyEnabled = process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true';
+    if (!isLoyaltyEnabled) {
+      return null;
+    }
+
     try {
       const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [
                     Query.equal("customer_id", customerId),
@@ -211,6 +221,11 @@ export class LoyaltyService {
   static async findLoyaltyDiscountByCode(
     discountCode: string
   ): Promise<LoyaltyDiscount | null> {
+    const isLoyaltyEnabled = process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true';
+    if (!isLoyaltyEnabled) {
+      return null;
+    }
+
     try {
       const records = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: DISCOUNT_MANAGEMENT_TABLE_ID, queries: [Query.equal("discount_code", discountCode)] });
 

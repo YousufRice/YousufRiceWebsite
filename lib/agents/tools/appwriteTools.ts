@@ -905,7 +905,7 @@ export const calculateOrderPriceTool = tool({
       let discountPercentage = 0;
 
       // Apply discount code if provided
-      if (discountCode) {
+      if (discountCode && process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true') {
         try {
           const loyaltyDiscount = await LoyaltyService.findLoyaltyDiscountByCode(
             discountCode
@@ -1213,7 +1213,7 @@ export const createOrderTool = tool({
       let extraDiscountPercentage = 0;
       let loyaltyRecord = null;
 
-      if (discountCode) {
+      if (discountCode && process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true') {
         try {
           // Just check validity first, don't use it yet
           loyaltyRecord = await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
@@ -1312,7 +1312,7 @@ export const createOrderTool = tool({
                   } });
 
       // Mark discount code as used if applicable
-      if (discountCode && loyaltyRecord) {
+      if (discountCode && loyaltyRecord && process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true') {
         try {
            await LoyaltyService.validateAndUseDiscountCode(discountCode, orderId);
         } catch (e) {

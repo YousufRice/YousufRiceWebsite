@@ -34,6 +34,13 @@ export const checkLoyaltyRewardTool = tool({
       .describe("Customer email address"),
   }),
   async execute({ phoneNumber, email }) {
+    if (process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT !== 'true') {
+      return {
+        success: false,
+        error: "Loyalty program is currently disabled by system configuration.",
+        reward: null,
+      };
+    }
     try {
       if (!phoneNumber && !email) {
         return {
