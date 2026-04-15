@@ -100,6 +100,8 @@ export function Navbar() {
             width={100}
             height={100}
             className="object-contain    "
+            priority
+            quality={90}
           />
           <span className="text-xl font-bold text-[#27247b] dark:text-white">
             Yousuf Rice
@@ -200,6 +202,8 @@ export function Navbar() {
               width={40}
               height={40}
               className="object-fit    "
+              priority
+              quality={90}
             />
           </Link>
 

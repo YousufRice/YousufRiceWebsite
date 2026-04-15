@@ -96,6 +96,7 @@ export default function AboutPage() {
                 fill
                 className="object-cover p-2"
                 sizes="(max-width: 768px) 100vw, 50vw"
+                quality={80}
               />
             </div>
           </div>

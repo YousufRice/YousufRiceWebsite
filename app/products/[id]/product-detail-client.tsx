@@ -174,6 +174,7 @@ export default function ProductDetailClient({
                     className="object-contain p-4 sm:p-6 md:p-8"
                     sizes="(max-width: 768px) 100vw, 50vw"
                     priority
+                    quality={85}
                   />
                   {imageUrls.length > 1 && (
                     <>
@@ -228,6 +229,7 @@ export default function ProductDetailClient({
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 25vw, 12vw"
+                      quality={60}
                     />
                     {index === primaryImageIndex && (
                       <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 bg-[#ffff03] text-[#27247b] text-xs px-1.5 sm:px-2 py-0.5 rounded font-bold">

@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
   // ============================================
   images: {
     unoptimized: false, // Enable image optimization for caching
-    minimumCacheTTL: 86400, // Cache images for 24 hours (in seconds)
+    minimumCacheTTL: 2592000, // Cache optimized images for 30 days (in seconds)
     remotePatterns: [
       {
         protocol: "https",
@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
         pathname: "/v1/storage/buckets/**",
       },
     ],
-    formats: ["image/webp", "image/avif"], // Use modern formats for better performance
+    formats: ["image/avif", "image/webp"], // AVIF first: ~50% smaller than WebP, WebP as fallback
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     dangerouslyAllowSVG: true,

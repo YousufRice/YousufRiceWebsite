@@ -75,11 +75,13 @@ const Banner: React.FC<BannerProps> = ({
       <div className="absolute inset-0 overflow-hidden">
         <Image
           src={getImageUrl(images[currentIndex])}
-          alt="Background blur"
+          alt=""
           fill
+          aria-hidden="true"
           className="object-cover scale-125 blur-3xl"
           priority={currentIndex === 0}
           sizes="100vw"
+          quality={30}
         />
       </div>
 
@@ -97,6 +99,7 @@ const Banner: React.FC<BannerProps> = ({
               className="object-contain"
               priority={index === 0}
               sizes="100vw"
+              quality={85}
             />
           </div>
         ))}

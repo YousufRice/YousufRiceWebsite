@@ -29,6 +29,7 @@ export function ProductCard({ product, imageFileId }: ProductCardSimpleProps) {
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out z-10"
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                quality={75}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
