@@ -1,22 +1,33 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
-import { tablesDB, storage, DATABASE_ID, PRODUCT_IMAGES_TABLE_ID, PRODUCTS_TABLE_ID, STORAGE_BUCKET_ID } from "@/lib/appwrite";
-import { Product, ProductImage } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Upload, Trash2, Star, ArrowLeft } from 'lucide-react';
-import { ID, Query } from 'appwrite';
-import toast from 'react-hot-toast';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/auth-store";
+import {
+  tablesDB,
+  storage,
+  DATABASE_ID,
+  PRODUCT_IMAGES_TABLE_ID,
+  PRODUCTS_TABLE_ID,
+  STORAGE_BUCKET_ID,
+} from "@/lib/appwrite";
+import { Product, ProductImage } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Upload, Trash2, Star, ArrowLeft } from "lucide-react";
+import { ID, Query } from "appwrite";
+import toast from "react-hot-toast";
+import Image from "next/image";
+import Link from "next/link";
 
-export default function ProductImagesPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductImagesPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { isAdmin, checkAuth } = useAuthStore();
-  const [productId, setProductId] = useState<string>('');
+  const [productId, setProductId] = useState<string>("");
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +35,7 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     checkAuth();
-    params.then(p => setProductId(p.id));
+    params.then((p) => setProductId(p.id));
   }, [checkAuth, params]);
 
   useEffect(() => {
@@ -36,15 +47,26 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
   const fetchProductAndImages = async () => {
     try {
       // Fetch product
-      const productData = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: productId });
+      const productData = await tablesDB.getRow({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCTS_TABLE_ID,
+        rowId: productId,
+      });
       setProduct(productData as unknown as Product);
 
       // Fetch images for this product
-      const imagesResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, queries: [Query.equal('product_id', productId), Query.orderDesc('$createdAt')] });
+      const imagesResponse = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCT_IMAGES_TABLE_ID,
+        queries: [
+          Query.equal("product_id", productId),
+          Query.orderDesc("$createdAt"),
+        ],
+      });
       setImages(imagesResponse.rows as unknown as ProductImage[]);
     } catch (error) {
-      console.error('Error fetching product:', error);
-      toast.error('Failed to load product');
+      console.error("Error fetching product:", error);
+      toast.error("Failed to load product");
     } finally {
       setLoading(false);
     }
@@ -61,23 +83,32 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileId = ID.unique();
-        
+
         // Upload to storage
-        await storage.createFile({ bucketId: STORAGE_BUCKET_ID, fileId: fileId, file: file });
-        
+        await storage.createFile({
+          bucketId: STORAGE_BUCKET_ID,
+          fileId: fileId,
+          file: file,
+        });
+
         // Create database entry
-        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: ID.unique(), data: {
-                        product_id: productId,
-                        file_id: fileId,
-                        is_primary: images.length === 0 && i === 0 // First image is primary if no images exist
-                      } });
+        await tablesDB.createRow({
+          databaseId: DATABASE_ID,
+          tableId: PRODUCT_IMAGES_TABLE_ID,
+          rowId: ID.unique(),
+          data: {
+            product_id: productId,
+            file_id: fileId,
+            is_primary: images.length === 0 && i === 0, // First image is primary if no images exist
+          },
+        });
       }
 
       toast.success(`Uploaded ${files.length} image(s) successfully!`);
       fetchProductAndImages();
     } catch (error) {
-      console.error('Error uploading images:', error);
-      toast.error('Failed to upload images');
+      console.error("Error uploading images:", error);
+      toast.error("Failed to upload images");
     } finally {
       setUploading(false);
     }
@@ -88,18 +119,28 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
       // First, set all images to non-primary
       for (const img of images) {
         if (img.is_primary) {
-          await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: img.$id, data: { is_primary: false } });
+          await tablesDB.updateRow({
+            databaseId: DATABASE_ID,
+            tableId: PRODUCT_IMAGES_TABLE_ID,
+            rowId: img.$id,
+            data: { is_primary: false },
+          });
         }
       }
 
       // Then set the selected image as primary
-      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: imageId, data: { is_primary: true } });
+      await tablesDB.updateRow({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCT_IMAGES_TABLE_ID,
+        rowId: imageId,
+        data: { is_primary: true },
+      });
 
-      toast.success('Primary image updated!');
+      toast.success("Primary image updated!");
       fetchProductAndImages();
     } catch (error) {
-      console.error('Error setting primary image:', error);
-      toast.error('Failed to set primary image');
+      console.error("Error setting primary image:", error);
+      toast.error("Failed to set primary image");
     }
   };
 
@@ -108,36 +149,50 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
       // First, set all images to not-bundle-image
       for (const img of images) {
         if (img.is_cold_drink_bundle) {
-          await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: img.$id, data: { is_cold_drink_bundle: false } });
+          await tablesDB.updateRow({
+            databaseId: DATABASE_ID,
+            tableId: PRODUCT_IMAGES_TABLE_ID,
+            rowId: img.$id,
+            data: { is_cold_drink_bundle: false },
+          });
         }
       }
 
       // Then set the selected image as the bundle image
-      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: imageId, data: { is_cold_drink_bundle: true } });
+      await tablesDB.updateRow({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCT_IMAGES_TABLE_ID,
+        rowId: imageId,
+        data: { is_cold_drink_bundle: true },
+      });
 
-      toast.success('Cold Drink Bundle image updated!');
+      toast.success("Cold Drink Bundle image updated!");
       fetchProductAndImages();
     } catch (error) {
-      console.error('Error setting bundle image:', error);
-      toast.error('Failed to set bundle image');
+      console.error("Error setting bundle image:", error);
+      toast.error("Failed to set bundle image");
     }
   };
 
   const handleDeleteImage = async (imageId: string, fileId: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+    if (!confirm("Are you sure you want to delete this image?")) return;
 
     try {
       // Delete from storage
       await storage.deleteFile({ bucketId: STORAGE_BUCKET_ID, fileId: fileId });
-      
+
       // Delete from database
-      await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: PRODUCT_IMAGES_TABLE_ID, rowId: imageId });
-      
-      toast.success('Image deleted successfully!');
+      await tablesDB.deleteRow({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCT_IMAGES_TABLE_ID,
+        rowId: imageId,
+      });
+
+      toast.success("Image deleted successfully!");
       fetchProductAndImages();
     } catch (error) {
-      console.error('Error deleting image:', error);
-      toast.error('Failed to delete image');
+      console.error("Error deleting image:", error);
+      toast.error("Failed to delete image");
     }
   };
 
@@ -145,8 +200,12 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-red-900 mb-2">Access Denied</h2>
-          <p className="text-red-700">You need admin privileges to access this page.</p>
+          <h2 className="text-2xl font-bold text-red-900 mb-2">
+            Access Denied
+          </h2>
+          <p className="text-red-700">
+            You need admin privileges to access this page.
+          </p>
         </div>
       </div>
     );
@@ -225,16 +284,21 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
             <CardContent className="p-12 text-center">
               <Upload className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600">No images uploaded yet</p>
-              <p className="text-sm text-gray-500 mt-2">Upload images using the form above</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Upload images using the form above
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map((image) => {
-              const imageUrl = storage.getFileView({ bucketId: STORAGE_BUCKET_ID, fileId: image.file_id }).toString();
-              
+              const imageUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKET_ID}/files/${image.file_id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+
               return (
-                <Card key={image.$id} className={image.is_primary ? 'ring-2 ring-green-500' : ''}>
+                <Card
+                  key={image.$id}
+                  className={image.is_primary ? "ring-2 ring-green-500" : ""}
+                >
                   <CardContent className="p-3">
                     <div className="relative aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
                       <Image
@@ -271,23 +335,30 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
                           Set as Primary
                         </Button>
                       )}
-                      
-                      {product.name && (product.name.toLowerCase().includes('x-steam') || product.name.toLowerCase().includes('ultimate sella')) && !image.is_cold_drink_bundle && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
-                          onClick={() => handleSetColdDrinkBundle(image.$id)}
-                        >
-                          <span className="mr-2">🥤</span>
-                          Set as Bundle Image
-                        </Button>
-                      )}
+
+                      {product.name &&
+                        (product.name.toLowerCase().includes("x-steam") ||
+                          product.name
+                            .toLowerCase()
+                            .includes("ultimate sella")) &&
+                        !image.is_cold_drink_bundle && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
+                            onClick={() => handleSetColdDrinkBundle(image.$id)}
+                          >
+                            <span className="mr-2">🥤</span>
+                            Set as Bundle Image
+                          </Button>
+                        )}
                       <Button
                         size="sm"
                         variant="ghost"
                         className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDeleteImage(image.$id, image.file_id)}
+                        onClick={() =>
+                          handleDeleteImage(image.$id, image.file_id)
+                        }
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete
@@ -305,8 +376,13 @@ export default function ProductImagesPage({ params }: { params: Promise<{ id: st
         <h3 className="font-semibold text-blue-900 mb-2">💡 Tips:</h3>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Upload multiple images at once by selecting multiple files</li>
-          <li>• The first image uploaded will automatically be set as primary</li>
-          <li>• Click "Set as Primary" to change which image is shown on product listings</li>
+          <li>
+            • The first image uploaded will automatically be set as primary
+          </li>
+          <li>
+            • Click "Set as Primary" to change which image is shown on product
+            listings
+          </li>
           <li>• Primary images are marked with a green star</li>
         </ul>
       </div>

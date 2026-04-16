@@ -1,7 +1,12 @@
-import { XIcon } from 'lucide-react';
-import Link from 'next/link';
+import { XIcon } from "lucide-react";
+import Link from "next/link";
 
 export default function AnnocementBar() {
+  const announcementText =
+    process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === "true"
+      ? "⏳ HURRY! Offer Ends Soon: Get 1kg FREE Rice for every 15kg! Free Delivery & up to 24% OFF."
+      : "Yousuf Rice 2026 - Now delivering premium rice with Free Delivery across Karachi!";
+
   return (
     <div className="relative isolate flex items-center gap-x-6 overflow-hidden bg-gray-50 px-6 py-2.5 sm:px-3.5 sm:before:flex-1">
       <div
@@ -30,11 +35,7 @@ export default function AnnocementBar() {
       </div>
       <div className="flex flex-nowrap items-center gap-x-2 sm:gap-x-4 gap-y-2">
         <p className="text-xs sm:text-sm/6 text-gray-900">
-          <strong className="font-semibold">
-            {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true'
-              ? '⏳ HURRY! Offer Ends Soon: Get 1kg FREE Rice for every 15kg! Free Delivery & up to 24% OFF.'
-              : 'Yousuf Rice 2026 - Now delivering premium rice with Free Delivery across Karachi!'}
-          </strong>
+          <strong className="font-semibold">{announcementText}</strong>
         </p>
         <Link
           href="/#products"

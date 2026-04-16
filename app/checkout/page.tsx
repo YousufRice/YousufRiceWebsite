@@ -14,6 +14,7 @@ import {
   CUSTOMERS_TABLE_ID,
   ADDRESSES_TABLE_ID,
   ORDER_ITEMS_TABLE_ID,
+  STORAGE_BUCKET_ID,
 } from "@/lib/appwrite";
 import {
   formatCurrency,
@@ -32,8 +33,12 @@ import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
 import { MapPin, Gift, Check, X } from "lucide-react";
-import { LoyaltyService, LoyaltyDiscount } from "@/lib/services/loyalty-service";
+import {
+  LoyaltyService,
+  LoyaltyDiscount,
+} from "@/lib/services/loyalty-service";
 import { processLoyaltyReward } from "@/app/actions/loyalty-actions";
+import Image from "next/image";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -44,8 +49,8 @@ export default function CheckoutPage() {
   const [gettingLocation, setGettingLocation] = useState(false);
 
   // Detect if user is an agent (Saima or Kiran) - case insensitive
-  const isAgent = user?.labels?.some(label =>
-    ['saima', 'kiran'].includes(label.toLowerCase())
+  const isAgent = user?.labels?.some((label) =>
+    ["saima", "kiran"].includes(label.toLowerCase()),
   );
 
   const [formData, setFormData] = useState({
@@ -62,9 +67,8 @@ export default function CheckoutPage() {
 
   // Discount state
   const [discountCode, setDiscountCode] = useState("");
-  const [appliedDiscount, setAppliedDiscount] = useState<LoyaltyDiscount | null>(
-    null
-  );
+  const [appliedDiscount, setAppliedDiscount] =
+    useState<LoyaltyDiscount | null>(null);
   const [discountError, setDiscountError] = useState("");
   const [validatingDiscount, setValidatingDiscount] = useState(false);
 
@@ -81,7 +85,9 @@ export default function CheckoutPage() {
       setFormData((prev) => ({
         ...prev,
         fullName: user.name || prev.fullName,
-        phone: user.phone ? formatPhoneNumberForDisplay(user.phone) : prev.phone,
+        phone: user.phone
+          ? formatPhoneNumberForDisplay(user.phone)
+          : prev.phone,
         email: user.email || prev.email,
       }));
     }
@@ -118,11 +124,11 @@ export default function CheckoutPage() {
     ) {
       toast.error(
         "⚠️ Geolocation requires HTTPS! Current URL is not secure. " +
-        "Please access via HTTPS or localhost.",
-        { duration: 8000 }
+          "Please access via HTTPS or localhost.",
+        { duration: 8000 },
       );
       console.error(
-        "Insecure context - Geolocation requires HTTPS or localhost"
+        "Insecure context - Geolocation requires HTTPS or localhost",
       );
       setGettingLocation(false);
       return;
@@ -144,7 +150,7 @@ export default function CheckoutPage() {
           // Very poor accuracy (>1km) - likely using cell towers only
           toast(
             `Low GPS accuracy (${Math.round(accuracy)}m). Please enable location, move outside.`,
-            { duration: 8000 }
+            { duration: 8000 },
           );
 
           console.warn("Very low accuracy - GPS not available:", {
@@ -158,12 +164,10 @@ export default function CheckoutPage() {
         } else if (accuracy > 100) {
           // Moderate accuracy - warn but allow
           toast(
-            `Low accuracy (${Math.round(
-              accuracy
-            )}m). • Go outdoors\n` +
-            `• Enable GPS\n` +
-            `• Or try again`,
-            { duration: 4000 }
+            `Low accuracy (${Math.round(accuracy)}m). • Go outdoors\n` +
+              `• Enable GPS\n` +
+              `• Or try again`,
+            { duration: 4000 },
           );
           console.warn("Low accuracy location:", {
             latitude,
@@ -176,17 +180,17 @@ export default function CheckoutPage() {
             `Location captured (Accuracy: ${Math.round(accuracy)}m - Fair)`,
             {
               duration: 4000,
-            }
+            },
           );
         } else {
           // Good accuracy
           toast.success(
             `✓ Location captured! (Accuracy: ${Math.round(
-              accuracy
+              accuracy,
             )}m - Excellent)`,
             {
               duration: 4000,
-            }
+            },
           );
         }
 
@@ -220,7 +224,7 @@ export default function CheckoutPage() {
             errorMessage +=
               "Location information is unavailable. Check if location services are enabled on your device.";
             console.error(
-              "Position unavailable - GPS/location services may be disabled"
+              "Position unavailable - GPS/location services may be disabled",
             );
             break;
           case 3: // TIMEOUT
@@ -237,12 +241,12 @@ export default function CheckoutPage() {
         toast.error(errorMessage, { duration: 5000 });
         setGettingLocation(false);
       },
-      options
+      options,
     );
   };
 
   const handleApplyDiscount = async () => {
-    if (process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT !== 'true') {
+    if (process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT !== "true") {
       toast.error("Loyalty discounts are currently disabled");
       return;
     }
@@ -257,7 +261,7 @@ export default function CheckoutPage() {
 
     try {
       const discount = await LoyaltyService.findLoyaltyDiscountByCode(
-        discountCode.trim()
+        discountCode.trim(),
       );
 
       if (!discount) {
@@ -267,7 +271,9 @@ export default function CheckoutPage() {
       }
 
       if (discount.code_status !== "active") {
-        setDiscountError("This discount code has already been used or is inactive");
+        setDiscountError(
+          "This discount code has already been used or is inactive",
+        );
         setAppliedDiscount(null);
         return;
       }
@@ -316,14 +322,14 @@ export default function CheckoutPage() {
 
     // Validate that no product has 0 price
     const zeroPriceProducts = items.filter(
-      (item) => item.product.base_price_per_kg === 0
+      (item) => item.product.base_price_per_kg === 0,
     );
     if (zeroPriceProducts.length > 0) {
       const productNames = zeroPriceProducts
         .map((item) => item.product.name)
         .join(", ");
       toast.error(
-        `Cannot place order: The following products have invalid pricing: ${productNames}. Please contact support or remove these items from your cart.`
+        `Cannot place order: The following products have invalid pricing: ${productNames}. Please contact support or remove these items from your cart.`,
       );
       return;
     }
@@ -332,7 +338,7 @@ export default function CheckoutPage() {
     const currentTotalPrice = getTotalPrice();
     if (currentTotalPrice <= 0) {
       toast.error(
-        "Cannot place order with 0 total price. Please check your cart items."
+        "Cannot place order with 0 total price. Please check your cart items.",
       );
       console.error("Attempted to place order with 0 total price", { items });
       return;
@@ -353,13 +359,13 @@ export default function CheckoutPage() {
       let dbFullName = formData.fullName;
       if (user && user.labels) {
         // Case-insensitive check for agent labels
-        const labels = user.labels.map(l => l.toLowerCase());
-        let suffix = '';
+        const labels = user.labels.map((l) => l.toLowerCase());
+        let suffix = "";
 
-        if (labels.includes('saima')) {
-          suffix = ' (S)';
-        } else if (labels.includes('kiran')) {
-          suffix = ' (K)';
+        if (labels.includes("saima")) {
+          suffix = " (S)";
+        } else if (labels.includes("kiran")) {
+          suffix = " (K)";
         }
 
         // Append suffix if found and not already present (avoid duplicates)
@@ -378,7 +384,11 @@ export default function CheckoutPage() {
       // ---------------------------------------------------------
 
       // Check if a customer with this phone number already exists
-      const existingCustomerByPhone = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formattedPhone)] });
+      const existingCustomerByPhone = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: CUSTOMERS_TABLE_ID,
+        queries: [Query.equal("phone", formattedPhone)],
+      });
 
       let customerId: string;
 
@@ -395,30 +405,37 @@ export default function CheckoutPage() {
           userIdToSave = user.$id;
         } else {
           // Guest checkout: keep existing ID if it's not "guest"
-          userIdToSave = existingCustomer.user_id && existingCustomer.user_id !== "guest"
-            ? existingCustomer.user_id
-            : "guest";
+          userIdToSave =
+            existingCustomer.user_id && existingCustomer.user_id !== "guest"
+              ? existingCustomer.user_id
+              : "guest";
         }
 
         // Update customer info
         await tablesDB.updateRow({
-          databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          rowId: customerId,
+          data: {
             user_id: userIdToSave,
             full_name: dbFullName,
             email: formData.email || null,
             phone: formattedPhone, // Ensure phone is formatted
-          }
+          },
         });
       } else {
         // Create new customer with phone as the primary identifier
         customerId = ID.unique();
         await tablesDB.createRow({
-          databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          rowId: customerId,
+          data: {
             user_id: user?.$id || "guest",
             full_name: dbFullName,
             phone: formattedPhone,
             email: formData.email || null,
-          }
+          },
         });
       }
 
@@ -426,13 +443,16 @@ export default function CheckoutPage() {
       const orderId = ID.unique();
       const addressId = ID.unique();
       const mapsUrl = generateMapsUrl(formData.latitude, formData.longitude);
-      const finalCity = formData.city === "Other City/Town" ? formData.otherCity : formData.city;
+      const finalCity =
+        formData.city === "Other City/Town"
+          ? formData.otherCity
+          : formData.city;
 
       const orderItems = formatOrderItems(
         items.map((item) => ({
           productId: item.product.$id,
           quantity: item.quantity,
-        }))
+        })),
       );
 
       // Calculate totals from items
@@ -451,24 +471,31 @@ export default function CheckoutPage() {
 
         // Calculate item totals with loyalty discount if applicable
         // Disallow loyalty discount on Cold Drink bundles
-        const loyaltyDiscountPercent = (appliedDiscount?.extra_discount_percentage || 0) * (item.isColdDrinkBundle ? 0 : 1);
+        const loyaltyDiscountPercent =
+          (appliedDiscount?.extra_discount_percentage || 0) *
+          (item.isColdDrinkBundle ? 0 : 1);
         const itemCalculations = calculateItemTotal(
           tierPricing.pricePerKg,
           item.quantity,
-          loyaltyDiscountPercent
+          loyaltyDiscountPercent,
         );
 
         // Calculate total discount for this item (Tier Discount + Loyalty Discount)
         // Tier Discount = (Base Price - Tier Price) * Quantity
         // Loyalty Discount = itemCalculations.discountAmount
         // No tier discount for Cold Drink bundles
-        const tierDiscountAmount = item.isColdDrinkBundle ? 0 : tierPricing.discountAmount;
-        const totalItemDiscount = tierDiscountAmount + itemCalculations.discountAmount;
+        const tierDiscountAmount = item.isColdDrinkBundle
+          ? 0
+          : tierPricing.discountAmount;
+        const totalItemDiscount =
+          tierDiscountAmount + itemCalculations.discountAmount;
 
         // Round values for Appwrite (requires integer)
         const roundedItemTotal = Math.round(itemCalculations.total);
         const roundedItemDiscount = Math.round(totalItemDiscount);
-        const roundedSubtotal = Math.round(product.base_price_per_kg * item.quantity);
+        const roundedSubtotal = Math.round(
+          product.base_price_per_kg * item.quantity,
+        );
 
         // Update order-level totals
         totalItemsCount += 1;
@@ -486,7 +513,7 @@ export default function CheckoutPage() {
           // Pass rounded values for use in order item creation
           roundedItemTotal,
           roundedItemDiscount,
-          roundedSubtotal
+          roundedSubtotal,
         };
       });
 
@@ -504,12 +531,15 @@ export default function CheckoutPage() {
             totalItemDiscount,
             roundedItemTotal,
             roundedItemDiscount,
-            roundedSubtotal
+            roundedSubtotal,
           } = processed;
 
           const itemId = ID.unique();
           await tablesDB.createRow({
-            databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: itemId, data: {
+            databaseId: DATABASE_ID,
+            tableId: ORDER_ITEMS_TABLE_ID,
+            rowId: itemId,
+            data: {
               order_id: orderId,
               product_id: product.$id,
               product_name: product.name,
@@ -533,8 +563,8 @@ export default function CheckoutPage() {
               discount_percentage:
                 product.base_price_per_kg * item.quantity > 0
                   ? (totalItemDiscount /
-                    (product.base_price_per_kg * item.quantity)) *
-                  100
+                      (product.base_price_per_kg * item.quantity)) *
+                    100
                   : 0,
               discount_amount: roundedItemDiscount, // Includes tier + loyalty discount (Rounded)
 
@@ -543,15 +573,22 @@ export default function CheckoutPage() {
               total_after_discount: roundedItemTotal, // Rounded
 
               // Metadata
-              notes: (formData.notes || "") + (item.isColdDrinkBundle && item.quantity >= 10 ? `\n(Free Cold Drink Deal Qualified)` : ""),
-            }
+              notes:
+                (formData.notes || "") +
+                (item.isColdDrinkBundle && item.quantity >= 10
+                  ? `\n(Free Cold Drink Deal Qualified)`
+                  : ""),
+            },
           });
           createdItemIds.push(itemId);
         }
 
         // Create address FIRST (using pre-generated orderId)
         await tablesDB.createRow({
-          databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId, data: {
+          databaseId: DATABASE_ID,
+          tableId: ADDRESSES_TABLE_ID,
+          rowId: addressId,
+          data: {
             customer_id: customerId,
             order_id: orderId,
             address_line: formData.addressLine,
@@ -559,12 +596,15 @@ export default function CheckoutPage() {
             latitude: formData.latitude,
             longitude: formData.longitude,
             maps_url: mapsUrl,
-          }
+          },
         });
 
         // Create order with accurate calculated totals AND the pre-generated address_id
         await tablesDB.createRow({
-          databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
+          databaseId: DATABASE_ID,
+          tableId: ORDERS_TABLE_ID,
+          rowId: orderId,
+          data: {
             customer_id: customerId,
             address_id: addressId, // Set immediately! No update needed.
             order_items: orderItems, // CSV string snapshot
@@ -577,9 +617,8 @@ export default function CheckoutPage() {
             total_price: finalTotalPrice,
 
             status: "pending",
-          }
+          },
         });
-
       } catch (creationError) {
         console.error("Error during order creation flow:", creationError);
 
@@ -591,17 +630,27 @@ export default function CheckoutPage() {
         if (createdItemIds.length > 0) {
           console.log("Rolling back created items...");
           await Promise.allSettled(
-            createdItemIds.map(id => tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: id }))
+            createdItemIds.map((id) =>
+              tablesDB.deleteRow({
+                databaseId: DATABASE_ID,
+                tableId: ORDER_ITEMS_TABLE_ID,
+                rowId: id,
+              }),
+            ),
           );
         }
 
         // 2. Delete Address (if it was created but order failed)
         // We can try to delete the addressId just in case. If it doesn't exist, it will just fail silently or throw (we catch).
         try {
-          await tablesDB.deleteRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId });
+          await tablesDB.deleteRow({
+            databaseId: DATABASE_ID,
+            tableId: ADDRESSES_TABLE_ID,
+            rowId: addressId,
+          });
           console.log("Rolled back address");
         } catch (ignored) {
-          // Address might not have been created yet, or delete failed. 
+          // Address might not have been created yet, or delete failed.
         }
 
         throw creationError; // Re-throw to be caught by main try-catch
@@ -609,7 +658,8 @@ export default function CheckoutPage() {
 
       // Track Purchase event
       // Clean customer name by removing agent symbols before sending to Meta
-      const cleanedName = sanitizeCustomerNameForMeta(formData.fullName) || formData.fullName;
+      const cleanedName =
+        sanitizeCustomerNameForMeta(formData.fullName) || formData.fullName;
 
       await trackPurchase({
         value: getTotalPrice(),
@@ -632,14 +682,12 @@ export default function CheckoutPage() {
         },
       });
 
-
-
       // Mark discount code as used if applied
       if (appliedDiscount) {
         try {
           await LoyaltyService.validateAndUseDiscountCode(
             appliedDiscount.discount_code,
-            orderId
+            orderId,
           );
         } catch (discountError) {
           console.error("Error marking discount as used:", discountError);
@@ -659,7 +707,7 @@ export default function CheckoutPage() {
           formData.fullName,
           getTotalPrice(),
           productNames,
-          orderId
+          orderId,
         );
       } catch (loyaltyError) {
         console.error("Error processing loyalty discount:", loyaltyError);
@@ -684,7 +732,7 @@ export default function CheckoutPage() {
               items: items.map((item) => {
                 const savingsInfo = calculateSavings(
                   item.product,
-                  item.quantity
+                  item.quantity,
                 );
                 return {
                   productName: item.product.name,
@@ -706,7 +754,9 @@ export default function CheckoutPage() {
             }),
           });
           // Don't block order completion if email fails
-          console.log("Order confirmation email sent (with loyalty info if applicable)");
+          console.log(
+            "Order confirmation email sent (with loyalty info if applicable)",
+          );
         } catch (emailError) {
           console.error("Failed to send order confirmation email:", emailError);
           // Continue with order completion even if email fails
@@ -826,14 +876,25 @@ export default function CheckoutPage() {
                           value={formData.city}
                           onChange={(e) => {
                             const val = e.target.value;
-                            setFormData({ ...formData, city: val, otherCity: val !== "Other City/Town" ? "" : formData.otherCity });
+                            setFormData({
+                              ...formData,
+                              city: val,
+                              otherCity:
+                                val !== "Other City/Town"
+                                  ? ""
+                                  : formData.otherCity,
+                            });
                           }}
                           required
                           className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base bg-gray-50 cursor-pointer appearance-none"
                         >
-                          <option value="" disabled>Select City</option>
+                          <option value="" disabled>
+                            Select City
+                          </option>
                           <option value="Karachi">Karachi</option>
-                          <option value="Other City/Town">Other City/Town (Delivery Charges Apply)</option>
+                          <option value="Other City/Town">
+                            Other City/Town (Delivery Charges Apply)
+                          </option>
                         </select>
                       </div>
 
@@ -857,7 +918,9 @@ export default function CheckoutPage() {
                         </div>
                       )}
 
-                      <div className={`col-span-1 ${formData.city === "Other City/Town" ? "md:col-span-2" : "md:col-span-1"}`}>
+                      <div
+                        className={`col-span-1 ${formData.city === "Other City/Town" ? "md:col-span-2" : "md:col-span-1"}`}
+                      >
                         <label className="block text-sm font-bold text-[#27247b] mb-2">
                           Delivery Address *
                         </label>
@@ -904,7 +967,9 @@ export default function CheckoutPage() {
                             </label>
                             <ul className="text-xs text-[#27247b]/80 space-y-1 ml-4 list-disc">
                               <li>Turn on your phone's GPS/location</li>
-                              <li className="text-[#27247b]/60 italic">Recommended</li>
+                              <li className="text-[#27247b]/60 italic">
+                                Recommended
+                              </li>
                             </ul>
                           </div>
                           <Button
@@ -913,9 +978,13 @@ export default function CheckoutPage() {
                             disabled={gettingLocation}
                             className="bg-linear-to-r from-[#ffff03] to-[#ffed00] hover:from-[#ffff03]/90 hover:to-[#ffed00]/90 text-[#27247b] font-bold py-3 px-5 rounded-xl border-2 border-[#27247b]/30 shadow-lg hover:shadow-2xl hover:scale-[1.05] active:scale-[0.95] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 whitespace-nowrap"
                           >
-                            <MapPin className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} />
+                            <MapPin
+                              className={`w-5 h-5 ${gettingLocation ? "animate-pulse" : ""}`}
+                            />
                             <span className="hidden sm:inline">
-                              {gettingLocation ? "Please Wait…" : "Enable Location"}
+                              {gettingLocation
+                                ? "Please Wait…"
+                                : "Enable Location"}
                             </span>
                             <span className="sm:hidden">
                               {gettingLocation ? "Getting..." : "GPS"}
@@ -929,27 +998,26 @@ export default function CheckoutPage() {
                         (formData.latitude !== 0 && formData.longitude === 0) ||
                         (formData.latitude === 0 &&
                           formData.longitude !== 0)) && (
-                          <div className="bg-[#ffff03]/20 border-2 border-[#ffff03] rounded-xl p-4">
-                            <p className="text-sm font-bold text-[#27247b] mb-1">
-                              ✓ Location Captured Successfully
-                            </p>
-                            <p className="text-xs text-[#27247b]/80">
-                              Coordinates captured and ready for delivery
-                            </p>
-                            <a
-                              href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
-                            >
-                              View on Google Maps
-                            </a>
-                          </div>
-                        )}
+                        <div className="bg-[#ffff03]/20 border-2 border-[#ffff03] rounded-xl p-4">
+                          <p className="text-sm font-bold text-[#27247b] mb-1">
+                            ✓ Location Captured Successfully
+                          </p>
+                          <p className="text-xs text-[#27247b]/80">
+                            Coordinates captured and ready for delivery
+                          </p>
+                          <a
+                            href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#27247b] font-bold hover:underline mt-1 inline-block"
+                          >
+                            View on Google Maps
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="hidden text-xs font-bold text-[#27247b] mb-1">
@@ -1006,74 +1074,75 @@ export default function CheckoutPage() {
 
           <div className="lg:col-span-1 space-y-6">
             {/* Discount Code Section */}
-            {process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true' && !items.some((item) => item.isColdDrinkBundle) && (
-              <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
-                <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
-                  <CardTitle className="text-xl font-bold text-white flex items-center">
-                    <Gift className="w-5 h-5 mr-2 text-[#ffff03]" />
-                    Discount Code
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {!appliedDiscount ? (
-                    <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Enter code (e.g. LOYALTY...)"
-                          value={discountCode}
-                          onChange={(e) => {
-                            setDiscountCode(e.target.value.toUpperCase());
-                            setDiscountError("");
-                          }}
-                          className="uppercase"
-                        />
-                        <Button
-                          type="button"
-                          onClick={handleApplyDiscount}
-                          disabled={validatingDiscount || !discountCode}
-                          className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold"
-                        >
-                          {validatingDiscount ? "..." : "Apply"}
-                        </Button>
-                      </div>
-                      {discountError && (
-                        <p className="text-red-500 text-sm flex items-center">
-                          <X className="w-4 h-4 mr-1" />
-                          {discountError}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="text-green-800 font-bold flex items-center">
-                            <Check className="w-4 h-4 mr-1" />
-                            Code Applied!
-                          </p>
-                          <p className="text-sm text-green-600 font-mono mt-1">
-                            {appliedDiscount.discount_code}
-                          </p>
+            {process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === "true" &&
+              !items.some((item) => item.isColdDrinkBundle) && (
+                <Card className="border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
+                  <CardHeader className="bg-linear-to-r from-[#27247b] to-[#27247b]/90 p-6">
+                    <CardTitle className="text-xl font-bold text-white flex items-center">
+                      <Gift className="w-5 h-5 mr-2 text-[#ffff03]" />
+                      Discount Code
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    {!appliedDiscount ? (
+                      <div className="space-y-4">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Enter code (e.g. LOYALTY...)"
+                            value={discountCode}
+                            onChange={(e) => {
+                              setDiscountCode(e.target.value.toUpperCase());
+                              setDiscountError("");
+                            }}
+                            className="uppercase"
+                          />
+                          <Button
+                            type="button"
+                            onClick={handleApplyDiscount}
+                            disabled={validatingDiscount || !discountCode}
+                            className="bg-[#ffff03] text-[#27247b] hover:bg-[#ffff03]/90 font-bold"
+                          >
+                            {validatingDiscount ? "..." : "Apply"}
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRemoveDiscount}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto p-1"
-                        >
-                          Remove
-                        </Button>
+                        {discountError && (
+                          <p className="text-red-500 text-sm flex items-center">
+                            <X className="w-4 h-4 mr-1" />
+                            {discountError}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-sm text-green-700">
-                        {appliedDiscount.extra_discount_percentage}% Loyalty Extra discount will be
-                        applied to your total.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                    ) : (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="text-green-800 font-bold flex items-center">
+                              <Check className="w-4 h-4 mr-1" />
+                              Code Applied!
+                            </p>
+                            <p className="text-sm text-green-600 font-mono mt-1">
+                              {appliedDiscount.discount_code}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveDiscount}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-auto p-1"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <p className="text-sm text-green-700">
+                          {appliedDiscount.extra_discount_percentage}% Loyalty
+                          Extra discount will be applied to your total.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
             <Card className="sticky top-20 border-2 border-gray-200 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader className="bg-linear-to-r from-[#ffff03] to-[#ffff03]/90 p-6">
@@ -1083,70 +1152,114 @@ export default function CheckoutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
-                  const totalWeight = items.reduce((acc, item) => acc + item.quantity, 0);
-                  const freeKg = Math.floor(totalWeight / 15);
-                  const nextThreshold = (freeKg + 1) * 15;
-                  const kgNeeded = nextThreshold - totalWeight;
+                {process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === "true" &&
+                  (() => {
+                    const totalWeight = items.reduce(
+                      (acc, item) => acc + item.quantity,
+                      0,
+                    );
+                    const freeKg = Math.floor(totalWeight / 15);
+                    const nextThreshold = (freeKg + 1) * 15;
+                    const kgNeeded = nextThreshold - totalWeight;
 
-                  return (
-                    <div className="mb-6 p-4 rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white shadow-lg relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-2 opacity-10">
-                        <span className="text-6xl">🌙</span>
+                    return (
+                      <div className="mb-6 p-4 rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-10">
+                          <span className="text-6xl">🌙</span>
+                        </div>
+                        <div className="relative z-10">
+                          <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1">
+                            <span>⏳</span> Post-Eid Special (Ends Mar 31)
+                          </h3>
+                          {freeKg > 0 ? (
+                            <p className="text-sm">
+                              🎉{" "}
+                              <span className="font-bold text-[#ffff03]">
+                                {freeKg}kg FREE Rice
+                              </span>{" "}
+                              qualified! Add{" "}
+                              <span className="font-bold text-[#ffff03]">
+                                {kgNeeded}kg
+                              </span>{" "}
+                              more for {freeKg + 1}kg free.
+                            </p>
+                          ) : (
+                            <p className="text-sm">
+                              Add{" "}
+                              <span className="font-bold text-[#ffff03]">
+                                {kgNeeded}kg
+                              </span>{" "}
+                              more for 1kg FREE Rice!
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="relative z-10">
-                        <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1">
-                          <span>⏳</span> Post-Eid Special (Ends Mar 31)
-                        </h3>
-                        {freeKg > 0 ? (
-                          <p className="text-sm">
-                            🎉 <span className="font-bold text-[#ffff03]">{freeKg}kg FREE Rice</span> qualified! Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for {freeKg + 1}kg free.
-                          </p>
-                        ) : (
-                          <p className="text-sm">
-                            Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for 1kg FREE Rice!
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
                 <div className="space-y-3 mb-6">
                   {items.map((item) => {
                     const itemSavings = calculateSavings(
                       item.product,
-                      item.quantity
+                      item.quantity,
                     );
+                    const imageUrl = item.product.primary_image_id
+                      ? `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKET_ID}/files/${item.product.primary_image_id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+                      : null;
                     return (
                       <div
-                        key={`${item.product.$id}-${item.isColdDrinkBundle ? 'bundle' : 'standard'}`}
-                        className="flex justify-between items-center bg-gray-50 rounded-lg p-3 border border-gray-200"
+                        key={`${item.product.$id}-${item.isColdDrinkBundle ? "bundle" : "standard"}`}
+                        className="flex gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200"
                       >
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-[#27247b] flex items-center gap-2">
-                            {item.product.name}
-                          </span>
-                          
-                          {/* Bundle Deal Styling */}
-                          {item.isColdDrinkBundle && (
-                            <div className="mt-1 inline-flex items-center gap-1.5 bg-linear-to-r from-teal-50 to-cyan-50 border border-teal-200 px-2 py-1 rounded-md shadow-sm w-fit">
-                              <span className="text-sm">🥤</span>
-                              <div>
-                                <p className="text-[9px] font-bold text-teal-700 uppercase tracking-widest leading-none mb-0.5">Bundle Offer</p>
-                                <p className="text-[10px] text-teal-900 font-bold leading-none">
-                                  {item.quantity >= 10 ? Math.floor(item.quantity / 10) : 0}x Free 1L Cold Drink
-                                </p>
-                              </div>
+                        <div className="relative w-16 h-16 shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                          {imageUrl ? (
+                            <Image
+                              src={imageUrl}
+                              alt={item.product.name}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                              quality={60}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <div className="text-2xl">🌾</div>
                             </div>
                           )}
-                          
-                          {itemSavings.savings > 0 && !item.isColdDrinkBundle && (
-                            <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full w-fit mt-1">
-                              {itemSavings.savingsPercentage.toFixed(0)}% OFF
-                            </span>
-                          )}
                         </div>
-                        <span className="text-sm font-bold text-[#27247b]">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-[#27247b] truncate">
+                              {item.product.name}
+                            </span>
+
+                            {/* Bundle Deal Styling */}
+                            {item.isColdDrinkBundle && (
+                              <div className="mt-1 inline-flex items-center gap-1.5 bg-linear-to-r from-teal-50 to-cyan-50 border border-teal-200 px-2 py-1 rounded-md shadow-sm w-fit">
+                                <span className="text-sm">🥤</span>
+                                <div>
+                                  <p className="text-[9px] font-bold text-teal-700 uppercase tracking-widest leading-none mb-0.5">
+                                    Bundle Offer
+                                  </p>
+                                  <p className="text-[10px] text-teal-900 font-bold leading-none">
+                                    {item.quantity >= 10
+                                      ? Math.floor(item.quantity / 10)
+                                      : 0}
+                                    x Free 1L Cold Drink
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {itemSavings.savings > 0 &&
+                              !item.isColdDrinkBundle && (
+                                <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full w-fit mt-1">
+                                  {itemSavings.savingsPercentage.toFixed(0)}%
+                                  OFF
+                                </span>
+                              )}
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-[#27247b] self-center">
                           {item.quantity}kg
                         </span>
                       </div>
@@ -1170,7 +1283,7 @@ export default function CheckoutPage() {
                         <span className="text-green-700 font-bold">
                           -{formatCurrency(totalSavings)} (
                           {((totalSavings / totalOriginalPrice) * 100).toFixed(
-                            0
+                            0,
                           )}
                           % off)
                         </span>
@@ -1197,15 +1310,21 @@ export default function CheckoutPage() {
                     {appliedDiscount && (
                       <div className="flex justify-between items-center mb-2 text-green-700">
                         <span className="font-semibold">
-                          Loyalty Discount ({appliedDiscount.extra_discount_percentage}%)
+                          Loyalty Discount (
+                          {appliedDiscount.extra_discount_percentage}%)
                         </span>
                         <span className="font-bold">
                           -
                           {formatCurrency(
                             items.reduce((acc, item) => {
                               if (item.isColdDrinkBundle) return acc;
-                              return acc + (calculatePrice(item.product, item.quantity) * appliedDiscount.extra_discount_percentage) / 100;
-                            }, 0)
+                              return (
+                                acc +
+                                (calculatePrice(item.product, item.quantity) *
+                                  appliedDiscount.extra_discount_percentage) /
+                                  100
+                              );
+                            }, 0),
                           )}
                         </span>
                       </div>
@@ -1217,11 +1336,20 @@ export default function CheckoutPage() {
                       <span className="text-3xl font-bold text-[#27247b]">
                         {formatCurrency(
                           appliedDiscount
-                            ? totalPrice - items.reduce((acc, item) => {
-                              if (item.isColdDrinkBundle) return acc;
-                              return acc + (calculatePrice(item.product, item.quantity) * appliedDiscount.extra_discount_percentage) / 100;
-                            }, 0)
-                            : totalPrice
+                            ? totalPrice -
+                                items.reduce((acc, item) => {
+                                  if (item.isColdDrinkBundle) return acc;
+                                  return (
+                                    acc +
+                                    (calculatePrice(
+                                      item.product,
+                                      item.quantity,
+                                    ) *
+                                      appliedDiscount.extra_discount_percentage) /
+                                      100
+                                  );
+                                }, 0)
+                            : totalPrice,
                         )}
                       </span>
                     </div>
@@ -1242,6 +1370,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

@@ -2,16 +2,34 @@
 
 import { Drawer } from "@base-ui/react/drawer";
 import { useCartStore } from "@/lib/store/cart-store";
+import { useAuthStore } from "@/lib/store/auth-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Plus, Minus, ShoppingBag, X } from "lucide-react";
-import { calculatePrice, formatCurrency, getPricePerKg, calculateSavings } from "@/lib/utils";
+import {
+  calculatePrice,
+  formatCurrency,
+  getPricePerKg,
+  calculateSavings,
+} from "@/lib/utils";
 import { storage, STORAGE_BUCKET_ID } from "@/lib/appwrite";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 
 export function CartDrawer() {
-  const { isOpen, setIsOpen, items, removeItem, addBag, removeBag, getTotalPrice, clearCart } = useCartStore();
+  const {
+    isOpen,
+    setIsOpen,
+    items,
+    removeItem,
+    addBag,
+    removeBag,
+    getTotalPrice,
+    clearCart,
+  } = useCartStore();
+  const { user } = useAuthStore();
+  const { trackInitiateCheckout } = useMetaTracking();
   const totalPrice = getTotalPrice();
   const router = useRouter();
 
@@ -27,6 +45,32 @@ export function CartDrawer() {
   }, 0);
 
   const handleCheckout = () => {
+    // Detect if user is an agent (Saima or Kiran) - case insensitive
+    const isAgent = user?.labels?.some((label) =>
+      ["saima", "kiran"].includes(label.toLowerCase()),
+    );
+
+    // Don't send user data if it's an agent
+    const userData =
+      user && !isAgent
+        ? {
+            email: user.email,
+            phone: user.phone,
+            externalId: user.$id,
+            firstName: user.name?.split(" ")[0],
+            lastName: user.name?.split(" ").slice(1).join(" "),
+          }
+        : undefined;
+
+    // Track InitiateCheckout event
+    trackInitiateCheckout({
+      value: totalPrice,
+      currency: "PKR",
+      numItems: items.reduce((sum, item) => sum + item.quantity, 0),
+      contentIds: items.map((item) => item.product.$id),
+      userData,
+    });
+
     setIsOpen(false);
     router.push("/checkout");
   };
@@ -52,8 +96,12 @@ export function CartDrawer() {
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
                   <ShoppingBag className="w-16 h-16 text-gray-300" />
                   <div className="space-y-1">
-                    <Drawer.Description className="text-xl font-medium text-gray-900">Your cart is empty</Drawer.Description>
-                    <p className="text-sm text-gray-500">Looks like you haven't added anything yet.</p>
+                    <Drawer.Description className="text-xl font-medium text-gray-900">
+                      Your cart is empty
+                    </Drawer.Description>
+                    <p className="text-sm text-gray-500">
+                      Looks like you haven't added anything yet.
+                    </p>
                   </div>
                   <Button onClick={() => setIsOpen(false)} className="mt-4">
                     Continue Shopping
@@ -62,19 +110,33 @@ export function CartDrawer() {
               ) : (
                 <div className="space-y-6">
                   {/* Items List */}
-                  <Drawer.Description className="sr-only">Review your shopping cart items</Drawer.Description>
+                  <Drawer.Description className="sr-only">
+                    Review your shopping cart items
+                  </Drawer.Description>
                   <div className="space-y-4">
                     {items.map((item) => {
-                      const pricePerKg = getPricePerKg(item.product, item.quantity);
-                      const itemTotal = calculatePrice(item.product, item.quantity);
-                      const savingsInfo = calculateSavings(item.product, item.quantity);
+                      const pricePerKg = getPricePerKg(
+                        item.product,
+                        item.quantity,
+                      );
+                      const itemTotal = calculatePrice(
+                        item.product,
+                        item.quantity,
+                      );
+                      const savingsInfo = calculateSavings(
+                        item.product,
+                        item.quantity,
+                      );
 
                       const imageUrl = item.product.primary_image_id
-                        ? storage.getFileView({ bucketId: STORAGE_BUCKET_ID, fileId: item.product.primary_image_id }).toString()
+                        ? `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKET_ID}/files/${item.product.primary_image_id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
                         : null;
 
                       return (
-                        <Card key={item.product.$id} className="overflow-hidden border border-gray-100 shadow-sm">
+                        <Card
+                          key={item.product.$id}
+                          className="overflow-hidden border border-gray-100 shadow-sm"
+                        >
                           <CardContent className="p-3 sm:p-4">
                             <div className="flex gap-4">
                               <div className="relative w-20 h-20 shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
@@ -107,29 +169,49 @@ export function CartDrawer() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => removeItem(item.product.$id, item.isColdDrinkBundle)}
+                                    onClick={() =>
+                                      removeItem(
+                                        item.product.$id,
+                                        item.isColdDrinkBundle,
+                                      )
+                                    }
                                     className="h-8 w-8 p-0 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  {formatCurrency(pricePerKg)}/kg • Total: {item.quantity}kg
+                                  {formatCurrency(pricePerKg)}/kg • Total:{" "}
+                                  {item.quantity}kg
                                 </p>
 
                                 {/* Bag Controls */}
                                 <div className="space-y-1.5 mt-3">
                                   {[3, 5, 10, 25].map((size) => {
-                                    const count = item.bags[`kg${size}` as keyof typeof item.bags];
+                                    const count =
+                                      item.bags[
+                                        `kg${size}` as keyof typeof item.bags
+                                      ];
                                     if (count > 0) {
                                       return (
-                                        <div key={size} className="flex items-center justify-between bg-white border border-gray-100 rounded-md px-2 py-1 shadow-xs">
-                                          <span className="text-[11px] font-medium text-gray-600">{size}kg bags: {count}</span>
+                                        <div
+                                          key={size}
+                                          className="flex items-center justify-between bg-white border border-gray-100 rounded-md px-2 py-1 shadow-xs"
+                                        >
+                                          <span className="text-[11px] font-medium text-gray-600">
+                                            {size}kg bags: {count}
+                                          </span>
                                           <div className="flex items-center gap-1">
                                             <Button
                                               size="sm"
                                               variant="ghost"
-                                              onClick={() => removeBag(item.product.$id, size as any, item.isColdDrinkBundle)}
+                                              onClick={() =>
+                                                removeBag(
+                                                  item.product.$id,
+                                                  size as any,
+                                                  item.isColdDrinkBundle,
+                                                )
+                                              }
                                               className="h-5 w-5 p-0 bg-gray-50 hover:bg-red-50 hover:text-red-600 border border-gray-200 rounded"
                                             >
                                               <Minus className="w-3 h-3" />
@@ -137,7 +219,13 @@ export function CartDrawer() {
                                             <Button
                                               size="sm"
                                               variant="ghost"
-                                              onClick={() => addBag(item.product, size as any, item.isColdDrinkBundle)}
+                                              onClick={() =>
+                                                addBag(
+                                                  item.product,
+                                                  size as any,
+                                                  item.isColdDrinkBundle,
+                                                )
+                                              }
                                               className="h-5 w-5 p-0 bg-gray-50 hover:bg-[#ffff03]/20 hover:text-[#27247b] border border-gray-200 rounded"
                                             >
                                               <Plus className="w-3 h-3" />
@@ -156,7 +244,8 @@ export function CartDrawer() {
                                   </p>
                                   {savingsInfo.savings > 0 && (
                                     <p className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
-                                      Saved {formatCurrency(savingsInfo.savings)}
+                                      Saved{" "}
+                                      {formatCurrency(savingsInfo.savings)}
                                     </p>
                                   )}
                                 </div>
@@ -190,7 +279,9 @@ export function CartDrawer() {
                     </div>
                   )}
                   <div className="flex justify-between items-end pt-2 border-t border-gray-100">
-                    <span className="text-base font-semibold text-gray-900">Total</span>
+                    <span className="text-base font-semibold text-gray-900">
+                      Total
+                    </span>
                     <span className="text-2xl font-black text-[#27247b]">
                       {formatCurrency(totalPrice)}
                     </span>
@@ -198,10 +289,18 @@ export function CartDrawer() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1" onClick={clearCart}>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={clearCart}
+                  >
                     Clear
                   </Button>
-                  <Button className="flex-2 bg-[#27247b] hover:bg-[#1a1854] text-white shadow-xl hover:shadow-2xl transition-all" size="lg" onClick={handleCheckout}>
+                  <Button
+                    className="flex-2 bg-[#27247b] hover:bg-[#1a1854] text-white shadow-xl hover:shadow-2xl transition-all"
+                    size="lg"
+                    onClick={handleCheckout}
+                  >
                     Checkout
                   </Button>
                 </div>

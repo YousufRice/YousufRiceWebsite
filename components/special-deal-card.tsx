@@ -43,7 +43,7 @@ export function SpecialDealCard({
   const totalPrice = calculatePrice(product, totalKg || 0);
 
   const imageUrl = imageFileId
-    ? storage.getFileView({ bucketId: STORAGE_BUCKET_ID, fileId: imageFileId }).toString()
+    ? `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${STORAGE_BUCKET_ID}/files/${imageFileId}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
     : null;
 
   const handleAddBag = () => {
@@ -75,10 +75,10 @@ export function SpecialDealCard({
       toast.error("Please add at least one 25kg bag to continue!");
       return;
     }
-    
+
     useCartStore.getState().setIsOpen(true);
     useCartStore.getState().highlightCart();
-    
+
     toast.success("Review cart! Proceeding to checkout shortly...", {
       icon: "🚀",
       style: {
@@ -88,7 +88,7 @@ export function SpecialDealCard({
         fontWeight: "bold",
       },
     });
-    
+
     setTimeout(() => {
       useCartStore.getState().setIsOpen(false);
       useCartStore.getState().highlightCart();
@@ -190,7 +190,7 @@ export function SpecialDealCard({
                     <span>
                       Save{" "}
                       {formatCurrency(
-                        (product.base_price_per_kg - pricePerKg) * 25
+                        (product.base_price_per_kg - pricePerKg) * 25,
                       )}
                     </span>
                   </div>
