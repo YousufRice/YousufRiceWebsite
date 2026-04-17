@@ -103,7 +103,10 @@ export function useMetaTracking() {
 
   // Convenience methods for common events
   const trackPageView = useCallback(() => {
-    return trackEvent({ eventName: 'PageView' });
+    return trackEvent({ 
+      eventName: 'PageView',
+      testEventCode: TEST_EVENT_CODE || undefined,
+    });
   }, [trackEvent]);
 
   const trackViewContent = useCallback((productData: {
@@ -134,6 +137,7 @@ export function useMetaTracking() {
         value: productData.value,
         currency: productData.currency || 'PKR',
       },
+      testEventCode: TEST_EVENT_CODE || undefined,
     });
   }, [trackEvent]);
 
@@ -201,6 +205,7 @@ export function useMetaTracking() {
         content_ids: checkoutData.contentIds,
         content_type: 'product',
       },
+      testEventCode: TEST_EVENT_CODE || undefined,
     });
   }, [trackEvent]);
 
@@ -248,6 +253,7 @@ export function useMetaTracking() {
       customData: {
         search_string: searchQuery,
       },
+      testEventCode: TEST_EVENT_CODE || undefined,
     });
   }, [trackEvent]);
 
