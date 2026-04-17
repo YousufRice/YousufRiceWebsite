@@ -1,4 +1,4 @@
-import Script from 'next/script';
+import Script from "next/script";
 
 interface StructuredDataProps {
   data: object | object[];
@@ -6,7 +6,7 @@ interface StructuredDataProps {
 
 export function StructuredData({ data }: StructuredDataProps) {
   const jsonLd = Array.isArray(data) ? data : [data];
-  
+
   return (
     <>
       {jsonLd.map((item, index) => (

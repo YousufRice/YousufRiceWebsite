@@ -9,23 +9,23 @@ export function ProductCardSkeleton() {
       <div className="p-6">
         {/* Image skeleton */}
         <div className="aspect-square bg-gray-200 rounded-xl mb-4"></div>
-        
+
         {/* Title skeleton */}
         <div className="h-7 bg-gray-200 rounded-lg mb-3 w-3/4"></div>
-        
+
         {/* Description skeleton */}
         <div className="space-y-2 mb-4">
           <div className="h-4 bg-gray-200 rounded w-full"></div>
           <div className="h-4 bg-gray-200 rounded w-5/6"></div>
         </div>
-        
+
         {/* Price tiers skeleton */}
         <div className="space-y-2 mb-4">
           <div className="h-16 bg-gray-200 rounded-lg"></div>
           <div className="h-16 bg-gray-200 rounded-lg"></div>
           <div className="h-16 bg-gray-200 rounded-lg"></div>
         </div>
-        
+
         {/* Button skeleton */}
         <div className="h-12 bg-gray-200 rounded-lg"></div>
       </div>
@@ -57,7 +57,7 @@ export function HeroStatsSkeleton() {
   return (
     <div className="grid grid-cols-3 gap-3 md:gap-6 max-w-4xl mx-auto">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div 
+        <div
           key={i}
           className="bg-white/10 backdrop-blur-md rounded-xl md:rounded-2xl p-3 md:p-6 border border-white/20 animate-shimmer"
         >
@@ -73,7 +73,7 @@ export function FeaturesSkeleton() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div 
+        <div
           key={i}
           className="text-center p-4 md:p-6 lg:p-8 bg-white rounded-xl md:rounded-2xl shadow-md animate-shimmer"
         >
@@ -96,11 +96,14 @@ export function ProductDetailSkeleton() {
             <div className="aspect-square bg-gray-200 rounded-2xl"></div>
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-square bg-gray-200 rounded-lg"></div>
+                <div
+                  key={i}
+                  className="aspect-square bg-gray-200 rounded-lg"
+                ></div>
               ))}
             </div>
           </div>
-          
+
           {/* Product info skeleton */}
           <div className="space-y-6">
             <div className="h-10 bg-gray-200 rounded-lg w-3/4"></div>
@@ -122,7 +125,10 @@ export function OrdersListSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="space-y-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-white rounded-xl shadow-md p-6 animate-shimmer">
+        <div
+          key={i}
+          className="bg-white rounded-xl shadow-md p-6 animate-shimmer"
+        >
           <div className="flex justify-between items-start mb-4">
             <div className="space-y-2 flex-1">
               <div className="h-6 bg-gray-200 rounded w-32"></div>
@@ -144,7 +150,10 @@ export function SpecialDealsSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-shimmer">
+        <div
+          key={i}
+          className="bg-white rounded-2xl shadow-lg overflow-hidden animate-shimmer"
+        >
           <div className="aspect-video bg-gray-200"></div>
           <div className="p-6 space-y-4">
             <div className="h-6 bg-gray-200 rounded w-3/4"></div>

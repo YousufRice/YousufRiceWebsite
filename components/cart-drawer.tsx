@@ -147,7 +147,7 @@ export function CartDrawer() {
                                     fill
                                     className="object-cover"
                                     sizes="80px"
-                                    quality={60}
+                                    quality={70}
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center bg-gray-50">

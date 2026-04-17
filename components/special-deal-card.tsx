@@ -116,7 +116,7 @@ export function SpecialDealCard({
                 fill
                 className="object-contain group-hover:scale-105 transition-transform duration-700 drop-shadow-2xl"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                quality={75}
+                quality={85}
               />
             </div>
           ) : (

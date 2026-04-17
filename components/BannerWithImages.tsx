@@ -1,5 +1,7 @@
-import Banner from '@/components/Banner';
-import { getBannerImages } from '@/lib/banner-cache';
+"use cache";
+
+import Banner from "@/components/Banner";
+import { getBannerImages } from "@/lib/banner-cache";
 
 interface BannerWrapperProps {
   projectId: string;
@@ -8,7 +10,7 @@ interface BannerWrapperProps {
 
 const BannerWrapper = async ({ projectId, bucketId }: BannerWrapperProps) => {
   const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!;
-  
+
   // Fetch cached banner images
   const images = await getBannerImages(bucketId, projectId, endpoint);
 
@@ -22,7 +24,7 @@ const BannerWrapper = async ({ projectId, bucketId }: BannerWrapperProps) => {
   }
 
   // Extract URLs from the images
-  const imageUrls = images.map(img => img.url);
+  const imageUrls = images.map((img) => img.url);
 
   return <Banner images={imageUrls} />;
 };

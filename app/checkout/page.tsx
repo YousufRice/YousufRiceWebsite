@@ -1218,7 +1218,7 @@ export default function CheckoutPage() {
                               fill
                               className="object-cover"
                               sizes="64px"
-                              quality={60}
+                              quality={70}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

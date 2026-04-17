@@ -145,36 +145,5 @@ export async function getCachedProductImagesById(productId: string) {
   }
 }
 
-/**
- * Cached function to fetch products for hotels and restaurants
- * Uses Next.js 16 'use cache' directive with PPR for optimal performance
- * Filters products by name pattern containing "hotel" or "restaurant"
- */
-export async function getCachedHotelRestaurantProducts() {
-  "use cache";
-  cacheLife("max");
-  cacheTag("products", "hotel-restaurant-products");
-
-  try {
-    const response = await tablesDB.listRows({
-      databaseId: DATABASE_ID,
-      tableId: PRODUCTS_TABLE_ID,
-      queries: [Query.equal("available", true), Query.orderDesc("$createdAt")],
-    });
-
-    // Filter products that contain "hotel" or "restaurant" in their name or description
-    const allProducts = JSON.parse(JSON.stringify(response.rows)) as Product[];
-    return allProducts.filter((product) => {
-      const searchText = `${product.name} ${
-        product.description || ""
-      }`.toLowerCase();
-      return searchText.includes("hotel") || searchText.includes("restaurant");
-    });
-  } catch (error) {
-    console.error("Error fetching hotel/restaurant products:", error);
-    return [];
-  }
-}
-
 // Note: Image URL generation should be done inline in components
 // as it's a synchronous operation that doesn't benefit from caching

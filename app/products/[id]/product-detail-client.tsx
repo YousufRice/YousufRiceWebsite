@@ -34,14 +34,15 @@ export default function ProductDetailClient({
   bundleImageIndex,
 }: ProductDetailClientProps) {
   const [isBuyNowHovered, setIsBuyNowHovered] = useState(false);
-  const { trackViewContent, trackAddToCart, trackInitiateCheckout } = useMetaTracking();
+  const { trackViewContent, trackAddToCart, trackInitiateCheckout } =
+    useMetaTracking();
   const hasTrackedViewRef = useRef(false);
   const { user } = useAuthStore();
   const { items: cartItems } = useCartStore();
 
   // Detect if user is an agent (Saima or Kiran) - case insensitive
-  const isAgent = user?.labels?.some(label =>
-    ['saima', 'kiran'].includes(label.toLowerCase())
+  const isAgent = user?.labels?.some((label) =>
+    ["saima", "kiran"].includes(label.toLowerCase()),
   );
 
   const searchParams = useSearchParams();
@@ -49,8 +50,11 @@ export default function ProductDetailClient({
     searchParams?.get("bundle") === "colddrink" &&
     process.env.NEXT_PUBLIC_ENABLE_COLD_DRINK_BUNDLE === "true";
 
-  const [selectedImageIndex, setSelectedImageIndex] =
-    useState(isColdDrinkBundle && bundleImageIndex !== undefined ? bundleImageIndex : primaryImageIndex);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(
+    isColdDrinkBundle && bundleImageIndex !== undefined
+      ? bundleImageIndex
+      : primaryImageIndex,
+  );
 
   const {
     bagCounts,
@@ -67,13 +71,16 @@ export default function ProductDetailClient({
     if (hasTrackedViewRef.current) return;
 
     // Don't send user data if it's an agent
-    const userData = (user && !isAgent) ? {
-      email: user.email,
-      phone: user.phone,
-      externalId: user.$id,
-      firstName: user.name?.split(' ')[0],
-      lastName: user.name?.split(' ').slice(1).join(' '),
-    } : undefined;
+    const userData =
+      user && !isAgent
+        ? {
+            email: user.email,
+            phone: user.phone,
+            externalId: user.$id,
+            firstName: user.name?.split(" ")[0],
+            lastName: user.name?.split(" ").slice(1).join(" "),
+          }
+        : undefined;
 
     trackViewContent({
       contentName: product.name,
@@ -92,13 +99,16 @@ export default function ProductDetailClient({
     const newTotalKg = totalKg + weight;
     const newTotalPrice = calculatePrice(product, newTotalKg);
 
-    const userData = (user && !isAgent) ? {
-      email: user.email,
-      phone: user.phone,
-      externalId: user.$id,
-      firstName: user.name?.split(' ')[0],
-      lastName: user.name?.split(' ').slice(1).join(' '),
-    } : undefined;
+    const userData =
+      user && !isAgent
+        ? {
+            email: user.email,
+            phone: user.phone,
+            externalId: user.$id,
+            firstName: user.name?.split(" ")[0],
+            lastName: user.name?.split(" ").slice(1).join(" "),
+          }
+        : undefined;
 
     trackAddToCart({
       contentName: product.name,
@@ -119,13 +129,16 @@ export default function ProductDetailClient({
     }
 
     // Don't send user data if it's an agent
-    const userData = (user && !isAgent) ? {
-      email: user.email,
-      phone: user.phone,
-      externalId: user.$id,
-      firstName: user.name?.split(' ')[0],
-      lastName: user.name?.split(' ').slice(1).join(' '),
-    } : undefined;
+    const userData =
+      user && !isAgent
+        ? {
+            email: user.email,
+            phone: user.phone,
+            externalId: user.$id,
+            firstName: user.name?.split(" ")[0],
+            lastName: user.name?.split(" ").slice(1).join(" "),
+          }
+        : undefined;
 
     // Track InitiateCheckout event
     trackInitiateCheckout({
@@ -146,7 +159,7 @@ export default function ProductDetailClient({
 
   const prevImage = () => {
     setSelectedImageIndex(
-      (prev) => (prev - 1 + imageUrls.length) % imageUrls.length
+      (prev) => (prev - 1 + imageUrls.length) % imageUrls.length,
     );
   };
 
@@ -218,10 +231,11 @@ export default function ProductDetailClient({
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`relative aspect-square rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${selectedImageIndex === index
-                      ? "border-[#ffff03] ring-4 ring-[#ffff03]/30 shadow-lg"
-                      : "border-gray-200 hover:border-[#27247b]/30"
-                      }`}
+                    className={`relative aspect-square rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
+                      selectedImageIndex === index
+                        ? "border-[#ffff03] ring-4 ring-[#ffff03]/30 shadow-lg"
+                        : "border-gray-200 hover:border-[#27247b]/30"
+                    }`}
                   >
                     <Image
                       src={url || "/placeholder.svg"}
@@ -229,7 +243,7 @@ export default function ProductDetailClient({
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 25vw, 12vw"
-                      quality={60}
+                      quality={70}
                     />
                     {index === primaryImageIndex && (
                       <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 bg-[#ffff03] text-[#27247b] text-xs px-1.5 sm:px-2 py-0.5 rounded font-bold">
@@ -352,16 +366,28 @@ export default function ProductDetailClient({
               {isColdDrinkBundle && (
                 <div className="mb-4 p-3 sm:p-5 rounded-xl border-2 border-cyan-400/50 bg-linear-to-r from-[#27247b] to-blue-800 text-white shadow-[0_8px_25px_rgba(39,36,123,0.3)] relative overflow-hidden group hover:scale-[1.02] transition-all duration-400">
                   <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-40 transition-opacity">
-                    <span className="text-8xl group-hover:animate-bounce inline-block transform rotate-12 -mt-4 -mr-4">🥤</span>
+                    <span className="text-8xl group-hover:animate-bounce inline-block transform rotate-12 -mt-4 -mr-4">
+                      🥤
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 relative z-10">
-                    <span className="text-4xl sm:text-5xl drop-shadow-lg animate-pulse delay-75">🎁</span>
+                    <span className="text-4xl sm:text-5xl drop-shadow-lg animate-pulse delay-75">
+                      🎁
+                    </span>
                     <div>
                       <h3 className="font-black text-cyan-300 mb-1 text-base sm:text-lg tracking-widest uppercase drop-shadow">
                         Exclusive Bundle Deal
                       </h3>
                       <p className="text-xs sm:text-sm text-blue-50 font-medium leading-relaxed">
-                        You get <span className="text-[#27247b] font-black bg-linear-to-r from-cyan-300 to-cyan-400 px-2 py-0.5 rounded shadow-md mx-1 inline-block transform -rotate-1 scale-105">1 FREE Cold Drink (1L)</span> for <strong className="text-white border-b-2 border-cyan-300 pb-0.5 tracking-wide">EVERY 10kg</strong> you buy!
+                        You get{" "}
+                        <span className="text-[#27247b] font-black bg-linear-to-r from-cyan-300 to-cyan-400 px-2 py-0.5 rounded shadow-md mx-1 inline-block transform -rotate-1 scale-105">
+                          1 FREE Cold Drink (1L)
+                        </span>{" "}
+                        for{" "}
+                        <strong className="text-white border-b-2 border-cyan-300 pb-0.5 tracking-wide">
+                          EVERY 10kg
+                        </strong>{" "}
+                        you buy!
                       </p>
                     </div>
                   </div>
@@ -369,78 +395,96 @@ export default function ProductDetailClient({
               )}
 
               {/* Ramadan Offer Banner */}
-              {!isColdDrinkBundle && process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === 'true' && (() => {
-                // Calculate total weight from cart (cart already includes current product if added)
-                const cartWeight = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-                const freeKg = Math.floor(cartWeight / 15);
-                const nextThreshold = (freeKg + 1) * 15;
-                const kgNeeded = nextThreshold - cartWeight;
+              {!isColdDrinkBundle &&
+                process.env.NEXT_PUBLIC_ENABLE_RAMADAN_OFFER === "true" &&
+                (() => {
+                  // Calculate total weight from cart (cart already includes current product if added)
+                  const cartWeight = cartItems.reduce(
+                    (acc, item) => acc + item.quantity,
+                    0,
+                  );
+                  const freeKg = Math.floor(cartWeight / 15);
+                  const nextThreshold = (freeKg + 1) * 15;
+                  const kgNeeded = nextThreshold - cartWeight;
 
-                return (
-                  <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-2 opacity-10">
-                      <span className="text-6xl">🌙</span>
+                  return (
+                    <div className="mb-4 p-3 sm:p-4 rounded-xl border-2 border-[#ffff03] bg-linear-to-r from-[#27247b] to-[#27247b]/90 text-white shadow-lg relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-2 opacity-10">
+                        <span className="text-6xl">🌙</span>
+                      </div>
+                      <div className="relative z-10">
+                        <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1 text-sm sm:text-base">
+                          <span>⏳</span> Post-Eid Special (Ends Mar 31)
+                        </h3>
+                        {freeKg > 0 ? (
+                          <p className="text-xs sm:text-sm">
+                            🎉{" "}
+                            <span className="font-bold text-[#ffff03]">
+                              {freeKg}kg FREE Rice
+                            </span>{" "}
+                            qualified! Add{" "}
+                            <span className="font-bold text-[#ffff03]">
+                              {kgNeeded}kg
+                            </span>{" "}
+                            more for {freeKg + 1}kg free.
+                          </p>
+                        ) : (
+                          <p className="text-xs sm:text-sm">
+                            Add{" "}
+                            <span className="font-bold text-[#ffff03]">
+                              {kgNeeded}kg
+                            </span>{" "}
+                            more for 1kg FREE Rice!
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="relative z-10">
-                      <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1 text-sm sm:text-base">
-                        <span>⏳</span> Post-Eid Special (Ends Mar 31)
-                      </h3>
-                      {freeKg > 0 ? (
-                        <p className="text-xs sm:text-sm">
-                          🎉 <span className="font-bold text-[#ffff03]">{freeKg}kg FREE Rice</span> qualified! Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for {freeKg + 1}kg free.
-                        </p>
-                      ) : (
-                        <p className="text-xs sm:text-sm">
-                          Add <span className="font-bold text-[#ffff03]">{kgNeeded}kg</span> more for 1kg FREE Rice!
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
               <div className="space-y-2 sm:space-y-3">
                 {/* 3kg Bag */}
-                {!isColdDrinkBundle && !product.name.toLowerCase().includes("every") && (
-                  <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
-                        3kg
+                {!isColdDrinkBundle &&
+                  !product.name.toLowerCase().includes("every") && (
+                    <div className="group flex items-center justify-between bg-linear-to-r from-white to-gray-50 p-2 sm:p-3 rounded-lg border-2 border-gray-200 hover:border-[#27247b] hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="bg-linear-to-br from-[#27247b] to-[#1a1854] text-white w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
+                          3kg
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base truncate">
+                            3kg Bag
+                          </p>
+                          <p className="text-xs text-gray-600 font-medium">
+                            {formatCurrency(getPricePerKg(product, 3))}/kg
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-[#27247b] text-xs sm:text-sm md:text-base truncate">
-                          3kg Bag
-                        </p>
-                        <p className="text-xs text-gray-600 font-medium">
-                          {formatCurrency(getPricePerKg(product, 3))}/kg
-                        </p>
+                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRemoveBag(3)}
+                          disabled={!product.available || bagCounts.kg3 === 0}
+                          className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
+                        </Button>
+                        <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
+                          {bagCounts.kg3}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onAddBag(3)}
+                          disabled={!product.available}
+                          className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
+                        >
+                          <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b]" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRemoveBag(3)}
-                        disabled={!product.available || bagCounts.kg3 === 0}
-                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
-                      </Button>
-                      <span className="w-5 sm:w-6 text-center font-bold text-[#27247b] text-sm">
-                        {bagCounts.kg3}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onAddBag(3)}
-                        disabled={!product.available}
-                        className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 bg-[#ffff03] hover:bg-[#ffd700] border-2 border-[#ffff03] rounded-lg transition-all shadow-md"
-                      >
-                        <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-[#27247b]" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  )}
 
                 {/* 5kg Bag */}
                 {!isColdDrinkBundle && (
@@ -598,7 +642,7 @@ export default function ProductDetailClient({
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="text-sm font-medium text-red-300 line-through decoration-red-300/70 decoration-1">
                               {formatCurrency(
-                                totalKg * product.base_price_per_kg
+                                totalKg * product.base_price_per_kg,
                               )}
                             </span>
                             <span className="text-[10px] sm:text-xs font-bold bg-[#ffff03] text-[#27247b] px-1.5 py-0.5 rounded-full animate-pulse">
@@ -606,7 +650,7 @@ export default function ProductDetailClient({
                                 ((totalKg * product.base_price_per_kg -
                                   totalPrice) /
                                   (totalKg * product.base_price_per_kg)) *
-                                100
+                                  100,
                               )}
                               % OFF
                             </span>

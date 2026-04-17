@@ -1,3 +1,5 @@
+"use cache";
+
 import { ProductCard } from "@/components/product-card";
 import { ColdDrinkBundleCard } from "@/components/cold-drink-bundle-card";
 import {
@@ -66,12 +68,16 @@ export async function AsyncProductsList() {
   const images = await getCachedProductImages(productIds);
   // Map primary images for regular product cards
   const imageMap = new Map(
-    images.filter(img => img.is_primary).map((img) => [img.product_id, img.file_id])
+    images
+      .filter((img) => img.is_primary)
+      .map((img) => [img.product_id, img.file_id]),
   );
-  
+
   // Map cold drink bundle images specifically for the bundle cards
   const bundleImageMap = new Map(
-    images.filter(img => img.is_cold_drink_bundle).map((img) => [img.product_id, img.file_id])
+    images
+      .filter((img) => img.is_cold_drink_bundle)
+      .map((img) => [img.product_id, img.file_id]),
   );
 
   if (products.length === 0) {
@@ -111,7 +117,8 @@ export async function AsyncProductsList() {
             <div className="flex items-center gap-4">
               <div className="flex-1 h-0.5 bg-linear-to-r from-transparent via-blue-500 to-blue-500"></div>
               <h3 className="text-2xl md:text-3xl font-black text-blue-600 whitespace-nowrap flex items-center gap-2">
-                <span className="text-3xl">🥤</span> Exclusive Free Cold Drink Deals
+                <span className="text-3xl">🥤</span> Exclusive Free Cold Drink
+                Deals
               </h3>
               <div className="flex-1 h-0.5 bg-linear-to-l from-transparent via-blue-500 to-blue-500"></div>
             </div>
@@ -124,14 +131,20 @@ export async function AsyncProductsList() {
                   (p) =>
                     p.name.toLowerCase().includes("ultimate sella") ||
                     p.name.toLowerCase().includes("x-steam") ||
-                    p.name.toLowerCase().includes("x steam")
+                    p.name.toLowerCase().includes("x steam"),
                 )
                 .map((product) => (
-                  <div key={`bundle-${product.$id}`} className="flex justify-center">
+                  <div
+                    key={`bundle-${product.$id}`}
+                    className="flex justify-center"
+                  >
                     <div className="w-full max-w-sm">
                       <ColdDrinkBundleCard
                         product={product}
-                        imageFileId={bundleImageMap.get(product.$id) || imageMap.get(product.$id)}
+                        imageFileId={
+                          bundleImageMap.get(product.$id) ||
+                          imageMap.get(product.$id)
+                        }
                       />
                     </div>
                   </div>
