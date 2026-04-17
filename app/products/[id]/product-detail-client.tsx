@@ -414,7 +414,7 @@ export default function ProductDetailClient({
                       </div>
                       <div className="relative z-10">
                         <h3 className="font-bold text-[#ffff03] flex items-center gap-2 mb-1 text-sm sm:text-base">
-                          <span>⏳</span> Post-Eid Special (Ends Mar 31)
+                          <span>⏳</span> Post-Eid Special (Ends April 25)
                         </h3>
                         {freeKg > 0 ? (
                           <p className="text-xs sm:text-sm">
