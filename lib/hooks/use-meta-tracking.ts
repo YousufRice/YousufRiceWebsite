@@ -57,13 +57,16 @@ export function useMetaTracking() {
         // Generate unique event ID for deduplication
         const eventId = generateEventId();
 
-        // Construct current URL using Next.js hooks + domain from env
-        const primaryDomain =
-          process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com";
+        // Construct current URL using actual browser origin
+        const origin =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : process.env.NEXT_PUBLIC_PRIMARY_DOMAIN ||
+              "https://yousufrice.com";
         const queryString = searchParams.toString();
         const eventSourceUrl = queryString
-          ? `${primaryDomain}${pathname}?${queryString}`
-          : `${primaryDomain}${pathname}`;
+          ? `${origin}${pathname}?${queryString}`
+          : `${origin}${pathname}`;
 
         console.log(
           `[Meta Tracking] Event: ${eventName}, URL: ${eventSourceUrl}`,

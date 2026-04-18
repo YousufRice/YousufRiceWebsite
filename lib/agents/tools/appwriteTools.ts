@@ -1,5 +1,6 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
+import { headers } from "next/headers";
 import {
   tablesDB,
   DATABASE_ID,
@@ -17,6 +18,26 @@ import {
   trackAgentInitiateCheckout,
 } from "@/lib/meta-agent-tracking";
 import { LoyaltyService } from "@/lib/services/loyalty-service";
+
+/**
+ * Helper function to get current URL from Next.js headers
+ * This is needed for server-side Meta tracking to send the actual current URL
+ */
+async function getCurrentUrl(): Promise<string> {
+  try {
+    const headersList = await headers();
+    const host =
+      headersList.get("host") ||
+      process.env.NEXT_PUBLIC_PRIMARY_DOMAIN ||
+      "yousufrice.com";
+    const protocol = headersList.get("x-forwarded-proto") || "https";
+    const pathname = headersList.get("x-pathname") || "/";
+    return `${protocol}://${host}${pathname}`;
+  } catch (error) {
+    // Fallback if headers are not available (e.g., in non-request context)
+    return process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com";
+  }
+}
 
 /**
  * Helper function to build price tiers from product data
@@ -177,7 +198,7 @@ export const searchProductsTool = tool({
       .nullable()
       .default(null)
       .describe(
-        "Set true to show only hotel/restaurant products (filtered by name), false for regular products, null for all."
+        "Set true to show only hotel/restaurant products (filtered by name), false for regular products, null for all.",
       ),
     limit: z
       .number()
@@ -219,9 +240,16 @@ export const searchProductsTool = tool({
       }
 
       const response = (await Promise.race([
-        tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: queries }),
+        tablesDB.listRows({
+          databaseId: DATABASE_ID,
+          tableId: PRODUCTS_TABLE_ID,
+          queries: queries,
+        }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Database request timeout")), 15000)
+          setTimeout(
+            () => reject(new Error("Database request timeout")),
+            15000,
+          ),
         ),
       ])) as any;
 
@@ -260,8 +288,8 @@ export const searchProductsTool = tool({
           forHotelsRestaurants === true
             ? " for hotels/restaurants"
             : forHotelsRestaurants === false
-            ? " (regular products)"
-            : ""
+              ? " (regular products)"
+              : ""
         }.`,
       };
     } catch (error: any) {
@@ -288,7 +316,7 @@ export const searchProductsTool = tool({
         total: 0,
       };
     }
-  }
+  },
 });
 
 /**
@@ -312,7 +340,11 @@ export const getProductDetailsTool = tool({
         };
       }
 
-      const product = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: productId.trim() });
+      const product = await tablesDB.getRow({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCTS_TABLE_ID,
+        rowId: productId.trim(),
+      });
 
       return {
         success: true,
@@ -359,7 +391,7 @@ export const trackOrdersTool = tool({
       .nullable()
       .default(null)
       .describe(
-        "Customer phone number to get all their orders. Provide this OR orderId."
+        "Customer phone number to get all their orders. Provide this OR orderId.",
       ),
   }),
   async execute({
@@ -393,13 +425,21 @@ export const trackOrdersTool = tool({
           };
         }
 
-        const order = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: trimmedOrderId });
+        const order = await tablesDB.getRow({
+          databaseId: DATABASE_ID,
+          tableId: ORDERS_TABLE_ID,
+          rowId: trimmedOrderId,
+        });
 
         // Fetch customer details
         let customerName = "Unknown";
         let phoneNumber = "Unknown";
         try {
-          const customer = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: order.customer_id });
+          const customer = await tablesDB.getRow({
+            databaseId: DATABASE_ID,
+            tableId: CUSTOMERS_TABLE_ID,
+            rowId: order.customer_id,
+          });
           customerName = customer.full_name;
           phoneNumber = customer.phone;
         } catch (e) {
@@ -410,7 +450,11 @@ export const trackOrdersTool = tool({
         let addressLine = "Address not available";
         if (order.address_id) {
           try {
-            const address = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: order.address_id });
+            const address = await tablesDB.getRow({
+              databaseId: DATABASE_ID,
+              tableId: ADDRESSES_TABLE_ID,
+              rowId: order.address_id,
+            });
             addressLine = address.address_line;
           } catch (e) {
             // Address not found
@@ -418,7 +462,11 @@ export const trackOrdersTool = tool({
         }
 
         // Fetch actual order items
-        const orderItemsResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", order.$id)] });
+        const orderItemsResponse = await tablesDB.listRows({
+          databaseId: DATABASE_ID,
+          tableId: ORDER_ITEMS_TABLE_ID,
+          queries: [Query.equal("order_id", order.$id)],
+        });
 
         const items = orderItemsResponse.rows.map((item: any) => ({
           productName: item.product_name,
@@ -450,7 +498,11 @@ export const trackOrdersTool = tool({
         const formattedPhone = formatPhoneNumber(phoneNumber);
 
         // First find customer by phone
-        const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formattedPhone)] });
+        const customerResponse = await tablesDB.listRows({
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          queries: [Query.equal("phone", formattedPhone)],
+        });
 
         if (customerResponse.total === 0) {
           return {
@@ -463,11 +515,15 @@ export const trackOrdersTool = tool({
         const customer = customerResponse.rows[0];
 
         // Then find orders by customer_id
-        const orderResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, queries: [
-                        Query.equal("customer_id", customer.$id),
-                        Query.orderDesc("$createdAt"),
-                        Query.limit(5),
-                      ] });
+        const orderResponse = await tablesDB.listRows({
+          databaseId: DATABASE_ID,
+          tableId: ORDERS_TABLE_ID,
+          queries: [
+            Query.equal("customer_id", customer.$id),
+            Query.orderDesc("$createdAt"),
+            Query.limit(5),
+          ],
+        });
 
         if (orderResponse.total === 0) {
           return {
@@ -483,7 +539,11 @@ export const trackOrdersTool = tool({
             let addressLine = "Address not available";
             if (order.address_id) {
               try {
-                const address = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: order.address_id });
+                const address = await tablesDB.getRow({
+                  databaseId: DATABASE_ID,
+                  tableId: ADDRESSES_TABLE_ID,
+                  rowId: order.address_id,
+                });
                 addressLine = address.address_line;
               } catch (e) {
                 // Address not found
@@ -491,7 +551,11 @@ export const trackOrdersTool = tool({
             }
 
             // Fetch actual order items
-            const orderItemsResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, queries: [Query.equal("order_id", order.$id)] });
+            const orderItemsResponse = await tablesDB.listRows({
+              databaseId: DATABASE_ID,
+              tableId: ORDER_ITEMS_TABLE_ID,
+              queries: [Query.equal("order_id", order.$id)],
+            });
 
             const items = orderItemsResponse.rows.map((item: any) => ({
               productName: item.product_name,
@@ -510,7 +574,7 @@ export const trackOrdersTool = tool({
               customerName: customer.full_name,
               createdAt: order.$createdAt,
             };
-          })
+          }),
         );
 
         return {
@@ -592,7 +656,11 @@ export const getCustomerTool = tool({
         queries.push(Query.equal("email", trimmedEmail));
       }
 
-      const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: queries });
+      const response = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: CUSTOMERS_TABLE_ID,
+        queries: queries,
+      });
 
       if (response.rows.length === 0) {
         return {
@@ -601,7 +669,7 @@ export const getCustomerTool = tool({
           customer: null,
           message: phoneNumber
             ? `No customer found with phone number ${formatPhoneNumber(
-                phoneNumber
+                phoneNumber,
               )}`
             : `No customer found with email ${email?.trim()}`,
         };
@@ -642,7 +710,7 @@ export const manageCustomerTool = tool({
     phoneNumber: z
       .string()
       .describe(
-        "Customer phone number (with country code, e.g., +923001234567)"
+        "Customer phone number (with country code, e.g., +923001234567)",
       ),
     email: z
       .string()
@@ -654,7 +722,7 @@ export const manageCustomerTool = tool({
       .nullable()
       .default(null)
       .describe(
-        "Optional Appwrite auth user ID. If provided, will be stored in user_id field; otherwise 'guest' will be used."
+        "Optional Appwrite auth user ID. If provided, will be stored in user_id field; otherwise 'guest' will be used.",
       ),
   }),
   async execute({ name, phoneNumber, email, userId }) {
@@ -703,17 +771,25 @@ export const manageCustomerTool = tool({
       }
 
       // Check if customer exists
-      const existingCustomers = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formattedPhone)] });
+      const existingCustomers = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: CUSTOMERS_TABLE_ID,
+        queries: [Query.equal("phone", formattedPhone)],
+      });
 
       if (existingCustomers.rows.length > 0) {
         // Update existing customer
         const customerId = existingCustomers.rows[0].$id;
-        const updated = await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
-                        full_name: name.trim(),
-                        user_id:
-                          userId || existingCustomers.rows[0].user_id || "guest",
-                        email: validatedEmail || existingCustomers.rows[0].email,
-                      } });
+        const updated = await tablesDB.updateRow({
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          rowId: customerId,
+          data: {
+            full_name: name.trim(),
+            user_id: userId || existingCustomers.rows[0].user_id || "guest",
+            email: validatedEmail || existingCustomers.rows[0].email,
+          },
+        });
 
         return {
           success: true,
@@ -728,12 +804,17 @@ export const manageCustomerTool = tool({
         };
       } else {
         // Create new customer
-        const newCustomer = await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: ID.unique(), data: {
-                        user_id: userId || "guest",
-                        full_name: name.trim(),
-                        phone: formattedPhone,
-                        email: validatedEmail,
-                      } });
+        const newCustomer = await tablesDB.createRow({
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          rowId: ID.unique(),
+          data: {
+            user_id: userId || "guest",
+            full_name: name.trim(),
+            phone: formattedPhone,
+            email: validatedEmail,
+          },
+        });
 
         return {
           success: true,
@@ -771,7 +852,7 @@ export const calculateOrderPriceTool = tool({
         z.object({
           productId: z.string().describe("Product ID"),
           quantity: z.number().describe("Quantity in kg"),
-        })
+        }),
       )
       .describe("Array of items with productId and quantity"),
     discountCode: z
@@ -825,7 +906,11 @@ export const calculateOrderPriceTool = tool({
         }
 
         // Fetch product from database
-        const product = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: item.productId.trim() });
+        const product = await tablesDB.getRow({
+          databaseId: DATABASE_ID,
+          tableId: PRODUCTS_TABLE_ID,
+          rowId: item.productId.trim(),
+        });
 
         // Check product availability
         if (!product.available) {
@@ -891,7 +976,7 @@ export const calculateOrderPriceTool = tool({
         return {
           success: false,
           error: `The following products are currently unavailable: ${unavailableProducts.join(
-            ", "
+            ", ",
           )}`,
           calculation: null,
         };
@@ -905,15 +990,19 @@ export const calculateOrderPriceTool = tool({
       let discountPercentage = 0;
 
       // Apply discount code if provided
-      if (discountCode && process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true') {
+      if (
+        discountCode &&
+        process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === "true"
+      ) {
         try {
-          const loyaltyDiscount = await LoyaltyService.findLoyaltyDiscountByCode(
-            discountCode
-          );
-          
+          const loyaltyDiscount =
+            await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
+
           if (loyaltyDiscount && loyaltyDiscount.code_status === "active") {
             discountPercentage = loyaltyDiscount.extra_discount_percentage || 3;
-            discountAmount = Math.round((grandTotal * discountPercentage) / 100);
+            discountAmount = Math.round(
+              (grandTotal * discountPercentage) / 100,
+            );
             grandTotal = Math.round(grandTotal - discountAmount);
             appliedDiscountCode = discountCode;
           }
@@ -974,7 +1063,7 @@ export const createOrderTool = tool({
           productName: z.string().describe("Product name"),
           quantity: z.number().describe("Quantity in kg"),
           price: z.number().describe("Price per unit"),
-        })
+        }),
       )
       .describe("Array of order items"),
     totalAmount: z.number().describe("Total order amount in PKR"),
@@ -998,7 +1087,7 @@ export const createOrderTool = tool({
       .nullable()
       .default(null)
       .describe(
-        "Optional Appwrite auth user ID. If provided, will be stored in user_id for the customer; otherwise 'guest' will be used."
+        "Optional Appwrite auth user ID. If provided, will be stored in user_id for the customer; otherwise 'guest' will be used.",
       ),
     discountCode: z
       .string()
@@ -1162,7 +1251,11 @@ export const createOrderTool = tool({
       const enrichedItems: any[] = [];
 
       for (const item of items) {
-        const product = await tablesDB.getRow({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, rowId: item.productId });
+        const product = await tablesDB.getRow({
+          databaseId: DATABASE_ID,
+          tableId: PRODUCTS_TABLE_ID,
+          rowId: item.productId,
+        });
 
         if (!product.available) {
           return {
@@ -1176,7 +1269,7 @@ export const createOrderTool = tool({
         // Calculate pricing for this item
         const basePrice = product.base_price_per_kg;
         const tierPrice = getPricePerKg(product, item.quantity);
-        
+
         const itemBaseSubtotal = basePrice * item.quantity;
         const itemTierSubtotal = tierPrice * item.quantity;
         const itemTierDiscount = itemBaseSubtotal - itemTierSubtotal;
@@ -1199,10 +1292,10 @@ export const createOrderTool = tool({
             ? item.quantity >= 10
               ? "10kg+"
               : item.quantity >= 5
-              ? "5-9kg"
-              : item.quantity >= 2
-              ? "2-4kg"
-              : "base"
+                ? "5-9kg"
+                : item.quantity >= 2
+                  ? "2-4kg"
+                  : "base"
             : "base",
           bags: calculateBagsFromQuantity(item.quantity),
         });
@@ -1213,17 +1306,25 @@ export const createOrderTool = tool({
       let extraDiscountPercentage = 0;
       let loyaltyRecord = null;
 
-      if (discountCode && process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true') {
+      if (
+        discountCode &&
+        process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === "true"
+      ) {
         try {
           // Just check validity first, don't use it yet
-          loyaltyRecord = await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
-          
+          loyaltyRecord =
+            await LoyaltyService.findLoyaltyDiscountByCode(discountCode);
+
           if (loyaltyRecord && loyaltyRecord.code_status === "active") {
-            extraDiscountPercentage = loyaltyRecord.extra_discount_percentage || 3;
+            extraDiscountPercentage =
+              loyaltyRecord.extra_discount_percentage || 3;
             // Calculate extra discount on the TIERED subtotal (price after tier discount)
             // totalTierSubtotal = subtotalBeforeDiscount - totalTierDiscountAmount
-            const totalTierSubtotal = subtotalBeforeDiscount - totalTierDiscountAmount;
-            extraDiscountAmount = Math.round((totalTierSubtotal * extraDiscountPercentage) / 100);
+            const totalTierSubtotal =
+              subtotalBeforeDiscount - totalTierDiscountAmount;
+            extraDiscountAmount = Math.round(
+              (totalTierSubtotal * extraDiscountPercentage) / 100,
+            );
           }
         } catch (e) {
           console.error("Error validating discount code:", e);
@@ -1236,7 +1337,11 @@ export const createOrderTool = tool({
 
       // --- CUSTOMER MANAGEMENT ---
       // Find or create customer
-      const customerResponse = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, queries: [Query.equal("phone", formattedPhone)] });
+      const customerResponse = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: CUSTOMERS_TABLE_ID,
+        queries: [Query.equal("phone", formattedPhone)],
+      });
 
       let customerId: string;
 
@@ -1245,19 +1350,29 @@ export const createOrderTool = tool({
         customerId = existingCustomer.$id;
 
         // Update existing customer details (name/email) and user_id
-        await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: customerId, data: {
-                        full_name: customerName.trim(),
-                        user_id: userId || existingCustomer.user_id || "guest",
-                        email: customerEmail || existingCustomer.email,
-                      } });
+        await tablesDB.updateRow({
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          rowId: customerId,
+          data: {
+            full_name: customerName.trim(),
+            user_id: userId || existingCustomer.user_id || "guest",
+            email: customerEmail || existingCustomer.email,
+          },
+        });
       } else {
         // Create new customer record
-        const newCustomer = await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: CUSTOMERS_TABLE_ID, rowId: ID.unique(), data: {
-                        user_id: userId || "guest",
-                        full_name: customerName.trim(),
-                        phone: formattedPhone,
-                        email: customerEmail || "",
-                      } });
+        const newCustomer = await tablesDB.createRow({
+          databaseId: DATABASE_ID,
+          tableId: CUSTOMERS_TABLE_ID,
+          rowId: ID.unique(),
+          data: {
+            user_id: userId || "guest",
+            full_name: customerName.trim(),
+            phone: formattedPhone,
+            email: customerEmail || "",
+          },
+        });
         customerId = newCustomer.$id;
       }
 
@@ -1269,7 +1384,7 @@ export const createOrderTool = tool({
       // --- TRACKING ---
       // Track Meta InitiateCheckout event before creating order (non-blocking)
       console.log(
-        `[DEBUG] Starting Meta InitiateCheckout tracking for customer ${customerName.trim()}`
+        `[DEBUG] Starting Meta InitiateCheckout tracking for customer ${customerName.trim()}`,
       );
       trackAgentInitiateCheckout({
         customerName: customerName.trim(),
@@ -1282,41 +1397,54 @@ export const createOrderTool = tool({
           productName: item.productName,
           quantity: item.quantity,
         })),
+        eventSourceUrl: await getCurrentUrl(),
       })
         .then((result) => {
           if (result.success) {
             console.log(
-              `✅ Meta InitiateCheckout event tracked for agent order with event ID: ${result.eventId}`
+              `✅ Meta InitiateCheckout event tracked for agent order with event ID: ${result.eventId}`,
             );
           }
         })
         .catch((trackingError) => {
           console.error(
             "💥 Error tracking Meta InitiateCheckout event:",
-            trackingError
+            trackingError,
           );
         });
 
       // --- ORDER CREATION ---
       const orderId = ID.unique();
-      const order = await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
-                    customer_id: customerId,
-                    address_id: "", // Will be updated after address creation
-                    order_items: orderItemsCSV,
-                    total_price: finalTotalPrice,
-                    status: "pending",
-                    total_items_count: totalItemsCount,
-                    total_weight_kg: totalWeightKg,
-                    subtotal_before_discount: subtotalBeforeDiscount,
-                    total_discount_amount: totalDiscountAmount,
-                  } });
+      const order = await tablesDB.createRow({
+        databaseId: DATABASE_ID,
+        tableId: ORDERS_TABLE_ID,
+        rowId: orderId,
+        data: {
+          customer_id: customerId,
+          address_id: "", // Will be updated after address creation
+          order_items: orderItemsCSV,
+          total_price: finalTotalPrice,
+          status: "pending",
+          total_items_count: totalItemsCount,
+          total_weight_kg: totalWeightKg,
+          subtotal_before_discount: subtotalBeforeDiscount,
+          total_discount_amount: totalDiscountAmount,
+        },
+      });
 
       // Mark discount code as used if applicable
-      if (discountCode && loyaltyRecord && process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === 'true') {
+      if (
+        discountCode &&
+        loyaltyRecord &&
+        process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT === "true"
+      ) {
         try {
-           await LoyaltyService.validateAndUseDiscountCode(discountCode, orderId);
+          await LoyaltyService.validateAndUseDiscountCode(
+            discountCode,
+            orderId,
+          );
         } catch (e) {
-           console.error("Error marking discount code as used:", e);
+          console.error("Error marking discount code as used:", e);
         }
       }
 
@@ -1326,38 +1454,45 @@ export const createOrderTool = tool({
         // Proportional to its tiered subtotal
         let itemExtraDiscount = 0;
         if (extraDiscountAmount > 0) {
-           const totalTierSubtotal = subtotalBeforeDiscount - totalTierDiscountAmount;
-           if (totalTierSubtotal > 0) {
-             const itemShare = item.itemTierSubtotal / totalTierSubtotal;
-             itemExtraDiscount = itemShare * extraDiscountAmount;
-           }
+          const totalTierSubtotal =
+            subtotalBeforeDiscount - totalTierDiscountAmount;
+          if (totalTierSubtotal > 0) {
+            const itemShare = item.itemTierSubtotal / totalTierSubtotal;
+            itemExtraDiscount = itemShare * extraDiscountAmount;
+          }
         }
 
         const totalItemDiscount = item.itemTierDiscount + itemExtraDiscount;
-        const itemTotalAfterDiscount = item.itemBaseSubtotal - totalItemDiscount;
+        const itemTotalAfterDiscount =
+          item.itemBaseSubtotal - totalItemDiscount;
 
-        await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ORDER_ITEMS_TABLE_ID, rowId: ID.unique(), data: {
-                        order_id: orderId,
-                        product_id: item.productId,
-                        product_name: item.product.name,
-                        product_description: item.product.description || "",
-                        quantity_kg: item.quantity,
-                        bags_3kg: item.bags?.kg3 || 0,
-                        bags_5kg: item.bags?.kg5 || 0,
-                        bags_10kg: item.bags?.kg10 || 0,
-                        bags_25kg: item.bags?.kg25 || 0,
-                        price_per_kg_at_order: item.tierPrice, // Store the tier price as the effective unit price
-                        base_price_per_kg: item.basePrice,
-                        tier_applied: item.tierApplied,
-                        discount_percentage:
-                          item.itemBaseSubtotal > 0
-                            ? (totalItemDiscount / item.itemBaseSubtotal) * 100
-                            : 0,
-                        discount_amount: totalItemDiscount, // Total discount (tier + extra)
-                        subtotal_before_discount: item.itemBaseSubtotal, // Base price * quantity
-                        total_after_discount: itemTotalAfterDiscount,
-                        notes: "",
-                      } });
+        await tablesDB.createRow({
+          databaseId: DATABASE_ID,
+          tableId: ORDER_ITEMS_TABLE_ID,
+          rowId: ID.unique(),
+          data: {
+            order_id: orderId,
+            product_id: item.productId,
+            product_name: item.product.name,
+            product_description: item.product.description || "",
+            quantity_kg: item.quantity,
+            bags_3kg: item.bags?.kg3 || 0,
+            bags_5kg: item.bags?.kg5 || 0,
+            bags_10kg: item.bags?.kg10 || 0,
+            bags_25kg: item.bags?.kg25 || 0,
+            price_per_kg_at_order: item.tierPrice, // Store the tier price as the effective unit price
+            base_price_per_kg: item.basePrice,
+            tier_applied: item.tierApplied,
+            discount_percentage:
+              item.itemBaseSubtotal > 0
+                ? (totalItemDiscount / item.itemBaseSubtotal) * 100
+                : 0,
+            discount_amount: totalItemDiscount, // Total discount (tier + extra)
+            subtotal_before_discount: item.itemBaseSubtotal, // Base price * quantity
+            total_after_discount: itemTotalAfterDiscount,
+            notes: "",
+          },
+        });
       }
 
       // Create address
@@ -1367,19 +1502,29 @@ export const createOrderTool = tool({
         ? `https://www.google.com/maps?q=${latitude},${longitude}`
         : "";
 
-      await tablesDB.createRow({ databaseId: DATABASE_ID, tableId: ADDRESSES_TABLE_ID, rowId: addressId, data: {
-                    customer_id: customerId,
-                    order_id: orderId,
-                    address_line: deliveryAddress.trim(),
-                    latitude: (hasCoordinates ? latitude : 0) || 0,
-                    longitude: (hasCoordinates ? longitude : 0) || 0,
-                    maps_url: mapsUrl,
-                  } });
+      await tablesDB.createRow({
+        databaseId: DATABASE_ID,
+        tableId: ADDRESSES_TABLE_ID,
+        rowId: addressId,
+        data: {
+          customer_id: customerId,
+          order_id: orderId,
+          address_line: deliveryAddress.trim(),
+          latitude: (hasCoordinates ? latitude : 0) || 0,
+          longitude: (hasCoordinates ? longitude : 0) || 0,
+          maps_url: mapsUrl,
+        },
+      });
 
       // Update order with address_id
-      await tablesDB.updateRow({ databaseId: DATABASE_ID, tableId: ORDERS_TABLE_ID, rowId: orderId, data: {
-                  address_id: addressId,
-                } });
+      await tablesDB.updateRow({
+        databaseId: DATABASE_ID,
+        tableId: ORDERS_TABLE_ID,
+        rowId: orderId,
+        data: {
+          address_id: addressId,
+        },
+      });
 
       // Send order confirmation email
       if (validatedEmail && validatedEmail.length > 0) {
@@ -1392,7 +1537,7 @@ export const createOrderTool = tool({
           mapsUrl:
             mapsUrl ||
             `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-              deliveryAddress.trim()
+              deliveryAddress.trim(),
             )}`,
           items: items.map((item) => ({
             productName: item.productName,
@@ -1404,20 +1549,20 @@ export const createOrderTool = tool({
           .then(() => {
             console.log(
               "Order confirmation email sent successfully to:",
-              validatedEmail
+              validatedEmail,
             );
           })
           .catch((emailError) => {
             console.error(
               "Error sending order confirmation email:",
-              emailError
+              emailError,
             );
           });
       }
 
       // Track Meta Purchase event
       console.log(
-        `[DEBUG] Starting Meta Purchase tracking for order ${orderId}`
+        `[DEBUG] Starting Meta Purchase tracking for order ${orderId}`,
       );
       trackAgentPurchase({
         orderId,
@@ -1433,18 +1578,19 @@ export const createOrderTool = tool({
           price: item.price,
         })),
         deliveryAddress: deliveryAddress.trim(),
+        eventSourceUrl: await getCurrentUrl(),
       })
         .then((result) => {
           if (result.success) {
             console.log(
-              `✅ Meta Purchase event tracked for agent order ${orderId} with event ID: ${result.eventId}`
+              `✅ Meta Purchase event tracked for agent order ${orderId} with event ID: ${result.eventId}`,
             );
           }
         })
         .catch((trackingError) => {
           console.error(
             "💥 Error tracking Meta Purchase event for agent order:",
-            trackingError
+            trackingError,
           );
         });
 
@@ -1456,7 +1602,7 @@ export const createOrderTool = tool({
           customerName.trim(),
           finalTotalPrice,
           productNames,
-          orderId
+          orderId,
         );
       } catch (loyaltyError) {
         console.error("Error processing loyalty discount:", loyaltyError);
@@ -1501,11 +1647,15 @@ export const getAllProductsTool = tool({
   async execute() {
     try {
       // Fetch up to 100 products (we expect ~10)
-      const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: [
-                    Query.limit(100),
-                    Query.orderDesc("$createdAt"),
-                    Query.equal("available", true), // Only show available products by default
-                  ] });
+      const response = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: PRODUCTS_TABLE_ID,
+        queries: [
+          Query.limit(100),
+          Query.orderDesc("$createdAt"),
+          Query.equal("available", true), // Only show available products by default
+        ],
+      });
 
       const products = response.rows.map((doc: any) => ({
         id: doc.$id,
@@ -1537,4 +1687,3 @@ export const getAllProductsTool = tool({
     }
   },
 });
-

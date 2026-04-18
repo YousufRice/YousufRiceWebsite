@@ -33,6 +33,7 @@ interface AgentOrderData {
   deliveryAddress: string;
   userAgent?: string;
   clientIp?: string;
+  eventSourceUrl?: string;
 }
 
 /**
@@ -90,7 +91,9 @@ export async function trackAgentPurchase(orderData: AgentOrderData): Promise<{
       event_name: "Purchase",
       event_time: getCurrentTimestamp(),
       event_id: eventId,
-      event_source_url: `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com"}/agent-order`, // Indicate this came from agent
+      event_source_url:
+        orderData.eventSourceUrl ||
+        `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com"}/agent-order`,
       action_source: "website",
       user_data: userData,
       custom_data: customData,
@@ -155,6 +158,7 @@ export async function trackAgentInitiateCheckout(orderData: {
   }>;
   userAgent?: string;
   clientIp?: string;
+  eventSourceUrl?: string;
 }): Promise<{
   success: boolean;
   error?: string;
@@ -196,7 +200,9 @@ export async function trackAgentInitiateCheckout(orderData: {
       event_name: "InitiateCheckout",
       event_time: getCurrentTimestamp(),
       event_id: eventId,
-      event_source_url: `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com"}/agent-checkout`,
+      event_source_url:
+        orderData.eventSourceUrl ||
+        `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com"}/agent-checkout`,
       action_source: "website",
       user_data: userData,
       custom_data: customData,
@@ -258,6 +264,7 @@ export async function trackAgentViewContent(productData: {
   customerName?: string;
   userAgent?: string;
   clientIp?: string;
+  eventSourceUrl?: string;
 }): Promise<{
   success: boolean;
   error?: string;
@@ -301,7 +308,9 @@ export async function trackAgentViewContent(productData: {
       event_name: "ViewContent",
       event_time: getCurrentTimestamp(),
       event_id: eventId,
-      event_source_url: `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com"}/agent-product-view`,
+      event_source_url:
+        productData.eventSourceUrl ||
+        `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || "https://yousufrice.com"}/agent-product-view`,
       action_source: "website",
       user_data: userData,
       custom_data: customData,
