@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // ============================================
   // Next.js 16 Advanced Features
   // ============================================
-  reactCompiler: true,
+  // reactCompiler: true,
   // Enable Cache Components with PPR (Partial Prerendering)
   // This enables the new caching model with 'use cache' directive
   // But disable it for API routes to avoid build-time authentication issues
@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: false, // Enable image optimization for caching
     minimumCacheTTL: 2592000, // Cache optimized images for 30 days (in seconds)
+    qualities: [20, 75, 85, 90],
     remotePatterns: [
       {
         protocol: "https",
