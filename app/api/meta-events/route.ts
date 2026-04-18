@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import {
   sendMetaEvent,
   prepareUserData,
@@ -7,7 +7,7 @@ import {
   sanitizeCustomerNameForMeta,
   type MetaEvent,
   type MetaCustomData,
-} from '@/lib/meta';
+} from "@/lib/meta";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,17 +22,21 @@ export async function POST(request: NextRequest) {
       test_event_code,
     } = body;
 
+    console.log(
+      `[Meta API] Received event: ${event_name}, URL from body: ${event_source_url}, Referer: ${request.headers.get("referer")}`,
+    );
+
     // Validate required fields
     if (!event_name || !event_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: event_name, event_id' },
-        { status: 400 }
+        { error: "Missing required fields: event_name, event_id" },
+        { status: 400 },
       );
     }
 
     // Get client IP and user agent from request headers
     const clientIp = getClientIp(request);
-    const userAgent = request.headers.get('user-agent') || undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
 
     // Prepare user data with hashing
     const preparedUserData = prepareUserData({
@@ -56,8 +60,9 @@ export async function POST(request: NextRequest) {
       event_name,
       event_time: getCurrentTimestamp(),
       event_id,
-      event_source_url: event_source_url || request.headers.get('referer') || undefined,
-      action_source: 'website',
+      event_source_url:
+        event_source_url || request.headers.get("referer") || undefined,
+      action_source: "website",
       user_data: preparedUserData,
       custom_data: custom_data as MetaCustomData,
     };
@@ -66,22 +71,19 @@ export async function POST(request: NextRequest) {
     const result = await sendMetaEvent(metaEvent, test_event_code);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
       event_id,
-      message: 'Event sent successfully',
+      message: "Event sent successfully",
     });
   } catch (error) {
-    console.error('Meta Events API Error:', error);
+    console.error("Meta Events API Error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
