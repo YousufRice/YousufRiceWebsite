@@ -86,7 +86,7 @@ export async function trackAgentPurchase(orderData: AgentOrderData): Promise<{
       event_name: 'Purchase',
       event_time: getCurrentTimestamp(),
       event_id: eventId,
-      event_source_url: 'https://yousufrice.com/agent-order', // Indicate this came from agent
+      event_source_url: `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'https://yousufrice.com'}/agent-order`, // Indicate this came from agent
       action_source: 'website',
       user_data: userData,
       custom_data: customData,
@@ -174,7 +174,7 @@ export async function trackAgentInitiateCheckout(orderData: {
       event_name: 'InitiateCheckout',
       event_time: getCurrentTimestamp(),
       event_id: eventId,
-      event_source_url: 'https://yousufrice.com/agent-checkout',
+      event_source_url: `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'https://yousufrice.com'}/agent-checkout`,
       action_source: 'website',
       user_data: userData,
       custom_data: customData,
@@ -262,7 +262,7 @@ export async function trackAgentViewContent(productData: {
       event_name: 'ViewContent',
       event_time: getCurrentTimestamp(),
       event_id: eventId,
-      event_source_url: 'https://yousufrice.com/agent-product-view',
+      event_source_url: `${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'https://yousufrice.com'}/agent-product-view`,
       action_source: 'website',
       user_data: userData,
       custom_data: customData,

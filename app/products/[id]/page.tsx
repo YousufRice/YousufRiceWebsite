@@ -92,11 +92,13 @@ async function ProductDetailContent({ productId }: { productId: string }) {
   const bundleImageIndex = images.findIndex((img) => img.is_cold_drink_bundle);
 
   return (
-    <ProductDetailClient
-      product={product}
-      imageUrls={imageUrls}
-      primaryImageIndex={primaryImageIndex >= 0 ? primaryImageIndex : 0}
-      bundleImageIndex={bundleImageIndex >= 0 ? bundleImageIndex : undefined}
-    />
+    <Suspense fallback={<ProductDetailSkeleton />}>
+      <ProductDetailClient
+        product={product}
+        imageUrls={imageUrls}
+        primaryImageIndex={primaryImageIndex >= 0 ? primaryImageIndex : 0}
+        bundleImageIndex={bundleImageIndex >= 0 ? bundleImageIndex : undefined}
+      />
+    </Suspense>
   );
 }

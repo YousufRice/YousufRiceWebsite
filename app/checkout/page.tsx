@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/store/cart-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -40,7 +40,7 @@ import {
 import { processLoyaltyReward } from "@/app/actions/loyalty-actions";
 import Image from "next/image";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const { items, getTotalPrice, clearCart } = useCartStore();
   const { user, customer, checkAuth } = useAuthStore();
@@ -1371,5 +1371,13 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

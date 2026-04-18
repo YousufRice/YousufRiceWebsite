@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   generateEventId,
   getFacebookCookies,
@@ -41,6 +42,9 @@ interface TrackEventParams {
 }
 
 export function useMetaTracking() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   // Track event on both browser (Pixel) and server (Conversions API)
   const trackEvent = useCallback(async ({
     eventName,
@@ -51,7 +55,11 @@ export function useMetaTracking() {
     try {
       // Generate unique event ID for deduplication
       const eventId = generateEventId();
-      const eventSourceUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+
+      // Construct current URL using Next.js hooks + domain from env
+      const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'https://yousufrice.com';
+      const queryString = searchParams.toString();
+      const eventSourceUrl = queryString ? `${primaryDomain}${pathname}?${queryString}` : `${primaryDomain}${pathname}`;
 
       // Get Facebook cookies
       const { fbp, fbc } = getFacebookCookies();
@@ -99,7 +107,7 @@ export function useMetaTracking() {
       console.error('[Meta Tracking] Error:', error);
       return { success: false, error: 'Tracking failed' };
     }
-  }, []);
+  }, [pathname, searchParams]);
 
   // Convenience methods for common events
   const trackPageView = useCallback(() => {
