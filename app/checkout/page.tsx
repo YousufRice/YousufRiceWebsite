@@ -678,7 +678,7 @@ function CheckoutContent() {
           firstName: cleanedName.split(" ")[0],
           lastName: cleanedName.split(" ").slice(1).join(" "),
           city: finalCity || undefined,
-          externalId: customerId || (!isAgent ? user?.$id : undefined), // CRITICAL: Link to customer/user ID, but NEVER agent ID
+          externalId: (!isAgent && user?.$id) ? user.$id : customerId, // CRITICAL: Link to customer/user ID, but NEVER agent ID
         },
       });
 
