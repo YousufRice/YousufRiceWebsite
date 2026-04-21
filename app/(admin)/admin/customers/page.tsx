@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID, ORDERS_TABLE_ID, ADDRESSES_TABLE_ID } from "@/lib/appwrite";
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 import { Customer, Order } from '@/lib/types';
 import { Card, CardContent, } from '@/components/ui/card';
@@ -107,47 +107,162 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const exportToMetaCSV = () => {
+  const exportToMetaCSV = async () => {
     try {
       if (customers.length === 0) {
         toast.error('No customers to export');
         return;
       }
 
-      const headers = ['email', 'phone', 'fn', 'ln', 'value'];
-      const rows = customers.map(customer => {
-        // Sanitize name
-        const cleanName = sanitizeCustomerNameForMeta(customer.full_name) || '';
-        const nameParts = cleanName.trim().split(/\s+/);
-        const fn = nameParts[0] || '';
-        const ln = nameParts.slice(1).join(' ') || '';
+      // Fetch orders and addresses for each customer to get city information
+      const customersWithCity = await Promise.all(
+        customers.map(async (customer) => {
+          try {
+            const ordersResponse = await tablesDB.listRows({ 
+              databaseId: DATABASE_ID, 
+              tableId: ORDERS_TABLE_ID, 
+              queries: [Query.equal('customer_id', customer.$id)] 
+            });
 
-        // Format phone: must include country code. Assume 92 if starts with 0 or has 10 digits
-        let phone = customer.phone.replace(/\D/g, '');
-        if (phone.startsWith('0')) {
-          phone = '92' + phone.substring(1);
-        } else if (phone.length === 10 && !phone.startsWith('92')) {
-          phone = '92' + phone;
+            let city: string | null = null;
+            
+            // Check all orders for city information
+            for (const order of ordersResponse.rows) {
+              if (order.address_id) {
+                try {
+                  const address = await tablesDB.getRow({ 
+                    databaseId: DATABASE_ID, 
+                    tableId: ADDRESSES_TABLE_ID, 
+                    rowId: order.address_id 
+                  });
+                  if (address.city) {
+                    city = address.city;
+                    break; // Use the first city found
+                  }
+                } catch (e) {
+                  // Address not found, continue to next order
+                }
+              }
+            }
+
+            return {
+              ...customer,
+              city
+            };
+          } catch (error) {
+            console.error(`Error fetching city for customer ${customer.$id}:`, error);
+            return {
+              ...customer,
+              city: null
+            };
+          }
+        })
+      );
+
+      // Sort customers by city: Karachi first, null second, others last
+      const sortedCustomers = customersWithCity.sort((a, b) => {
+        const aCity = (a.city || '').toLowerCase();
+        const bCity = (b.city || '').toLowerCase();
+        
+        const aIsKarachi = aCity === 'karachi';
+        const bIsKarachi = bCity === 'karachi';
+        const aIsNull = !a.city;
+        const bIsNull = !b.city;
+
+        // Karachi customers first
+        if (aIsKarachi && !bIsKarachi) return -1;
+        if (!aIsKarachi && bIsKarachi) return 1;
+        
+        // Within Karachi customers, sort by name
+        if (aIsKarachi && bIsKarachi) {
+          return a.full_name.localeCompare(b.full_name);
         }
 
-        // Ensure phone has 92 prefix if it's a standard length Pakistani mobile number (10 digits after 0)
-        if (phone.length === 10) {
-          phone = '92' + phone;
+        // Null city customers second
+        if (aIsNull && !bIsNull) return -1;
+        if (!aIsNull && bIsNull) return 1;
+        
+        // Within null city customers, sort by name
+        if (aIsNull && bIsNull) {
+          return a.full_name.localeCompare(b.full_name);
         }
 
-        return [
-          customer.email || '',
-          phone,
-          fn,
-          ln,
-          customer.totalSpent.toFixed(2)
-        ];
+        // Other cities last, sorted alphabetically by city then name
+        if (aCity !== bCity) {
+          return aCity.localeCompare(bCity);
+        }
+        return a.full_name.localeCompare(b.full_name);
       });
 
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
+      // Separate into three groups
+      const karachiCustomers = sortedCustomers.filter(c => c.city && c.city.toLowerCase() === 'karachi');
+      const nullCityCustomers = sortedCustomers.filter(c => !c.city);
+      const otherCityCustomers = sortedCustomers.filter(c => c.city && c.city.toLowerCase() !== 'karachi');
+
+      const headers = ['email', 'phone', 'fn', 'ln', 'ct', 'value'];
+
+      const generateRows = (customerList: typeof customersWithCity) => {
+        return customerList.map(customer => {
+          // Sanitize name
+          const cleanName = sanitizeCustomerNameForMeta(customer.full_name) || '';
+          const nameParts = cleanName.trim().split(/\s+/);
+          const fn = nameParts[0] || '';
+          const ln = nameParts.slice(1).join(' ') || '';
+
+          // Format phone: must include country code. Assume 92 if starts with 0 or has 10 digits
+          let phone = customer.phone.replace(/\D/g, '');
+          if (phone.startsWith('0')) {
+            phone = '92' + phone.substring(1);
+          } else if (phone.length === 10 && !phone.startsWith('92')) {
+            phone = '92' + phone;
+          }
+
+          // Ensure phone has 92 prefix if it's a standard length Pakistani mobile number (10 digits after 0)
+          if (phone.length === 10) {
+            phone = '92' + phone;
+          }
+
+          return [
+            customer.email || '',
+            phone,
+            fn,
+            ln,
+            customer.city || '',
+            customer.totalSpent.toFixed(2)
+          ];
+        });
+      };
+
+      const karachiRows = generateRows(karachiCustomers);
+      const nullCityRows = generateRows(nullCityCustomers);
+      const otherCityRows = generateRows(otherCityCustomers);
+
+      // Build CSV with heading blocks
+      const csvSections = [];
+
+      // Karachi customers section
+      if (karachiRows.length > 0) {
+        csvSections.push(headers.join(','));
+        csvSections.push(...karachiRows.map(row => row.map(cell => `"${cell}"`).join(',')));
+      }
+
+      // Null city customers section
+      if (nullCityRows.length > 0) {
+        // Add heading block (3 empty rows)
+        csvSections.push('', '', '');
+        csvSections.push(headers.join(','));
+        csvSections.push(...nullCityRows.map(row => row.map(cell => `"${cell}"`).join(',')));
+      }
+
+      // Other cities section
+      if (otherCityRows.length > 0) {
+        // Add heading block (3 empty rows)
+        csvSections.push('', '', '');
+        csvSections.push(headers.join(','));
+        csvSections.push(...otherCityRows.map(row => row.map(cell => `"${cell}"`).join(',')));
+      }
+
+      const csvContent = csvSections.join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
