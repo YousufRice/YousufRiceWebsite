@@ -16,6 +16,10 @@ import { storage, STORAGE_BUCKET_ID } from "@/lib/appwrite";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
+import {
+  getAgentLabelFromLabels,
+  getOrderChannelFromAgentLabel,
+} from "@/lib/tracking/order-channel";
 
 export function CartDrawer() {
   const {
@@ -45,10 +49,9 @@ export function CartDrawer() {
   }, 0);
 
   const handleCheckout = () => {
-    // Detect if user is an agent (Saima or Kiran) - case insensitive
-    const isAgent = user?.labels?.some((label) =>
-      ["saima", "kiran"].includes(label.toLowerCase()),
-    );
+    const agentLabel = getAgentLabelFromLabels(user?.labels);
+    const isAgent = Boolean(agentLabel);
+    const orderChannel = getOrderChannelFromAgentLabel(agentLabel);
 
     // Don't send user data if it's an agent
     const userData =
@@ -69,6 +72,12 @@ export function CartDrawer() {
       numItems: items.reduce((sum, item) => sum + item.quantity, 0),
       contentIds: items.map((item) => item.product.$id),
       userData,
+      trackingContext: {
+        orderChannel,
+        agentLabel,
+        placedByUserId: user?.$id,
+      },
+      stableKey: items.map((item) => `${item.product.$id}:${item.quantity}`).join("|"),
     });
 
     setIsOpen(false);

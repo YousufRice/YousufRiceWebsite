@@ -11,7 +11,11 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const contentType = request.headers.get("content-type") || "";
+    const body =
+      contentType.includes("application/json")
+        ? await request.json()
+        : JSON.parse(await request.text());
 
     const {
       event_name,
@@ -22,9 +26,14 @@ export async function POST(request: NextRequest) {
       test_event_code,
     } = body;
 
-    console.log(
-      `[Meta API] Received event: ${event_name}, URL from body: ${event_source_url}, Referer: ${request.headers.get("referer")}`,
-    );
+    console.log("[Meta API] Received event", {
+      eventName: event_name,
+      eventId: event_id,
+      sourceUrl: event_source_url,
+      referer: request.headers.get("referer"),
+      orderChannel: custom_data?.order_channel,
+      agentLabel: custom_data?.agent_label,
+    });
 
     // Validate required fields
     if (!event_name || !event_id) {

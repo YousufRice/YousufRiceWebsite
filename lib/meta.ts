@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { AgentLabel, OrderChannel } from "@/lib/tracking/order-channel";
 
 // Meta Configuration (2025 - Dataset Approach)
 // In 2025, every Pixel is part of a Dataset
@@ -43,6 +44,11 @@ export interface MetaCustomData {
   predicted_ltv?: number;
   search_string?: string;
   status?: string;
+  order_id?: string;
+  order_channel?: OrderChannel;
+  agent_label?: AgentLabel;
+  placed_by_user_id?: string;
+  customer_user_id?: string;
 }
 
 export interface MetaEvent {
@@ -89,8 +95,24 @@ export function hashData(data: string | undefined | null): string | undefined {
 }
 
 // Utility: Generate unique event ID for deduplication
-export function generateEventId(): string {
-  return `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+export function generateEventId(options?: {
+  eventName?: string;
+  stableKey?: string;
+}): string {
+  const eventPrefix = options?.eventName
+    ? options.eventName.toLowerCase().replace(/[^a-z0-9]+/g, "_")
+    : "event";
+
+  if (options?.stableKey) {
+    const stableHash = crypto
+      .createHash("sha256")
+      .update(options.stableKey)
+      .digest("hex")
+      .slice(0, 16);
+    return `${eventPrefix}_${stableHash}`;
+  }
+
+  return `${eventPrefix}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
 }
 
 // Utility: Get current Unix timestamp
@@ -164,37 +186,83 @@ export async function sendMetaEvent(
   event: MetaEvent,
   testEventCode?: string
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const payload: MetaEventPayload = {
-      data: [event],
-      ...(testEventCode && { test_event_code: testEventCode }),
-    };
+  const payload: MetaEventPayload = {
+    data: [event],
+    ...(testEventCode && { test_event_code: testEventCode }),
+  };
 
-    const response = await fetch(META_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${META_ACCESS_TOKEN}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  const maxAttempts = 2;
 
-    const result = await response.json();
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const controller = new AbortController();
+      timeout = setTimeout(() => controller.abort(), 3000);
 
-    if (!response.ok) {
-      console.error('Meta API Error:', result);
-      return {
-        success: false,
-        error: result.error?.message || 'Unknown error',
-      };
+      const response = await fetch(META_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${META_ACCESS_TOKEN}`,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+      timeout = undefined;
+
+      if (response.ok) {
+        return { success: true };
+      }
+
+      let errorMessage = 'Unknown error';
+      try {
+        const result = await response.json();
+        errorMessage = result?.error?.message || errorMessage;
+      } catch {
+        errorMessage = `Meta API HTTP ${response.status}`;
+      }
+
+      const shouldRetry = response.status >= 500 || response.status === 429;
+      if (!shouldRetry || attempt === maxAttempts) {
+        console.error('Meta API Error:', {
+          eventName: event.event_name,
+          eventId: event.event_id,
+          attempt,
+          status: response.status,
+          errorMessage,
+        });
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      }
+    } catch (error) {
+      const isAbort = error instanceof Error && error.name === 'AbortError';
+      const isLastAttempt = attempt === maxAttempts;
+      if (isLastAttempt) {
+        console.error('Meta API Request Failed:', {
+          eventName: event.event_name,
+          eventId: event.event_id,
+          attempt,
+          error,
+        });
+        return {
+          success: false,
+          error: isAbort
+            ? 'Meta request timeout'
+            : error instanceof Error
+              ? error.message
+              : 'Network error',
+        };
+      }
+    } finally {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
     }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Meta API Request Failed:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error',
-    };
   }
+
+  return { success: false, error: 'Meta request failed' };
 }

@@ -1386,19 +1386,26 @@ export const createOrderTool = tool({
       console.log(
         `[DEBUG] Starting Meta InitiateCheckout tracking for customer ${customerName.trim()}`,
       );
-      trackAgentInitiateCheckout({
-        customerName: customerName.trim(),
-        customerEmail: validatedEmail || undefined,
-        customerPhone: formattedPhone,
-        totalAmount: finalTotalPrice,
-        currency: "PKR",
-        items: items.map((item) => ({
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-        })),
-        eventSourceUrl: await getCurrentUrl(),
-      })
+      const currentUrlPromise = getCurrentUrl();
+      currentUrlPromise
+        .then((eventSourceUrl) =>
+          trackAgentInitiateCheckout({
+            customerName: customerName.trim(),
+            customerEmail: validatedEmail || undefined,
+            customerPhone: formattedPhone,
+            totalAmount: finalTotalPrice,
+            currency: "PKR",
+            items: items.map((item) => ({
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+            })),
+            eventSourceUrl,
+            placedByUserId: userId || undefined,
+            customerUserId: customerId,
+            stableKey: `${customerId}:${finalTotalPrice}:${items.length}`,
+          }),
+        )
         .then((result) => {
           if (result.success) {
             console.log(
@@ -1564,22 +1571,27 @@ export const createOrderTool = tool({
       console.log(
         `[DEBUG] Starting Meta Purchase tracking for order ${orderId}`,
       );
-      trackAgentPurchase({
-        orderId,
-        customerName: customerName.trim(),
-        customerEmail: validatedEmail || undefined,
-        customerPhone: formattedPhone,
-        totalAmount: finalTotalPrice,
-        currency: "PKR",
-        items: items.map((item) => ({
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        deliveryAddress: deliveryAddress.trim(),
-        eventSourceUrl: await getCurrentUrl(),
-      })
+      currentUrlPromise
+        .then((eventSourceUrl) =>
+          trackAgentPurchase({
+            orderId,
+            customerName: customerName.trim(),
+            customerEmail: validatedEmail || undefined,
+            customerPhone: formattedPhone,
+            totalAmount: finalTotalPrice,
+            currency: "PKR",
+            items: items.map((item) => ({
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            deliveryAddress: deliveryAddress.trim(),
+            eventSourceUrl,
+            placedByUserId: userId || undefined,
+            customerUserId: customerId,
+          }),
+        )
         .then((result) => {
           if (result.success) {
             console.log(

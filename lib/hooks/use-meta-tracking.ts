@@ -8,6 +8,7 @@ import {
   sanitizeCustomerNameForMeta,
   type MetaCustomData,
 } from "@/lib/meta";
+import type { AgentLabel, OrderChannel } from "@/lib/tracking/order-channel";
 
 // Get test event code from environment variable
 const TEST_EVENT_CODE = process.env.NEXT_PUBLIC_META_TEST_EVENT_CODE || "";
@@ -26,6 +27,7 @@ declare global {
 
 interface TrackEventParams {
   eventName: string;
+  eventId?: string;
   userData?: {
     email?: string;
     phone?: string;
@@ -39,6 +41,28 @@ interface TrackEventParams {
   };
   customData?: MetaCustomData;
   testEventCode?: string;
+  deliveryMode?: "await" | "background" | "navigation";
+}
+
+interface TrackingContext {
+  orderChannel: OrderChannel;
+  agentLabel?: AgentLabel | null;
+  placedByUserId?: string;
+  customerUserId?: string;
+}
+
+function buildTrackingCustomData(
+  customData: MetaCustomData,
+  trackingContext?: TrackingContext,
+): MetaCustomData {
+  if (!trackingContext) return customData;
+  return {
+    ...customData,
+    order_channel: trackingContext.orderChannel,
+    agent_label: trackingContext.agentLabel ?? undefined,
+    placed_by_user_id: trackingContext.placedByUserId,
+    customer_user_id: trackingContext.customerUserId,
+  };
 }
 
 export function useMetaTracking() {
@@ -49,13 +73,15 @@ export function useMetaTracking() {
   const trackEvent = useCallback(
     async ({
       eventName,
+      eventId: providedEventId,
       userData = {},
       customData = {},
       testEventCode,
+      deliveryMode = "await",
     }: TrackEventParams) => {
       try {
         // Generate unique event ID for deduplication
-        const eventId = generateEventId();
+        const eventId = providedEventId ?? generateEventId({ eventName });
 
         // Construct current URL using actual browser origin
         const origin =
@@ -81,39 +107,67 @@ export function useMetaTracking() {
           console.log(`[Meta Pixel] ${eventName} tracked with ID: ${eventId}`);
         }
 
+        const payload = {
+          event_name: eventName,
+          event_id: eventId,
+          event_source_url: eventSourceUrl,
+          user_data: {
+            ...userData,
+            firstName: userData.firstName
+              ? sanitizeCustomerNameForMeta(userData.firstName)
+              : undefined,
+            lastName: userData.lastName
+              ? sanitizeCustomerNameForMeta(userData.lastName)
+              : undefined,
+            fbp,
+            fbc,
+          },
+          custom_data: customData,
+          test_event_code: testEventCode,
+        };
+
         // 2. Server-side: Send to Conversions API via our endpoint
-        const response = await fetch("/api/meta-events", {
+        const requestInit: RequestInit = {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            event_name: eventName,
-            event_id: eventId,
-            event_source_url: eventSourceUrl,
-            user_data: {
-              ...userData,
-              firstName: userData.firstName
-                ? sanitizeCustomerNameForMeta(userData.firstName)
-                : undefined,
-              lastName: userData.lastName
-                ? sanitizeCustomerNameForMeta(userData.lastName)
-                : undefined,
-              fbp,
-              fbc,
-            },
-            custom_data: customData,
-            test_event_code: testEventCode,
-          }),
-        });
+          body: JSON.stringify(payload),
+          keepalive: deliveryMode !== "await",
+        };
 
-        if (!response.ok) {
-          const error = await response.json();
-          console.error("[Meta Conversions API] Error:", error);
-          return { success: false, error: error.error };
+        if (
+          deliveryMode === "navigation" &&
+          typeof navigator !== "undefined" &&
+          typeof navigator.sendBeacon === "function"
+        ) {
+          const beaconOk = navigator.sendBeacon(
+            "/api/meta-events",
+            new Blob([JSON.stringify(payload)], { type: "application/json" }),
+          );
+          if (beaconOk) {
+            return { success: true, eventId };
+          }
         }
 
-        const result = await response.json();
+        const responsePromise = fetch("/api/meta-events", requestInit);
+
+        if (deliveryMode !== "await") {
+          responsePromise.catch((error) => {
+            console.error("[Meta Conversions API] Background send failed:", {
+              eventName,
+              eventId,
+              error,
+            });
+          });
+          return { success: true, eventId };
+        }
+
+        const response = await responsePromise;
+        if (!response.ok) {
+          return { success: false, error: `HTTP ${response.status}` };
+        }
+
         const testModeIndicator = testEventCode ? " [TEST MODE]" : "";
         console.log(
           `[Meta Conversions API] ${eventName} sent with ID: ${eventId}${testModeIndicator}`,
@@ -154,17 +208,19 @@ export function useMetaTracking() {
         country?: string;
         externalId?: string;
       };
+      trackingContext?: TrackingContext;
     }) => {
       return trackEvent({
         eventName: "ViewContent",
         userData: productData.userData,
-        customData: {
+        customData: buildTrackingCustomData({
           content_name: productData.contentName,
           content_ids: [productData.contentId],
           content_type: productData.contentType || "product",
           value: productData.value,
           currency: productData.currency || "PKR",
-        },
+        }, productData.trackingContext),
+        deliveryMode: "background",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
     },
@@ -189,11 +245,12 @@ export function useMetaTracking() {
         country?: string;
         externalId?: string;
       };
+      trackingContext?: TrackingContext;
     }) => {
       return trackEvent({
         eventName: "AddToCart",
         userData: cartData.userData,
-        customData: {
+        customData: buildTrackingCustomData({
           content_name: cartData.contentName,
           content_ids: [cartData.contentId],
           content_type: "product",
@@ -206,7 +263,8 @@ export function useMetaTracking() {
               item_price: cartData.value,
             },
           ],
-        },
+        }, cartData.trackingContext),
+        deliveryMode: "background",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
     },
@@ -230,17 +288,24 @@ export function useMetaTracking() {
         country?: string;
         externalId?: string;
       };
+      trackingContext?: TrackingContext;
+      stableKey?: string;
     }) => {
       return trackEvent({
         eventName: "InitiateCheckout",
+        eventId: generateEventId({
+          eventName: "InitiateCheckout",
+          stableKey: checkoutData.stableKey,
+        }),
         userData: checkoutData.userData,
-        customData: {
+        customData: buildTrackingCustomData({
           value: checkoutData.value,
           currency: checkoutData.currency || "PKR",
           num_items: checkoutData.numItems,
           content_ids: checkoutData.contentIds,
           content_type: "product",
-        },
+        }, checkoutData.trackingContext),
+        deliveryMode: "navigation",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
     },
@@ -270,18 +335,25 @@ export function useMetaTracking() {
         country?: string;
         externalId?: string;
       };
+      trackingContext?: TrackingContext;
     }) => {
       return trackEvent({
         eventName: "Purchase",
+        eventId: generateEventId({
+          eventName: "Purchase",
+          stableKey: purchaseData.orderId,
+        }),
         userData: purchaseData.userData,
-        customData: {
+        customData: buildTrackingCustomData({
           value: purchaseData.value,
           currency: purchaseData.currency || "PKR",
+          order_id: purchaseData.orderId,
           content_ids: purchaseData.contentIds,
           content_type: "product",
           num_items: purchaseData.numItems,
           contents: purchaseData.contents,
-        },
+        }, purchaseData.trackingContext),
+        deliveryMode: "background",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
     },

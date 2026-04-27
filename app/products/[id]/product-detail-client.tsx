@@ -16,6 +16,10 @@ import { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, getPricePerKg, calculatePrice } from "@/lib/utils";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
+import {
+  getAgentLabelFromLabels,
+  getOrderChannelFromAgentLabel,
+} from "@/lib/tracking/order-channel";
 import { useBagSelection } from "@/lib/hooks/use-bag-selection";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -40,10 +44,9 @@ export default function ProductDetailClient({
   const { user } = useAuthStore();
   const { items: cartItems } = useCartStore();
 
-  // Detect if user is an agent (Saima or Kiran) - case insensitive
-  const isAgent = user?.labels?.some((label) =>
-    ["saima", "kiran"].includes(label.toLowerCase()),
-  );
+  const agentLabel = getAgentLabelFromLabels(user?.labels);
+  const isAgent = Boolean(agentLabel);
+  const orderChannel = getOrderChannelFromAgentLabel(agentLabel);
 
   const searchParams = useSearchParams();
   const isColdDrinkBundle =
@@ -89,10 +92,24 @@ export default function ProductDetailClient({
       value: totalPrice,
       currency: "PKR",
       userData,
+      trackingContext: {
+        orderChannel,
+        agentLabel,
+        placedByUserId: user?.$id,
+      },
     });
 
     hasTrackedViewRef.current = true;
-  }, [product.$id, product.name, totalPrice, trackViewContent, user, isAgent]);
+  }, [
+    agentLabel,
+    isAgent,
+    orderChannel,
+    product.$id,
+    product.name,
+    totalPrice,
+    trackViewContent,
+    user,
+  ]);
 
   // Wrapper for handleAddBag with AddToCart tracking
   const onAddBag = (weight: 3 | 5 | 10 | 25) => {
@@ -117,6 +134,11 @@ export default function ProductDetailClient({
       currency: "PKR",
       quantity: newTotalKg,
       userData,
+      trackingContext: {
+        orderChannel,
+        agentLabel,
+        placedByUserId: user?.$id,
+      },
     });
 
     handleAddBag(weight);
@@ -147,6 +169,12 @@ export default function ProductDetailClient({
       numItems: totalKg,
       contentIds: [product.$id],
       userData,
+      trackingContext: {
+        orderChannel,
+        agentLabel,
+        placedByUserId: user?.$id,
+      },
+      stableKey: `${product.$id}:${totalKg}`,
     });
 
     // Call the hook's buyNow function

@@ -7,6 +7,7 @@ import {
   type MetaEvent,
   type MetaCustomData,
 } from "@/lib/meta";
+import type { AgentLabel } from "@/lib/tracking/order-channel";
 
 /**
  * Server-side Meta tracking for AI Agent orders
@@ -34,6 +35,9 @@ interface AgentOrderData {
   userAgent?: string;
   clientIp?: string;
   eventSourceUrl?: string;
+  placedByUserId?: string;
+  customerUserId?: string;
+  agentLabel?: AgentLabel | null;
 }
 
 /**
@@ -52,7 +56,10 @@ export async function trackAgentPurchase(orderData: AgentOrderData): Promise<{
     console.log(
       `[META DEBUG] trackAgentPurchase called for order ${orderData.orderId}`,
     );
-    const eventId = generateEventId();
+    const eventId = generateEventId({
+      eventName: "Purchase",
+      stableKey: orderData.orderId,
+    });
 
     // Prepare user data for Meta (will be hashed automatically)
     // Clean the name by removing agent symbols before sending to Meta
@@ -84,6 +91,11 @@ export async function trackAgentPurchase(orderData: AgentOrderData): Promise<{
       num_items: orderData.items.length,
       // Add order ID for reference
       content_name: `Agent Order ${orderData.orderId}`,
+      order_id: orderData.orderId,
+      order_channel: "ai_agent",
+      agent_label: orderData.agentLabel ?? undefined,
+      placed_by_user_id: orderData.placedByUserId,
+      customer_user_id: orderData.customerUserId,
     };
 
     // Create Meta event
@@ -159,6 +171,10 @@ export async function trackAgentInitiateCheckout(orderData: {
   userAgent?: string;
   clientIp?: string;
   eventSourceUrl?: string;
+  placedByUserId?: string;
+  customerUserId?: string;
+  agentLabel?: AgentLabel | null;
+  stableKey?: string;
 }): Promise<{
   success: boolean;
   error?: string;
@@ -168,7 +184,10 @@ export async function trackAgentInitiateCheckout(orderData: {
     console.log(
       `[META DEBUG] trackAgentInitiateCheckout called for customer ${orderData.customerName}`,
     );
-    const eventId = generateEventId();
+    const eventId = generateEventId({
+      eventName: "InitiateCheckout",
+      stableKey: orderData.stableKey,
+    });
 
     // Prepare user data with required customer information
     // Clean the name by removing agent symbols before sending to Meta
@@ -193,6 +212,10 @@ export async function trackAgentInitiateCheckout(orderData: {
       content_ids: orderData.items.map((item) => item.productId),
       num_items: orderData.items.length,
       content_name: "Agent Checkout Initiated",
+      order_channel: "ai_agent",
+      agent_label: orderData.agentLabel ?? undefined,
+      placed_by_user_id: orderData.placedByUserId,
+      customer_user_id: orderData.customerUserId,
     };
 
     // Create Meta event
@@ -265,13 +288,16 @@ export async function trackAgentViewContent(productData: {
   userAgent?: string;
   clientIp?: string;
   eventSourceUrl?: string;
+  placedByUserId?: string;
+  customerUserId?: string;
+  agentLabel?: AgentLabel | null;
 }): Promise<{
   success: boolean;
   error?: string;
   eventId?: string;
 }> {
   try {
-    const eventId = generateEventId();
+    const eventId = generateEventId({ eventName: "ViewContent" });
 
     // Prepare user data (only if we have customer info)
     // Clean the name by removing agent symbols before sending to Meta
@@ -301,6 +327,10 @@ export async function trackAgentViewContent(productData: {
       content_type: "product",
       value: productData.value,
       currency: productData.currency || "PKR",
+      order_channel: "ai_agent",
+      agent_label: productData.agentLabel ?? undefined,
+      placed_by_user_id: productData.placedByUserId,
+      customer_user_id: productData.customerUserId,
     };
 
     // Create Meta event

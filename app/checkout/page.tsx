@@ -30,6 +30,10 @@ import {
 } from "@/lib/utils";
 import { sanitizeCustomerNameForMeta } from "@/lib/meta";
 import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
+import {
+  getAgentLabelFromLabels,
+  getOrderChannelFromAgentLabel,
+} from "@/lib/tracking/order-channel";
 import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
 import { MapPin, Gift, Check, X } from "lucide-react";
@@ -48,10 +52,9 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
 
-  // Detect if user is an agent (Saima or Kiran) - case insensitive
-  const isAgent = user?.labels?.some((label) =>
-    ["saima", "kiran"].includes(label.toLowerCase()),
-  );
+  const agentLabel = getAgentLabelFromLabels(user?.labels);
+  const isAgent = Boolean(agentLabel);
+  const orderChannel = getOrderChannelFromAgentLabel(agentLabel);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -661,7 +664,7 @@ function CheckoutContent() {
       const cleanedName =
         sanitizeCustomerNameForMeta(formData.fullName) || formData.fullName;
 
-      await trackPurchase({
+      trackPurchase({
         value: getTotalPrice(),
         currency: "PKR",
         orderId,
@@ -680,6 +683,17 @@ function CheckoutContent() {
           city: finalCity || undefined,
           externalId: (!isAgent && user?.$id) ? user.$id : customerId, // CRITICAL: Link to customer/user ID, but NEVER agent ID
         },
+        trackingContext: {
+          orderChannel,
+          agentLabel,
+          placedByUserId: user?.$id,
+          customerUserId: customerId,
+        },
+      }).catch((trackingError) => {
+        console.error("[Meta Purchase] non-blocking send failed:", {
+          orderId,
+          trackingError,
+        });
       });
 
       // Mark discount code as used if applied
