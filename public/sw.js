@@ -7,6 +7,7 @@ self.addEventListener("push", function (event) {
       badge: "/logo.png",
       vibrate: [100, 50, 100],
       data: {
+        url: data.url || "/",
         dateOfArrival: Date.now(),
         primaryKey: "1",
       },
@@ -18,7 +19,9 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   console.log("Notification click received.");
   event.notification.close();
-  event.waitUntil(clients.openWindow("/"));
+
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(clients.openWindow(url));
 });
 
 // Handle service worker activation and cleanup

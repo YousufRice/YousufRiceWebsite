@@ -4,6 +4,7 @@
     "nextjs": {
       "source": "vercel-labs/vercel-plugin",
       "sourceType": "github",
+      "skillPath": "skills/nextjs/SKILL.md",
       "computedHash": "d3a48eada4dbae95856d643a0c9c54a38974ee7896a4d34f93aead13d26c343a"
     }
   }
