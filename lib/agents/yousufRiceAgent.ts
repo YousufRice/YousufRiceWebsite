@@ -44,10 +44,35 @@ const guardrailAgent = new Agent({
   - Creative writing (poems, stories) unrelated to rice
   - General knowledge questions not related to rice/cooking/Pakistan
   - Politics or sensitive topics
-  
+
   Return isRelevant: true for relevant topics, false otherwise.`,
   outputType: z.object({
     isRelevant: z.boolean(),
+    reasoning: z.string(),
+  }),
+});
+
+const specialDealGuardrailAgent = new Agent({
+  name: "Special Deal Guardrail",
+  model: "gpt-5-nano",
+  instructions: `Check if the user is trying to order 5kg for special deals or bulk deals.
+  Special deals and bulk deals ONLY come in 25kg bags - there is NO 5kg option for special deals.
+
+  Check if the user input contains:
+  - Mentions of "special deal", "bulk deal", "hotel", "restaurant" AND
+  - Mentions of 5kg quantity
+
+  If the user is asking for 5kg in the context of special deals/bulk deals/hotels/restaurants, return isValid: false.
+  Otherwise, return isValid: true.
+
+  Examples:
+  - "I want 5kg special deal" → isValid: false
+  - "I want 5kg for my restaurant" → isValid: false
+  - "I want 25kg special deal" → isValid: true
+  - "I want 5kg basmati rice" → isValid: true (regular product, not special deal)
+  - "I want 25kg for my hotel" → isValid: true`,
+  outputType: z.object({
+    isValid: z.boolean(),
     reasoning: z.string(),
   }),
 });
@@ -65,10 +90,22 @@ const safetyGuardrail: InputGuardrail = {
     };
   },
 };
+
+const specialDealGuardrail: InputGuardrail = {
+  name: "Special Deal 5kg Guardrail",
+  runInParallel: false,
+  execute: async ({ input, context }) => {
+    const result = await run(specialDealGuardrailAgent, input, { context });
+    return {
+      outputInfo: result.finalOutput,
+      tripwireTriggered: result.finalOutput?.isValid === false,
+    };
+  },
+};
 export const yousufRiceAgent = Agent.create({
   name: "Yousuf Rice Agent",
   model: "gpt-5.2",
-  inputGuardrails: [safetyGuardrail],
+  inputGuardrails: [safetyGuardrail, specialDealGuardrail],
   instructions: `You are the customer service agent and a good sales man for Yousuf Rice, a premium rice supplier in Pakistan. Your name is Sajjad.
 
 # YOUR CAPABILITIES
@@ -219,7 +256,7 @@ Focus on quality over quantity—make purposeful tool calls and respond once you
     createOrderTool,
     trackOrdersTool,
     manageCustomerTool,
-    getCustomerTool
+    getCustomerTool,
   ],
-  modelSettings: { toolChoice: "required" }
+  modelSettings: { toolChoice: "required" },
 });
