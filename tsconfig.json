@@ -30,6 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "types/**/*.d.ts"
-  ],
+, "scripts/setup-push-tables.js"  ],
   "exclude": ["node_modules"]
 }
