@@ -1,73 +1,51 @@
 import { NextResponse } from "next/server";
-import webpush from "web-push";
-import fs from "fs";
-import path from "path";
-
-// Configure VAPID
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
-
-const DB_FILE = path.join(process.cwd(), "subscriptions.json");
+import { sendPushNotifications, verifyPushSecret, NotificationPayload, SendOptions } from "@/lib/push";
 
 export async function POST(req: Request) {
   try {
-    const { title, body, url, icon } = await req.json();
-    const payload = JSON.stringify({
-      title,
-      body,
-      url,
-      icon: icon || "/logo.png",
-    });
-
-    // Load subscriptions from file
-    let subs: any[] = [];
-    if (fs.existsSync(DB_FILE)) {
-      subs = JSON.parse(fs.readFileSync(DB_FILE, "utf8") || "[]");
+    // Verify admin secret
+    const secret = req.headers.get("x-push-secret");
+    if (!secret || !verifyPushSecret(secret)) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    if (subs.length === 0) {
-      return NextResponse.json({
-        sent: 0,
-        failed: 0,
-        message: "No subscriptions found",
-      });
-    }
+    const body = await req.json();
+    
+    const payload: NotificationPayload = {
+      title: body.title,
+      body: body.body,
+      url: body.url || "/",
+      icon: body.icon || "/logo.png",
+      image: body.image,
+      badge: body.badge || "/badge.png",
+      tag: body.tag || "general",
+      requireInteraction: body.requireInteraction ?? false,
+      actions: body.actions || [{ action: "view", title: "View" }],
+      data: body.data,
+      ttl: body.ttl || 86400,
+    };
 
-    // Send to all subscriptions
-    const results = await Promise.allSettled(
-      subs.map((sub) => webpush.sendNotification(sub, payload)),
-    );
+    const options: SendOptions = {
+      tags: body.tags,
+      userIds: body.userIds,
+      batchSize: body.batchSize || 100,
+      batchDelayMs: body.batchDelayMs || 200,
+    };
 
-    const successful = results.filter((r) => r.status === "fulfilled").length;
-    const failed = results.filter((r) => r.status === "rejected").length;
-
-    // Clean up dead subscriptions (410 Gone)
-    const deadEndpoints = results
-      .map((r, i) =>
-        r.status === "rejected" && (r as any).reason?.statusCode === 410
-          ? subs[i].endpoint
-          : null,
-      )
-      .filter(Boolean);
-
-    if (deadEndpoints.length > 0) {
-      subs = subs.filter((s: any) => !deadEndpoints.includes(s.endpoint));
-      fs.writeFileSync(DB_FILE, JSON.stringify(subs, null, 2));
-    }
+    const result = await sendPushNotifications(payload, options);
 
     return NextResponse.json({
-      sent: successful,
-      failed,
-      total: results.length,
+      success: true,
+      ...result,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Send notification error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to send notification" },
-      { status: 500 },
+      { success: false, error: error.message || "Failed to send notification" },
+      { status: 500 }
     );
   }
 }

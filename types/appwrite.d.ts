@@ -101,3 +101,38 @@ export type DiscountManagement = Models.Row & {
     is_enabled: boolean;
     order_id: string;
 }
+
+export type PushSubscriptions = Models.Row & {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    user_id: string | null;
+    tags: string | null;
+    status: "active" | "inactive";
+    fail_count: number;
+    user_agent: string | null;
+    ip_address: string | null;
+}
+
+export enum PushNotificationLogStatus {
+    SENT = "sent",
+    CLICKED = "clicked",
+    DISMISSED = "dismissed",
+    FAILED = "failed",
+    DELIVERED = "delivered"
+}
+
+export type PushNotificationLog = Models.Row & {
+    subscription_id: string;
+    title: string;
+    body: string;
+    url: string | null;
+    tag: string | null;
+    image: string | null;
+    status: PushNotificationLogStatus;
+    sent_at: string | null;
+    clicked_at: string | null;
+    dismissed_at: string | null;
+    error_message: string | null;
+    error_code: number | null;
+}

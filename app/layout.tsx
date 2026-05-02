@@ -6,6 +6,8 @@ import { Footer } from "@/components/footer";
 import { MetaPixel } from "@/components/meta-pixel";
 import FloatingChatbox from "@/components/floating-chatbox";
 import { PWAInstall } from "@/components/PWAInstall";
+import PushNotificationButton from "@/components/PushNotificationButton";
+import { FloatingPushNotification } from "@/components/FloatingPushNotification";
 import "./globals.css";
 import AnnocementBar from "@/components/annoucement-bar";
 import { Suspense } from "react";
@@ -190,6 +192,9 @@ export default function RootLayout({
         </Suspense>
         <Suspense fallback={null}>
           <PWAInstall />
+        </Suspense>
+        <Suspense fallback={null}>
+          <FloatingPushNotification />
         </Suspense>
         <Suspense fallback={null}>
           <Popup />
