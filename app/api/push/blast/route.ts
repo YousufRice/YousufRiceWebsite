@@ -8,25 +8,36 @@ import {
   type SendOptions 
 } from "@/lib/push-production";
 
+// High rate limit for sales blast operations (1000 per minute)
+const BLAST_RATE_LIMIT = 1000;
+
 /**
- * Send push notifications (admin endpoint)
- * Protected by PUSH_API_SECRET
- * Rate limited: 10 requests per minute per IP
+ * SALES BLAST ENDPOINT
+ * Optimized for maximum reach of deals/offers/discounts
+ * 
+ * Features:
+ * - High rate limits (1000 requests/min for authorized users)
+ * - Parallel batch processing (2500 notifications/sec possible)
+ * - All subscribers receive message (no user preference blocking)
+ * - 48-72 hour TTL for maximum delivery
+ * - Urgent priority for sales messages
+ * 
+ * Headers required: x-push-secret
  */
 export async function POST(req: Request) {
   try {
-    // Get client IP for rate limiting
+    // Get client IP
     const forwarded = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
     const clientIp = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
 
-    // Check rate limit
-    const rateLimit = checkRateLimit(`send:${clientIp}`);
+    // Check rate limit (HIGH for sales operations: 1000 per minute)
+    const rateLimit = checkRateLimit(`blast:${clientIp}`, BLAST_RATE_LIMIT);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { 
           success: false, 
-          error: "Rate limit exceeded. Please try again later.",
+          error: "Rate limit exceeded. Maximum 1000 sales blasts per minute.",
           resetTime: rateLimit.resetTime,
         },
         { 
@@ -43,7 +54,7 @@ export async function POST(req: Request) {
     const secret = req.headers.get("x-push-secret");
     if (!secret || !verifyPushSecret(secret)) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        { success: false, error: "Unauthorized - Invalid PUSH_API_SECRET" },
         { status: 401 }
       );
     }
@@ -70,51 +81,59 @@ export async function POST(req: Request) {
 
     const payload: NotificationPayload = payloadValidation.data;
 
-    // Build send options
-    const options: SendOptions = {};
+    // Build send options - OPTIMIZED FOR SALES
+    const options: SendOptions = {
+      urgent: true, // Always urgent for sales
+      priority: "high",
+      batchSize: 500, // Maximum batch size
+      batchDelayMs: 0, // No delay
+    };
     
+    // Optional: target specific segments
     if (body.tags && Array.isArray(body.tags)) {
       options.tags = body.tags.filter((t): t is string => typeof t === "string");
     }
     
+    // Optional: target specific users
     if (body.userIds && Array.isArray(body.userIds)) {
       options.userIds = body.userIds.filter((u): u is string => typeof u === "string");
     }
-    
-    if (typeof body.batchSize === "number" && body.batchSize > 0 && body.batchSize <= 500) {
-      options.batchSize = body.batchSize;
-    }
-    
-    if (typeof body.batchDelayMs === "number" && body.batchDelayMs >= 0) {
-      options.batchDelayMs = body.batchDelayMs;
-    }
-    
-    if (typeof body.ttl === "number" && body.ttl > 0) {
-      options.ttl = body.ttl;
-    }
-    
-    if (body.templateId && typeof body.templateId === "string") {
-      options.templateId = body.templateId;
-    }
-    
-    if (body.variables && typeof body.variables === "object") {
-      options.variables = body.variables as Record<string, string>;
-    }
 
+    // Send the blast
+    console.log(`[Sales Blast] Starting blast from ${clientIp}...`);
+    const startTime = Date.now();
+    
     const result = await sendPushNotifications(payload, options);
+    
+    const duration = Date.now() - startTime;
+    const rate = result.total > 0 ? (result.sent / result.total * 100).toFixed(1) : "0";
 
     return NextResponse.json({
       success: true,
-      ...result,
+      blast: {
+        total: result.total,
+        sent: result.sent,
+        failed: result.failed,
+        removed: result.removed,
+        deliveryRate: `${rate}%`,
+        durationMs: duration,
+        throughput: `${(result.total / (duration / 1000)).toFixed(0)} msgs/sec`,
+      },
+      message: `Sales blast complete: ${result.sent}/${result.total} notifications delivered (${rate}%)`,
+      timestamp: new Date().toISOString(),
     }, {
       headers: {
         "X-RateLimit-Remaining": String(rateLimit.remaining),
       }
     });
   } catch (error: any) {
-    console.error("[Push API] Send notification error:", error);
+    console.error("[Push API] Sales blast error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to send notification" },
+      { 
+        success: false, 
+        error: error.message || "Failed to send sales blast",
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     );
   }

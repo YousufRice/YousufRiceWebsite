@@ -97,6 +97,7 @@ export async function getExistingSubscription(): Promise<PushSubscription | null
 
 /**
  * Subscribe to push notifications
+ * Handles VAPID key changes by auto-unsubscribing and resubscribing
  */
 export async function subscribeToPush(
   applicationServerKey: string,
@@ -119,11 +120,44 @@ export async function subscribeToPush(
       return { success: false, error: "Failed to register service worker" };
     }
 
-    // Subscribe to push
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(applicationServerKey) as BufferSource,
-    });
+    // Check for existing subscription
+    const existingSub = await registration.pushManager.getSubscription();
+
+    let subscription: PushSubscription;
+
+    try {
+      // Try to subscribe directly
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(applicationServerKey) as BufferSource,
+      });
+    } catch (subError: any) {
+      // Handle "different applicationServerKey already exists" error
+      if (subError?.message?.includes("applicationServerKey") || 
+          subError?.message?.includes("gcm_sender_id") ||
+          subError?.name === "InvalidStateError") {
+        console.log("[Push] Detected existing subscription with different keys, resubscribing...");
+        
+        // Unsubscribe existing subscription
+        if (existingSub) {
+          await existingSub.unsubscribe();
+          // Notify server to clean up old subscription
+          await fetch(`${API_BASE}/unsubscribe`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: existingSub.endpoint }),
+          }).catch(() => {}); // Ignore errors, we'll re-subscribe anyway
+        }
+
+        // Try subscribing again
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(applicationServerKey) as BufferSource,
+        });
+      } else {
+        throw subError;
+      }
+    }
 
     // Extract subscription data
     const subData = extractSubscriptionData(subscription);
@@ -139,7 +173,7 @@ export async function subscribeToPush(
         ...subData,
         user_agent: options.userAgent || navigator.userAgent,
         user_id: options.userId,
-        tags: options.tags?.join(",") || "",
+        tags: options.tags || [], // Send as array
       }),
     });
 

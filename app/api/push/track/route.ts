@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client, TablesDB, Query } from "node-appwrite";
+import { checkRateLimit, getMetrics } from "@/lib/push-production";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "";
 const PUSH_LOG_TABLE_ID = process.env.NEXT_PUBLIC_APPWRITE_PUSH_LOG_TABLE_ID || "push_notification_log";
@@ -12,14 +13,60 @@ function createClient() {
   return new TablesDB(client);
 }
 
+/**
+ * Track notification interaction (click or dismiss)
+ * Rate limited: 120 requests per minute per IP
+ */
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    // Get client IP for rate limiting
+    const forwarded = req.headers.get("x-forwarded-for");
+    const realIp = req.headers.get("x-real-ip");
+    const clientIp = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
+
+    // Check rate limit
+    const rateLimit = checkRateLimit(`track:${clientIp}`);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "Rate limit exceeded. Please try again later.",
+          resetTime: rateLimit.resetTime,
+        },
+        { 
+          status: 429,
+          headers: {
+            "X-RateLimit-Remaining": String(rateLimit.remaining),
+            "X-RateLimit-Reset": String(rateLimit.resetTime),
+          }
+        }
+      );
+    }
+
+    // Parse body
+    let body: { subscription_id?: string; action?: string; url?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+    
     const { subscription_id, action, url } = body;
 
-    if (!subscription_id || !action) {
+    // Validate required fields
+    if (!subscription_id || typeof subscription_id !== "string") {
       return NextResponse.json(
-        { success: false, error: "subscription_id and action are required" },
+        { success: false, error: "subscription_id is required and must be a string" },
+        { status: 400 }
+      );
+    }
+
+    if (!action || !["click", "dismiss"].includes(action)) {
+      return NextResponse.json(
+        { success: false, error: "action must be 'click' or 'dismiss'" },
         { status: 400 }
       );
     }
@@ -44,7 +91,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const logEntry = logs.rows[0];
+    const logEntry = logs.rows[0] as { $id: string };
     const now = new Date().toISOString();
 
     // Update the log entry based on the action
@@ -53,16 +100,28 @@ export async function POST(req: Request) {
         status: "clicked",
         clicked_at: now,
       });
+      // Update metrics
+      const metrics = getMetrics();
+      metrics.totalClicked++;
     } else if (action === "dismiss") {
       await tablesDB.updateRow(DATABASE_ID, PUSH_LOG_TABLE_ID, logEntry.$id, {
         status: "dismissed",
         dismissed_at: now,
       });
+      // Update metrics
+      const metrics = getMetrics();
+      metrics.totalDismissed++;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+    }, {
+      headers: {
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+      }
+    });
   } catch (error: any) {
-    console.error("Track notification error:", error);
+    console.error("[Push API] Track notification error:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Failed to track notification" },
       { status: 500 }

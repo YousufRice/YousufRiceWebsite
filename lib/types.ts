@@ -152,3 +152,44 @@ export interface OrderWithDetails extends Order {
   customer: Customer;
   address?: Address;
 }
+
+export interface NotificationCampaign {
+  $id: string;
+  title: string;
+  body: string;
+  image_url?: string;
+  target_url?: string;
+  icon_url?: string;
+  badge_url?: string;
+  tag?: string;
+  campaign_type: 'push' | 'in-app' | 'both';
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+  is_active: boolean;
+  sent_count: number;
+  clicked_count: number;
+  failed_count: number;
+  delivered_count: number;
+  dismissed_count: number;
+  scheduled_at?: string;
+  sent_at?: string;
+  created_by?: string;
+  target_segment: 'all' | 'active_users' | 'inactive_users' | 'custom';
+  target_tags?: string[];
+  actions?: Array<{ action: string; title: string; icon?: string }>;
+  require_interaction: boolean;
+  $createdAt: string;
+}
+
+export interface NotificationCampaignAnalytics {
+  $id: string;
+  campaign_id: string;
+  subscription_id: string;
+  event_type: 'sent' | 'delivered' | 'clicked' | 'dismissed' | 'failed';
+  user_agent?: string;
+  ip_address?: string;
+  clicked_url?: string;
+  error_code?: number;
+  error_message?: string;
+  event_at?: string;
+  $createdAt: string;
+}

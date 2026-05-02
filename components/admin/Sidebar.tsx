@@ -12,7 +12,8 @@ import {
   UserSearchIcon,
   LogOut, 
   ShieldCheck,
-  Home
+  Home,
+  Bell
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -53,6 +54,11 @@ export function Sidebar() {
       name: 'Staff Performance',
       href: '/admin/staff-performance',
       icon: UserSearchIcon,
+    },
+    {
+      name: 'Notifications',
+      href: '/admin/notifications',
+      icon: Bell,
     },
   ];
 
