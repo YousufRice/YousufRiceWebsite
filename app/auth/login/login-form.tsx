@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { account } from '@/lib/appwrite';
 import { getUserEmailByPhone } from '@/app/actions/auth';
+import { setSessionCookie } from '@/app/actions/session';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,9 +56,10 @@ export default function LoginForm() {
       // Check if input is email or phone
       const isEmail = emailOrPhone.includes('@');
 
+      let session;
       if (isEmail) {
-        // Direct email login
-        await account.createEmailPasswordSession({ email: emailOrPhone, password: password });
+        // Direct email login - capture session with secret
+        session = await account.createEmailPasswordSession({ email: emailOrPhone, password: password });
       } else {
         // Validate phone number
         const validation = validatePakistaniPhoneNumber(emailOrPhone);
@@ -80,8 +82,20 @@ export default function LoginForm() {
           return;
         }
 
-        // Login with the retrieved email
-        await account.createEmailPasswordSession({ email: email, password: password });
+        // Login with the retrieved email - capture session with secret
+        session = await account.createEmailPasswordSession({ email: email, password: password });
+      }
+
+      // Sync Appwrite session secret into our own cookie so
+      // Next.js API routes can authenticate the user server-side.
+      // The secret is only available in the session returned by createEmailPasswordSession,
+      // not in subsequent getSession calls (web SDK hides it for security).
+      try {
+        if ((session as any).secret) {
+          await setSessionCookie((session as any).secret);
+        }
+      } catch {
+        // Non-critical: session cookie sync failed, but user is still logged in client-side
       }
 
       await checkAuth();

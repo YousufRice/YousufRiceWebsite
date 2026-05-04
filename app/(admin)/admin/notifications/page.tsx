@@ -8,6 +8,7 @@ import {
   DATABASE_ID,
   NOTIFICATION_CAMPAIGNS_TABLE_ID,
   NOTIFICATION_IMAGES_BUCKET_ID,
+  PUSH_SUBSCRIPTIONS_TABLE_ID,
 } from "@/lib/appwrite";
 import { NotificationCampaign } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +63,6 @@ import { ID, Query } from "appwrite";
 import toast from "react-hot-toast";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import ReadOnlyGuard from "@/components/admin/ReadOnlyGuard";
-import { AdminPermission } from "@/lib/store/auth-store";
 import Image from "next/image";
 
 type CampaignStatus = "draft" | "scheduled" | "sending" | "sent" | "failed" | "cancelled";
@@ -107,6 +107,7 @@ export default function AdminNotificationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<CampaignFormData>(defaultFormData);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalCampaigns: 0,
@@ -139,13 +140,39 @@ export default function AdminNotificationsPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/notifications/analytics");
-      const data = await res.json();
-      if (data.success) setStats(data.stats);
+      // Fetch stats using client-side SDK (same pattern as orders)
+      const [campaignsRes, subscriptionsRes] = await Promise.all([
+        tablesDB.listRows({
+          databaseId: DATABASE_ID,
+          tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
+          queries: [Query.limit(1)],
+        }).catch(() => ({ total: 0 })),
+        tablesDB.listRows({
+          databaseId: DATABASE_ID,
+          tableId: PUSH_SUBSCRIPTIONS_TABLE_ID,
+          queries: [Query.limit(1)],
+        }).catch(() => ({ total: 0 })),
+      ]);
+
+      const totalCampaigns = (campaignsRes as any).total || 0;
+      const totalSubscriptions = (subscriptionsRes as any).total || 0;
+
+      // Calculate active campaigns from loaded data
+      const activeCampaigns = campaigns.filter(c => c.is_active).length;
+
+      setStats({
+        totalCampaigns,
+        activeCampaigns,
+        totalSubscriptions,
+        activeSubscriptions: totalSubscriptions, // Approximation
+        totalNotifications: 0,
+        totalClicked: 0,
+        clickRate: 0,
+      });
     } catch (error) {
       console.error("Error fetching analytics:", error);
     }
-  }, []);
+  }, [campaigns]);
 
   useEffect(() => {
     fetchCampaigns();
@@ -177,11 +204,13 @@ export default function AdminNotificationsPage() {
       const imageUrl = `${endpoint}/storage/buckets/${NOTIFICATION_IMAGES_BUCKET_ID}/files/${fileId}/view?project=${projectId}`;
       setFormData((prev) => ({ ...prev, image_url: imageUrl }));
       toast.success("Image uploaded!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading image:", error);
-      toast.error("Failed to upload image");
+      const message = error?.message || error?.response?.message || "Failed to upload image";
+      toast.error(message);
     } finally {
       setUploadingImage(false);
+      setFileInputKey((k) => k + 1);
     }
   };
 
@@ -191,39 +220,55 @@ export default function AdminNotificationsPage() {
       toast.error("Write permission required");
       return;
     }
-    const payload = {
-      action: "create",
-      title: formData.title,
-      body: formData.body,
-      image_url: formData.image_url || null,
-      target_url: formData.target_url || "/",
-      icon_url: formData.icon_url || "/logo.png",
-      tag: formData.tag || "general",
-      campaign_type: formData.campaign_type,
-      target_segment: formData.target_segment,
-      target_tags: formData.target_tags ? formData.target_tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
-      require_interaction: formData.require_interaction,
-      actions: null,
-      scheduled_at: formData.scheduled_at || null,
-    };
     try {
       if (editingId) {
-        const res = await fetch("/api/notifications/campaigns", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ campaignId: editingId, ...payload, action: undefined }),
+        // Update existing campaign using client-side SDK (same pattern as orders)
+        await tablesDB.updateRow({
+          databaseId: DATABASE_ID,
+          tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
+          rowId: editingId,
+          data: {
+            title: formData.title,
+            body: formData.body,
+            image_url: formData.image_url || null,
+            target_url: formData.target_url || "/",
+            icon_url: formData.icon_url || "/logo.png",
+            tag: formData.tag || "general",
+            campaign_type: formData.campaign_type,
+            target_segment: formData.target_segment,
+            target_tags: formData.target_tags ? formData.target_tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+            require_interaction: formData.require_interaction,
+            scheduled_at: formData.scheduled_at || null,
+          },
         });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error);
         toast.success("Campaign updated!");
       } else {
-        const res = await fetch("/api/notifications/campaigns", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        // Create new campaign using client-side SDK (same pattern as orders)
+        await tablesDB.createRow({
+          databaseId: DATABASE_ID,
+          tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
+          rowId: ID.unique(),
+          data: {
+            title: formData.title,
+            body: formData.body,
+            image_url: formData.image_url || null,
+            target_url: formData.target_url || "/",
+            icon_url: formData.icon_url || "/logo.png",
+            tag: formData.tag || "general",
+            campaign_type: formData.campaign_type,
+            target_segment: formData.target_segment,
+            target_tags: formData.target_tags ? formData.target_tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+            require_interaction: formData.require_interaction,
+            scheduled_at: formData.scheduled_at || null,
+            status: "draft",
+            is_active: true,
+            sent_count: 0,
+            clicked_count: 0,
+            failed_count: 0,
+            delivered_count: 0,
+            dismissed_count: 0,
+          },
         });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error);
         toast.success("Campaign created!");
       }
       resetForm();
@@ -253,11 +298,18 @@ export default function AdminNotificationsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!hasWritePermission()) {
+      toast.error("Write permission required");
+      return;
+    }
     if (!confirm("Delete this campaign?")) return;
     try {
-      const res = await fetch(`/api/notifications/campaigns?campaignId=${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
+      // Delete using client-side SDK (same pattern as orders)
+      await tablesDB.deleteRow({
+        databaseId: DATABASE_ID,
+        tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
+        rowId: id,
+      });
       toast.success("Deleted!");
       fetchCampaigns();
     } catch (error: any) {
@@ -339,7 +391,7 @@ export default function AdminNotificationsPage() {
   };
 
   return (
-    <AdminAuthGuard requiredPermission={AdminPermission.READ_ONLY}>
+    <AdminAuthGuard>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <div className="flex justify-between items-start mb-6">
@@ -496,7 +548,7 @@ export default function AdminNotificationsPage() {
                         <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                           <ImageIcon className="w-4 h-4 mr-2 text-gray-500" />
                           <span className="text-sm">{uploadingImage ? "Uploading..." : "Upload Image"}</span>
-                          <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                          <input key={fileInputKey} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
                         </label>
                         {formData.image_url && (
                           <div className="relative w-16 h-16 rounded-lg overflow-hidden border">

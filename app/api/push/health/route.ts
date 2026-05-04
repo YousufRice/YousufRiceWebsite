@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import { getHealthStatus, getPushStats, getMetrics, verifyPushSecret, checkRateLimit } from "@/lib/push-production";
 
+// Detect if we're in a build/prerender environment
+const isBuildTime = () => {
+  return process.env.NODE_ENV === 'production' && typeof window === 'undefined' && process.env.NEXT_PHASE === 'phase-production-build';
+};
+
+// Dummy health data for build-time
+const dummyHealth = {
+  success: true,
+  health: { status: 'healthy', database: 'connected', webPush: 'configured' },
+  stats: { totalSubscriptions: 0, activeSubscriptions: 0, totalNotificationsSent: 0 },
+  metrics: { totalSent: 0, totalFailed: 0, totalClicked: 0, totalDismissed: 0, averageLatencyMs: 0, recentErrors: [] },
+  timestamp: new Date().toISOString(),
+};
+
 /**
  * Health check endpoint for push notification system
  * Returns system status, metrics, and diagnostics
@@ -8,6 +22,12 @@ import { getHealthStatus, getPushStats, getMetrics, verifyPushSecret, checkRateL
  * Rate limited: 30 requests per minute per IP
  */
 export async function GET(req: Request) {
+  // During build time, return dummy data to avoid prerendering errors
+  if (isBuildTime()) {
+    console.log('[Push API] Build-time detected, returning dummy health data');
+    return NextResponse.json(dummyHealth);
+  }
+
   try {
     // Get client IP for rate limiting
     const forwarded = req.headers.get("x-forwarded-for");

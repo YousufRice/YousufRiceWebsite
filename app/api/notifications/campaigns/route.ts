@@ -12,7 +12,7 @@ import { checkAdminPermissions } from "@/lib/auth-utils";
 // GET: List campaigns with optional filters
 // ============================================================================
 export async function GET(req: NextRequest) {
-  const authError = await checkAdminPermissions(req, false);
+  const authError = await checkAdminPermissions(req, false, false);
   if (authError) return authError;
 
   try {
@@ -44,8 +44,8 @@ export async function GET(req: NextRequest) {
 // ============================================================================
 // POST: Create new campaign or send existing campaign
 // ============================================================================
-export async function POST(req: Request) {
-  const authError = await checkAdminPermissions(req as any, true);
+export async function POST(req: NextRequest) {
+  const authError = await checkAdminPermissions(req, true, true);
   if (authError) return authError;
 
   try {
@@ -204,8 +204,8 @@ export async function POST(req: Request) {
 // ============================================================================
 // PATCH: Update campaign
 // ============================================================================
-export async function PATCH(req: Request) {
-  const authError = await checkAdminPermissions(req as any, true);
+export async function PATCH(req: NextRequest) {
+  const authError = await checkAdminPermissions(req, true, true);
   if (authError) return authError;
 
   try {
@@ -257,8 +257,8 @@ export async function PATCH(req: Request) {
 // ============================================================================
 // DELETE: Delete campaign
 // ============================================================================
-export async function DELETE(req: Request) {
-  const authError = await checkAdminPermissions(req as any, true);
+export async function DELETE(req: NextRequest) {
+  const authError = await checkAdminPermissions(req, true, true);
   if (authError) return authError;
 
   try {

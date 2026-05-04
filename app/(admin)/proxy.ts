@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
       const hasAdminLabel = user.labels?.includes('admin');
       const hasReadOnlyLabel = user.labels?.includes('readonly');
       
-      // If user has either admin or readonly label, allow access
+      // If user has either admin or readonly label, allow access to all admin routes
       if (hasAdminLabel || hasReadOnlyLabel) {
         return NextResponse.next();
       }

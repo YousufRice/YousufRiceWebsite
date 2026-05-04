@@ -10,11 +10,36 @@ import {
 import { Query } from "appwrite";
 import { checkAdminPermissions } from "@/lib/auth-utils";
 
+// Detect if we're in a build/prerender environment
+const isBuildTime = () => {
+  return process.env.NODE_ENV === 'production' && typeof window === 'undefined' && process.env.NEXT_PHASE === 'phase-production-build';
+};
+
+// Dummy stats for build-time
+const dummyStats = {
+  totalCampaigns: 0,
+  activeCampaigns: 0,
+  totalSubscriptions: 0,
+  activeSubscriptions: 0,
+  totalNotifications: 0,
+  totalClicked: 0,
+  clickRate: 0,
+};
+
 // ============================================================================
 // GET: Get analytics for campaigns and overall stats
 // ============================================================================
 export async function GET(req: NextRequest) {
-  const authError = await checkAdminPermissions(req, false);
+  // During build time, return dummy data to avoid prerendering errors
+  if (isBuildTime()) {
+    console.log('[Analytics API] Build-time detected, returning dummy stats');
+    return NextResponse.json({
+      success: true,
+      stats: dummyStats,
+    });
+  }
+
+  const authError = await checkAdminPermissions(req, false, false);
   if (authError) return authError;
 
   try {

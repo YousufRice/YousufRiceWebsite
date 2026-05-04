@@ -10,6 +10,7 @@ import {
   CUSTOMERS_TABLE_ID,
 } from "@/lib/appwrite";
 import { useAuthStore } from "@/lib/store/auth-store";
+import { setSessionCookie } from "@/app/actions/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -186,8 +187,18 @@ export default function RegisterForm() {
                       } });
       }
 
-      // Login the user
-      await account.createEmailPasswordSession({ email: formData.email, password: formData.password });
+      // Login the user - capture session with secret for server-side auth
+      const session = await account.createEmailPasswordSession({ email: formData.email, password: formData.password });
+
+      // Sync session secret into our own cookie for server-side auth
+      // The secret is only available in the session returned by createEmailPasswordSession
+      try {
+        if ((session as any).secret) {
+          await setSessionCookie((session as any).secret);
+        }
+      } catch {
+        // Non-critical
+      }
 
       // Update phone number in Appwrite Auth (after session is established)
       await account.updatePhone(

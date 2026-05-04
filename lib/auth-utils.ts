@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { account } from './appwrite';
+import { Client, Account } from 'node-appwrite';
 
 // Detect if we're in a build environment
 const isBuildTime = () => {
@@ -7,14 +7,38 @@ const isBuildTime = () => {
 };
 
 /**
+ * Create a server-side Appwrite client with session from request cookies
+ * @param req - Next.js request object
+ */
+function createServerClient(req: NextRequest) {
+  const client = new Client()
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
+
+  // The Appwrite session cookie lives on the Appwrite domain (yousufricemill.com),
+  // so the browser won't send it to our local API routes (localhost:3000).
+  // Instead we sync the session secret into a 'yousuf_session' cookie on
+  // the Next.js domain after login, so it is forwarded automatically.
+  const session = req.cookies.get('yousuf_session')?.value;
+
+  if (session) {
+    client.setSession(session);
+  }
+
+  return { client, account: new Account(client) };
+}
+
+/**
  * Utility function to check admin permissions for API routes
  * @param req - Next.js request object
  * @param requireWriteAccess - Whether write access is required (admin label)
+ * @param requireAdminOnly - Whether only admin label is allowed (not readonly)
  * @returns NextResponse error or null if authorized
  */
 export async function checkAdminPermissions(
   req: NextRequest,
-  requireWriteAccess = false
+  requireWriteAccess = false,
+  requireAdminOnly = false
 ): Promise<NextResponse | null> {
   // Skip authentication during build time
   if (isBuildTime()) {
@@ -23,9 +47,23 @@ export async function checkAdminPermissions(
   }
   
   try {
+    // Create server client with session from cookies
+    const { account } = createServerClient(req);
     const user = await account.get();
+    
     const hasAdminLabel = user.labels?.includes('admin');
     const hasReadOnlyLabel = user.labels?.includes('readonly');
+    
+    // For admin-only access (notifications, etc.), require admin label
+    if (requireAdminOnly && !hasAdminLabel) {
+      return NextResponse.json(
+        { 
+          error: 'Admin access required',
+          message: 'This feature is only available to administrators'
+        },
+        { status: 403 }
+      );
+    }
     
     // For write operations, require admin label
     if (requireWriteAccess && !hasAdminLabel) {

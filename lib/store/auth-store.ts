@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { account, tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID } from '../appwrite';
 import { Models, Query } from 'appwrite';
 import { Customer } from '../types';
+import { clearSessionCookie } from '@/app/actions/session';
 
 // Define permission levels for admin access
 export enum AdminPermission {
@@ -35,7 +36,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   checkAuth: async () => {
     try {
       const user = await account.get();
-      
+
+      // Note: We can't sync the session secret here because account.getSession('current')
+      // doesn't return the secret (web SDK hides it for security). The secret is only
+      // available when the session is first created via createEmailPasswordSession.
+      // The cookie is set during login/registration in the respective form handlers.
+
       // Check for admin labels (secure approach)
       console.log('User labels:', user.labels);
       const hasAdminLabel = user.labels && user.labels.includes('admin');
@@ -71,7 +77,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         adminPermission,
         loading: false 
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[checkAuth] Not logged in:', error?.message || error);
       set({ 
         user: null, 
         customer: null, 
@@ -86,6 +93,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async () => {
     try {
       await account.deleteSession({ sessionId: 'current' });
+      await clearSessionCookie();
       set({ 
         user: null, 
         customer: null, 
