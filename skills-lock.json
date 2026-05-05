@@ -5,7 +5,7 @@
       "source": "appwrite/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/appwrite-typescript/SKILL.md",
-      "computedHash": "38ba75d56d9d6fba0cf6150d9ee9fef5f7ff352b148bf715557c12be6b1a4905"
+      "computedHash": "c2654d10a77e48197df43d29b3dcfe230b6f3b8efc81c5566f0f45afffb28e09"
     },
     "nextjs": {
       "source": "vercel-labs/vercel-plugin",
