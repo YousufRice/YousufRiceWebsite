@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import {
-  tablesDB,
-  storage,
-  DATABASE_ID,
-  NOTIFICATION_CAMPAIGNS_TABLE_ID,
-  NOTIFICATION_IMAGES_BUCKET_ID,
-  PUSH_SUBSCRIPTIONS_TABLE_ID,
-} from "@/lib/appwrite";
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
+  getCampaigns,
+  uploadNotificationImage,
+} from "@/app/actions/notification-campaigns";
+// No direct Appwrite imports needed - using server actions
 import { NotificationCampaign } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ import {
   Activity,
   Smartphone,
 } from "lucide-react";
-import { ID, Query } from "appwrite";
+// ID not needed - server actions handle unique IDs
 import toast from "react-hot-toast";
 import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import ReadOnlyGuard from "@/components/admin/ReadOnlyGuard";
@@ -109,6 +109,7 @@ export default function AdminNotificationsPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [stats, setStats] = useState({
     totalCampaigns: 0,
     activeCampaigns: 0,
@@ -124,12 +125,12 @@ export default function AdminNotificationsPage() {
   const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await tablesDB.listRows({
-        databaseId: DATABASE_ID,
-        tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
-        queries: [Query.orderDesc("$createdAt"), Query.limit(100)],
-      });
-      setCampaigns(response.rows as unknown as NotificationCampaign[]);
+      const result = await getCampaigns();
+      if (result.success) {
+        setCampaigns(result.campaigns as unknown as NotificationCampaign[]);
+      } else {
+        toast.error(result.error || "Failed to load campaigns");
+      }
     } catch (error) {
       console.error("Error fetching campaigns:", error);
       toast.error("Failed to load campaigns");
@@ -140,39 +141,30 @@ export default function AdminNotificationsPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      // Fetch stats using client-side SDK (same pattern as orders)
-      const [campaignsRes, subscriptionsRes] = await Promise.all([
-        tablesDB.listRows({
-          databaseId: DATABASE_ID,
-          tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
-          queries: [Query.limit(1)],
-        }).catch(() => ({ total: 0 })),
-        tablesDB.listRows({
-          databaseId: DATABASE_ID,
-          tableId: PUSH_SUBSCRIPTIONS_TABLE_ID,
-          queries: [Query.limit(1)],
-        }).catch(() => ({ total: 0 })),
+      // Fetch stats using server actions
+      const [campaignsResult, subscriptionsRes] = await Promise.all([
+        getCampaigns(),
+        fetch(`/api/push/stats`).then(r => r.json()).catch(() => ({ totalSubscriptions: 0 })),
       ]);
 
-      const totalCampaigns = (campaignsRes as any).total || 0;
-      const totalSubscriptions = (subscriptionsRes as any).total || 0;
-
-      // Calculate active campaigns from loaded data
-      const activeCampaigns = campaigns.filter(c => c.is_active).length;
+      const allCampaigns = campaignsResult.success ? (campaignsResult.campaigns as unknown as NotificationCampaign[]) : [];
+      const totalCampaigns = allCampaigns.length;
+      const activeCampaigns = allCampaigns.filter((c) => c.is_active).length;
+      const totalSubscriptions = subscriptionsRes.totalSubscriptions || 0;
 
       setStats({
         totalCampaigns,
         activeCampaigns,
         totalSubscriptions,
-        activeSubscriptions: totalSubscriptions, // Approximation
-        totalNotifications: 0,
-        totalClicked: 0,
-        clickRate: 0,
+        activeSubscriptions: totalSubscriptions,
+        totalNotifications: subscriptionsRes.totalNotifications || 0,
+        totalClicked: subscriptionsRes.totalClicked || 0,
+        clickRate: subscriptionsRes.clickRate || 0,
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
     }
-  }, [campaigns]);
+  }, []);
 
   useEffect(() => {
     fetchCampaigns();
@@ -193,21 +185,19 @@ export default function AdminNotificationsPage() {
     if (!file) return;
     setUploadingImage(true);
     try {
-      const fileId = ID.unique();
-      await storage.createFile({
-        bucketId: NOTIFICATION_IMAGES_BUCKET_ID,
-        fileId,
-        file,
-      });
-      const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-      const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
-      const imageUrl = `${endpoint}/storage/buckets/${NOTIFICATION_IMAGES_BUCKET_ID}/files/${fileId}/view?project=${projectId}`;
-      setFormData((prev) => ({ ...prev, image_url: imageUrl }));
-      toast.success("Image uploaded!");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await uploadNotificationImage(formData);
+      if (result.success) {
+        setFormData((prev) => ({ ...prev, image_url: result.imageUrl || "" }));
+        toast.success("Image uploaded!");
+      } else {
+        toast.error(result.error || "Failed to upload image");
+      }
     } catch (error: any) {
       console.error("Error uploading image:", error);
-      const message = error?.message || error?.response?.message || "Failed to upload image";
-      toast.error(message);
+      toast.error(error?.message || "Failed to upload image");
     } finally {
       setUploadingImage(false);
       setFileInputKey((k) => k + 1);
@@ -220,62 +210,48 @@ export default function AdminNotificationsPage() {
       toast.error("Write permission required");
       return;
     }
+    setIsSubmitting(true);
     try {
+      const campaignData = {
+        title: formData.title,
+        body: formData.body,
+        image_url: formData.image_url || null,
+        target_url: formData.target_url || "/",
+        icon_url: formData.icon_url || "/logo.png",
+        tag: formData.tag || "general",
+        campaign_type: formData.campaign_type,
+        target_segment: formData.target_segment,
+        target_tags: formData.target_tags ? formData.target_tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        require_interaction: formData.require_interaction,
+        scheduled_at: formData.scheduled_at || null,
+      };
+
       if (editingId) {
-        // Update existing campaign using client-side SDK (same pattern as orders)
-        await tablesDB.updateRow({
-          databaseId: DATABASE_ID,
-          tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
-          rowId: editingId,
-          data: {
-            title: formData.title,
-            body: formData.body,
-            image_url: formData.image_url || null,
-            target_url: formData.target_url || "/",
-            icon_url: formData.icon_url || "/logo.png",
-            tag: formData.tag || "general",
-            campaign_type: formData.campaign_type,
-            target_segment: formData.target_segment,
-            target_tags: formData.target_tags ? formData.target_tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
-            require_interaction: formData.require_interaction,
-            scheduled_at: formData.scheduled_at || null,
-          },
-        });
-        toast.success("Campaign updated!");
+        const result = await updateCampaign(editingId, campaignData);
+        if (result.success) {
+          toast.success("Campaign updated!");
+        } else {
+          toast.error(result.error || "Failed to update");
+        }
       } else {
-        // Create new campaign using client-side SDK (same pattern as orders)
-        await tablesDB.createRow({
-          databaseId: DATABASE_ID,
-          tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
-          rowId: ID.unique(),
-          data: {
-            title: formData.title,
-            body: formData.body,
-            image_url: formData.image_url || null,
-            target_url: formData.target_url || "/",
-            icon_url: formData.icon_url || "/logo.png",
-            tag: formData.tag || "general",
-            campaign_type: formData.campaign_type,
-            target_segment: formData.target_segment,
-            target_tags: formData.target_tags ? formData.target_tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
-            require_interaction: formData.require_interaction,
-            scheduled_at: formData.scheduled_at || null,
-            status: "draft",
-            is_active: true,
-            sent_count: 0,
-            clicked_count: 0,
-            failed_count: 0,
-            delivered_count: 0,
-            dismissed_count: 0,
-          },
+        const result = await createCampaign({
+          ...campaignData,
+          status: "draft",
+          is_active: true,
         });
-        toast.success("Campaign created!");
+        if (result.success) {
+          toast.success("Campaign created!");
+        } else {
+          toast.error(result.error || "Failed to create");
+        }
       }
       resetForm();
       fetchCampaigns();
     } catch (error: any) {
       console.error("Error saving campaign:", error);
       toast.error(error.message || "Failed to save");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -304,13 +280,12 @@ export default function AdminNotificationsPage() {
     }
     if (!confirm("Delete this campaign?")) return;
     try {
-      // Delete using client-side SDK (same pattern as orders)
-      await tablesDB.deleteRow({
-        databaseId: DATABASE_ID,
-        tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
-        rowId: id,
-      });
-      toast.success("Deleted!");
+      const result = await deleteCampaign(id);
+      if (result.success) {
+        toast.success("Deleted!");
+      } else {
+        toast.error(result.error || "Failed to delete");
+      }
       fetchCampaigns();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete");
@@ -319,13 +294,12 @@ export default function AdminNotificationsPage() {
 
   const handleToggleActive = async (campaign: NotificationCampaign) => {
     try {
-      await tablesDB.updateRow({
-        databaseId: DATABASE_ID,
-        tableId: NOTIFICATION_CAMPAIGNS_TABLE_ID,
-        rowId: campaign.$id,
-        data: { is_active: !campaign.is_active },
-      });
-      toast.success(campaign.is_active ? "Deactivated" : "Activated");
+      const result = await updateCampaign(campaign.$id, { is_active: !campaign.is_active });
+      if (result.success) {
+        toast.success(campaign.is_active ? "Deactivated" : "Activated");
+      } else {
+        toast.error(result.error || "Failed to toggle status");
+      }
       fetchCampaigns();
     } catch (error) {
       toast.error("Failed to toggle status");
@@ -560,8 +534,14 @@ export default function AdminNotificationsPage() {
                     </div>
 
                     <div className="flex space-x-3">
-                      <Button type="submit" disabled={loading}>{editingId ? "Update Campaign" : "Create Campaign"}</Button>
-                      <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button>
+                      <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {editingId ? "Updating..." : "Creating..."}</>
+                        ) : (
+                          editingId ? "Update Campaign" : "Create Campaign"
+                        )}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting}>Cancel</Button>
                     </div>
                   </form>
                 </CardContent></Card>

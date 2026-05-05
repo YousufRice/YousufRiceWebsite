@@ -120,7 +120,7 @@ async function setupNotificationTables(): Promise<void> {
   await databases.createStringAttribute(config.databaseId, tableIds.notificationCampaigns, 'sent_at', 50, false);
   await databases.createStringAttribute(config.databaseId, tableIds.notificationCampaigns, 'created_by', 255, false);
   await databases.createStringAttribute(config.databaseId, tableIds.notificationCampaigns, 'target_segment', 100, false, 'all'); // all, active_users, inactive_users, custom
-  await databases.createStringAttribute(config.databaseId, tableIds.notificationCampaigns, 'target_tags', 500, false); // JSON array of tags
+  await databases.createStringAttribute(config.databaseId, tableIds.notificationCampaigns, 'target_tags', 100, false, undefined, true); // Array of tags
   await databases.createStringAttribute(config.databaseId, tableIds.notificationCampaigns, 'actions', 1000, false); // JSON action buttons
   await databases.createBooleanAttribute(config.databaseId, tableIds.notificationCampaigns, 'require_interaction', false, false);
 

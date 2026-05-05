@@ -1401,10 +1401,10 @@
         {
             "$id": "notification_campaigns",
             "$permissions": [
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")"
+                "create(\"users\")",
+                "read(\"any\")",
+                "update(\"users\")",
+                "delete(\"users\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Notification Campaigns",
@@ -1591,8 +1591,8 @@
                     "key": "target_tags",
                     "type": "string",
                     "required": false,
-                    "array": false,
-                    "size": 500,
+                    "array": true,
+                    "size": 100,
                     "default": null,
                     "encrypt": false
                 },
@@ -1655,10 +1655,10 @@
         {
             "$id": "notification_campaign_analytics",
             "$permissions": [
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")"
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"users\")"
             ],
             "databaseId": "6915ff74001aa13f6189",
             "name": "Notification Campaign Analytics",
@@ -1858,16 +1858,22 @@
         {
             "$id": "notification-images",
             "$permissions": [
-                "create(\"label:admin\")",
+                "create(\"users\")",
                 "read(\"any\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")"
+                "update(\"users\")",
+                "delete(\"users\")"
             ],
             "fileSecurity": false,
             "name": "Notification Images",
             "enabled": true,
             "maximumFileSize": 30000000,
-            "allowedFileExtensions": [],
+            "allowedFileExtensions": [
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "image/svg+xml"
+            ],
             "compression": "none",
             "encryption": true,
             "antivirus": true

@@ -32,6 +32,25 @@ export function createClient() {
   };
 }
 
+/**
+ * Creates admin-level server client with API key
+ * For use in server actions that need full database access
+ */
+export async function createAppwriteServerClient() {
+  const { Client, Databases, Storage } = await import("node-appwrite");
+  
+  const client = new Client()
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '')
+    .setKey(process.env.APPWRITE_API_KEY || '');
+
+  return {
+    client,
+    databases: new Databases(client),
+    storage: new Storage(client),
+  };
+}
+
 // Export database constants
 export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '';
 export const PRODUCTS_TABLE_ID = process.env.NEXT_PUBLIC_APPWRITE_PRODUCTS_COLLECTION_ID || '';
