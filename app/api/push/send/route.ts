@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendPushNotifications } from "@/lib/push";
+import { sendPushNotifications, getSubscriptions } from "@/lib/push";
 
 export async function POST(req: Request) {
   try {
@@ -27,4 +27,12 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+export async function GET() {
+  const subs = await getSubscriptions();
+  return NextResponse.json({
+    count: subs.length,
+    endpoints: subs.map((s) => s.endpoint.slice(0, 80)),
+  });
 }

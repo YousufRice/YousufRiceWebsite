@@ -4,10 +4,15 @@
  */
 
 self.addEventListener("push", function (event) {
-  if (!event.data) return;
+  console.log("[SW] Push event received", event.data ? "with data" : "no data");
+  if (!event.data) {
+    console.warn("[SW] Push event has no data");
+    return;
+  }
 
   try {
     const data = event.data.json();
+    console.log("[SW] Push data:", data.title);
 
     const options = {
       body: data.body,
@@ -20,7 +25,12 @@ self.addEventListener("push", function (event) {
       },
     };
 
-    event.waitUntil(self.registration.showNotification(data.title, options));
+    event.waitUntil(
+      self.registration
+        .showNotification(data.title, options)
+        .then(() => console.log("[SW] Notification shown"))
+        .catch((err) => console.error("[SW] showNotification failed:", err)),
+    );
   } catch (error) {
     console.error("[SW] Push error:", error);
   }

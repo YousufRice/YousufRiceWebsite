@@ -7,7 +7,7 @@ import { Client, TablesDB, Query, ID } from "node-appwrite";
 import webpush from "web-push";
 
 // VAPID
-const vapidEmail = process.env.VAPID_EMAIL || "admin@yousufrice.com";
+const vapidEmail = process.env.VAPID_EMAIL || "mailto:admin@yousufrice.com";
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
@@ -109,7 +109,8 @@ export async function getSubscriptions(): Promise<PushSub[]> {
 
 export async function sendPushNotifications(payload: NotificationPayload) {
   const subs = await getSubscriptions();
-  if (subs.length === 0) return { sent: 0, failed: 0, total: 0 };
+  if (subs.length === 0)
+    return { sent: 0, failed: 0, total: 0, errors: [] as string[] };
 
   const notificationPayload = JSON.stringify({
     title: payload.title,
@@ -121,6 +122,7 @@ export async function sendPushNotifications(payload: NotificationPayload) {
 
   let sent = 0;
   let failed = 0;
+  const errors: string[] = [];
 
   for (const sub of subs) {
     try {
@@ -135,11 +137,14 @@ export async function sendPushNotifications(payload: NotificationPayload) {
       sent++;
     } catch (err: any) {
       failed++;
+      const msg = `Endpoint ${sub.endpoint.slice(0, 60)}... status=${err.statusCode} error=${err.message}`;
+      console.error("[Push] send failed:", msg);
+      errors.push(msg);
       if (err.statusCode === 410 || err.statusCode === 404) {
         await removeSubscription(sub.endpoint);
       }
     }
   }
 
-  return { sent, failed, total: subs.length };
+  return { sent, failed, total: subs.length, errors };
 }
