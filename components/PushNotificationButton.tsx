@@ -50,10 +50,15 @@ export default function PushNotificationButton() {
         ),
       });
 
+      const subJson = subscription.toJSON();
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription),
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          p256dh: subJson.keys?.p256dh,
+          auth: subJson.keys?.auth,
+        }),
       });
 
       setStatus("subscribed");

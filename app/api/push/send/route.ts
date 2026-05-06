@@ -1,121 +1,30 @@
 import { NextResponse } from "next/server";
-import { 
-  sendPushNotifications, 
-  verifyPushSecret, 
-  validateNotificationPayload, 
-  checkRateLimit,
-  type NotificationPayload, 
-  type SendOptions 
-} from "@/lib/push-production";
+import { sendPushNotifications } from "@/lib/push";
 
-/**
- * Send push notifications (admin endpoint)
- * Protected by PUSH_API_SECRET
- * Rate limited: 10 requests per minute per IP
- */
 export async function POST(req: Request) {
   try {
-    // Get client IP for rate limiting
-    const forwarded = req.headers.get("x-forwarded-for");
-    const realIp = req.headers.get("x-real-ip");
-    const clientIp = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
-
-    // Check rate limit
-    const rateLimit = checkRateLimit(`send:${clientIp}`);
-    if (!rateLimit.allowed) {
+    const body = await req.json();
+    if (!body.title || !body.body) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "Rate limit exceeded. Please try again later.",
-          resetTime: rateLimit.resetTime,
-        },
-        { 
-          status: 429,
-          headers: {
-            "X-RateLimit-Remaining": String(rateLimit.remaining),
-            "X-RateLimit-Reset": String(rateLimit.resetTime),
-          }
-        }
+        { success: false, error: "title and body required" },
+        { status: 400 },
       );
     }
 
-    // Verify admin secret
-    const secret = req.headers.get("x-push-secret");
-    if (!secret || !verifyPushSecret(secret)) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Parse body
-    let body: Record<string, unknown>;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json(
-        { success: false, error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
-
-    // Validate notification payload
-    const payloadValidation = validateNotificationPayload(body);
-    if (!payloadValidation.valid || !payloadValidation.data) {
-      return NextResponse.json(
-        { success: false, error: payloadValidation.error || "Invalid notification payload" },
-        { status: 400 }
-      );
-    }
-
-    const payload: NotificationPayload = payloadValidation.data;
-
-    // Build send options
-    const options: SendOptions = {};
-    
-    if (body.tags && Array.isArray(body.tags)) {
-      options.tags = body.tags.filter((t): t is string => typeof t === "string");
-    }
-    
-    if (body.userIds && Array.isArray(body.userIds)) {
-      options.userIds = body.userIds.filter((u): u is string => typeof u === "string");
-    }
-    
-    if (typeof body.batchSize === "number" && body.batchSize > 0 && body.batchSize <= 500) {
-      options.batchSize = body.batchSize;
-    }
-    
-    if (typeof body.batchDelayMs === "number" && body.batchDelayMs >= 0) {
-      options.batchDelayMs = body.batchDelayMs;
-    }
-    
-    if (typeof body.ttl === "number" && body.ttl > 0) {
-      options.ttl = body.ttl;
-    }
-    
-    if (body.templateId && typeof body.templateId === "string") {
-      options.templateId = body.templateId;
-    }
-    
-    if (body.variables && typeof body.variables === "object") {
-      options.variables = body.variables as Record<string, string>;
-    }
-
-    const result = await sendPushNotifications(payload, options);
-
-    return NextResponse.json({
-      success: true,
-      ...result,
-    }, {
-      headers: {
-        "X-RateLimit-Remaining": String(rateLimit.remaining),
-      }
+    const result = await sendPushNotifications({
+      title: body.title,
+      body: body.body,
+      url: body.url || "/",
+      icon: body.icon || "/logo.png",
+      tag: body.tag || "general",
     });
+
+    return NextResponse.json({ success: true, ...result });
   } catch (error: any) {
-    console.error("[Push API] Send notification error:", error);
+    console.error("[Push API] Send error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to send notification" },
-      { status: 500 }
+      { success: false, error: error.message || "Failed to send" },
+      { status: 500 },
     );
   }
 }
