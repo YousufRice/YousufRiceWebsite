@@ -947,7 +947,7 @@ body.transition-target {
      ===================================================== */
 
   /* Blob 1: Blue -- slow wide elliptical orbit */
-  @keyframes adobe-blob-1-move {
+  @keyframes blob-1-move {
     0%   { transform: translate(0%,   0%)   scale(1)    rotate(0deg);   }
     15%  { transform: translate(55%,  15%)  scale(1.3)  rotate(40deg);  }
     30%  { transform: translate(30%,  60%)  scale(0.9)  rotate(80deg);  }
@@ -959,7 +959,7 @@ body.transition-target {
   }
 
   /* Blob 2: Yellow -- medium speed, offset phase */
-  @keyframes adobe-blob-2-move {
+  @keyframes blob-2-move {
     0%   { transform: translate(40%,  20%)  scale(1.2)  rotate(0deg);    }
     20%  { transform: translate(-30%, 50%)  scale(0.85) rotate(-60deg);  }
     40%  { transform: translate(-45%, -20%) scale(1.4)  rotate(-110deg); }
@@ -970,7 +970,7 @@ body.transition-target {
   }
 
   /* Blob 3: White/Cream -- fastest, tight chaotic path */
-  @keyframes adobe-blob-3-move {
+  @keyframes blob-3-move {
     0%   { transform: translate(-20%, -30%) scale(1.1)  rotate(0deg);   }
     12%  { transform: translate(30%,  -50%) scale(0.8)  rotate(55deg);  }
     25%  { transform: translate(55%,  25%)  scale(1.35) rotate(110deg); }
@@ -982,7 +982,7 @@ body.transition-target {
   }
 
   /* Container: clips and applies mega-blur to merge blobs */
-  .adobe-fluid-bg {
+  .fluid-bg {
     position: absolute;
     inset: -60%;
     border-radius: inherit;
@@ -992,50 +992,50 @@ body.transition-target {
   }
 
   /* Shared blob base */
-  .adobe-blob-1,
-  .adobe-blob-2,
-  .adobe-blob-3 {
+  .blob-1,
+  .blob-2,
+  .blob-3 {
     position: absolute;
     border-radius: 50%;
     will-change: transform;
   }
 
   /* Blob 1: Royal Blue */
-  .adobe-blob-1 {
+  .blob-1 {
     width: 100%;
     height: 100%;
     top: 10%;
     left: 5%;
     background: radial-gradient(ellipse at center, #3b6fd4 0%, #2251ae 45%, transparent 75%);
     opacity: 0.85;
-    animation: adobe-blob-1-move 14s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    animation: blob-1-move 14s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   }
 
   /* Blob 2: Vivid Yellow */
-  .adobe-blob-2 {
+  .blob-2 {
     width: 90%;
     height: 90%;
     top: 5%;
     left: 10%;
     background: radial-gradient(ellipse at center, #ffee00 0%, #f0c800 40%, transparent 72%);
     opacity: 0.9;
-    animation: adobe-blob-2-move 10s cubic-bezier(0.33, 0, 0.67, 1) infinite;
+    animation: blob-2-move 10s cubic-bezier(0.33, 0, 0.67, 1) infinite;
   }
 
   /* Blob 3: Soft White/Cream highlight */
-  .adobe-blob-3 {
+  .blob-3 {
     width: 80%;
     height: 80%;
     top: 15%;
     left: 15%;
     background: radial-gradient(ellipse at center, rgba(255,255,255,0.95) 0%, rgba(235,240,255,0.7) 35%, transparent 68%);
     opacity: 0.7;
-    animation: adobe-blob-3-move 7.5s cubic-bezier(0.55, 0.06, 0.68, 0.19) infinite;
+    animation: blob-3-move 7.5s cubic-bezier(0.55, 0.06, 0.68, 0.19) infinite;
   }
 
   /* Legacy class -- kept for backward compat */
   .animate-fluid-gradient {
     background-size: 300% 300%;
-    animation: adobe-blob-1-move 14s ease-in-out infinite;
+    animation: blob-1-move 14s ease-in-out infinite;
   }
 

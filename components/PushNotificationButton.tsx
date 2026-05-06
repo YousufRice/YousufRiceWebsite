@@ -1,91 +1,107 @@
-'use client';
-import { useState, useEffect } from 'react';
+"use client";
+import { useState, useEffect } from "react";
 
 function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+const isPushEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_PUSH_NOTIFICATIONS === "true";
+
 export default function PushNotificationButton() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'subscribed' | 'denied' | 'unsupported'>('idle');
+  // Feature flag: return null if push notifications are disabled
+  if (!isPushEnabled) {
+    return null;
+  }
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "subscribed" | "denied" | "unsupported"
+  >("idle");
 
   useEffect(() => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      setStatus('unsupported');
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      setStatus("unsupported");
       return;
     }
-    if (Notification.permission === 'granted') setStatus('subscribed');
-    if (Notification.permission === 'denied') setStatus('denied');
+    if (Notification.permission === "granted") setStatus("subscribed");
+    if (Notification.permission === "denied") setStatus("denied");
   }, []);
 
   const handleSubscribe = async () => {
-    if (status !== 'idle') return;
-    setStatus('loading');
+    if (status !== "idle") return;
+    setStatus("loading");
 
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') { setStatus('denied'); return; }
+      if (permission !== "granted") {
+        setStatus("denied");
+        return;
+      }
 
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
         ),
       });
 
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription),
       });
 
-      setStatus('subscribed');
+      setStatus("subscribed");
     } catch (err) {
-      console.error('Push subscription error:', err);
-      setStatus('denied');
+      console.error("Push subscription error:", err);
+      setStatus("denied");
     }
   };
 
   const config = {
     idle: {
-      label: 'Notifications for Best Deals',
-      sub: 'Offers & discounts — straight to you',
+      label: "Notifications for Best Deals",
+      sub: "Offers & discounts — straight to you",
       note: "Tap once — we'll never spam you",
       pulse: true,
     },
     loading: {
-      label: 'Enabling notifications…',
-      sub: 'Asking browser permission',
-      note: '',
+      label: "Enabling notifications…",
+      sub: "Asking browser permission",
+      note: "",
       pulse: false,
     },
     subscribed: {
       label: "You're subscribed!",
-      sub: 'Best deals will come straight to you',
-      note: 'Manage anytime in browser settings',
+      sub: "Best deals will come straight to you",
+      note: "Manage anytime in browser settings",
       pulse: false,
     },
     denied: {
-      label: 'Notifications blocked',
-      sub: 'Enable in your browser settings',
-      note: '',
+      label: "Notifications blocked",
+      sub: "Enable in your browser settings",
+      note: "",
       pulse: false,
     },
     unsupported: {
-      label: 'Not supported',
-      sub: 'Your browser does not support push notifications',
-      note: '',
+      label: "Not supported",
+      sub: "Your browser does not support push notifications",
+      note: "",
       pulse: false,
     },
   };
 
   const c = config[status];
-  const isDisabled = status === 'loading' || status === 'subscribed' || status === 'denied' || status === 'unsupported';
+  const isDisabled =
+    status === "loading" ||
+    status === "subscribed" ||
+    status === "denied" ||
+    status === "unsupported";
 
   return (
     <>
@@ -229,20 +245,28 @@ export default function PushNotificationButton() {
         <p className="pnb-eyebrow">Never miss a deal</p>
 
         <button
-          className={`pnb-btn ${status !== 'idle' && status !== 'loading' ? status : ''}`}
+          className={`pnb-btn ${status !== "idle" && status !== "loading" ? status : ""}`}
           onClick={handleSubscribe}
           disabled={isDisabled}
           aria-label="Subscribe to push notifications for best deals, offers and discounts"
         >
           {/* Bell or spinner */}
           <div className="pnb-bell-wrap">
-            {status === 'loading' ? (
+            {status === "loading" ? (
               <div className="pnb-spinner" />
             ) : (
               <>
-                <svg className="pnb-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                <svg
+                  className="pnb-bell"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 {c.pulse && <div className="pnb-badge" />}
               </>
@@ -256,23 +280,50 @@ export default function PushNotificationButton() {
           </div>
 
           {/* Arrow — only when idle */}
-          {status === 'idle' && (
-            <svg className="pnb-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
+          {status === "idle" && (
+            <svg
+              className="pnb-arrow"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           )}
 
           {/* Check — when subscribed */}
-          {status === 'subscribed' && (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
+          {status === "subscribed" && (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1D9E75"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
             </svg>
           )}
 
           {/* X — when denied */}
-          {(status === 'denied' || status === 'unsupported') && (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          {(status === "denied" || status === "unsupported") && (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#E24B4A"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           )}
         </button>

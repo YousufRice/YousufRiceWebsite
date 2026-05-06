@@ -22,6 +22,7 @@ interface NavItemsProps {
   items: {
     name: string;
     link: string;
+    highlight?: boolean;
   }[];
   className?: string;
   onItemClick?: () => void;
@@ -77,16 +78,16 @@ export const Navbar = ({ children, className }: NavbarProps) => {
       // IMPORTANT: Keep this as sticky for scrolling behavior
       className={cn(
         "sticky inset-x-0 top-0 z-40 w-full overflow-visible",
-        className
+        className,
       )}
     >
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
           ? React.cloneElement(
-            child as React.ReactElement<{ visible?: boolean }>,
-            { visible }
-          )
-          : child
+              child as React.ReactElement<{ visible?: boolean }>,
+              { visible },
+            )
+          : child,
       )}
     </motion.div>
   );
@@ -116,8 +117,8 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
       className={cn(
         "relative z-60 mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-transparent px-4 py-2 lg:flex dark:bg-transparent overflow-visible",
         visible &&
-        "glass-blur-md border border-white/20 dark:border-neutral-800/30 shadow-lg shadow-black/5 dark:shadow-white/5",
-        className
+          "glass-blur-md border border-white/20 dark:border-neutral-800/30 shadow-lg shadow-black/5 dark:shadow-white/5",
+        className,
       )}
     >
       {children}
@@ -133,17 +134,28 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
       onMouseLeave={() => setHovered(null)}
       className={cn(
         "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-zinc-600 transition duration-200 hover:text-zinc-800 lg:flex lg:space-x-2",
-        className
+        className,
       )}
     >
       {items.map((item, idx) => (
         <Link
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}
-          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
+          className={`relative px-4 py-2 text-neutral-600 dark:text-neutral-300 ${
+            item.highlight ? "overflow-hidden rounded-full" : ""
+          }`}
           key={`link-${idx}`}
           href={item.link}
         >
+          {item.highlight && (
+            <div className="absolute inset-0 pointer-events-none -z-10 bg-white rounded-full">
+              <div className="fluid-bg">
+                <div className="blob-1"></div>
+                <div className="blob-2"></div>
+                <div className="blob-3"></div>
+              </div>
+            </div>
+          )}
           {hovered === idx && (
             <motion.div
               layoutId="hovered"
@@ -156,7 +168,11 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
               }}
             />
           )}
-          <span className="relative z-20">{item.name}</span>
+          <span
+            className={`relative z-20 ${item.highlight ? "font-semibold text-[#27247b]" : ""}`}
+          >
+            {item.name}
+          </span>
         </Link>
       ))}
     </motion.div>
@@ -190,8 +206,8 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
       className={cn(
         "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-transparent px-0 py-2 lg:hidden",
         visible &&
-        "glass-blur-md border border-white/20 dark:border-neutral-800/30 shadow-lg shadow-black/5 dark:shadow-white/5 rounded-xl",
-        className
+          "glass-blur-md border border-white/20 dark:border-neutral-800/30 shadow-lg shadow-black/5 dark:shadow-white/5 rounded-xl",
+        className,
       )}
     >
       {children}
@@ -207,7 +223,7 @@ export const MobileNavHeader = ({
     <div
       className={cn(
         "flex w-full flex-row items-center justify-between",
-        className
+        className,
       )}
     >
       {children}
@@ -271,7 +287,7 @@ export const MobileNavMenu = ({
           }}
           className={cn(
             "absolute inset-x-0 top-16 z-50 mx-4 flex w-auto flex-col items-start justify-start gap-4 px-4 py-8 bg-white dark:bg-neutral-950 border border-black/5 dark:border-white/10 shadow-lg rounded-xl",
-            className
+            className,
           )}
         >
           {children}
@@ -326,9 +342,9 @@ export const NavbarButton = ({
   className?: string;
   variant?: "primary" | "secondary" | "dark" | "gradient";
 } & (
-    | React.ComponentPropsWithoutRef<"a">
-    | React.ComponentPropsWithoutRef<"button">
-  )) => {
+  | React.ComponentPropsWithoutRef<"a">
+  | React.ComponentPropsWithoutRef<"button">
+)) => {
   const baseStyles =
     "px-4 py-2 rounded-md bg-white button bg-white text-black text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center";
 

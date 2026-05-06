@@ -22,12 +22,24 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [isHighlighted, setIsHighlighted] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Track cart drawer state to pause blob animation when open (performance optimization)
+  useEffect(() => {
+    setIsCartOpen(useCartStore.getState().isOpen);
+
+    const unsubscribe = useCartStore.subscribe((state) => {
+      setIsCartOpen(state.isOpen);
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Log auth status for debugging
   useEffect(() => {
@@ -72,7 +84,7 @@ export function Navbar() {
 
   const navItems = [
     { name: "Products", link: "/#products" },
-    { name: "Special Deals", link: "/special-deals" },
+    { name: "Special Deals", link: "/special-deals", highlight: true },
     { name: "About Us", link: "/about" },
     { name: "Contact", link: "/contact" },
     // Manual tracking temporarily disabled - uncomment below to enable
@@ -115,20 +127,24 @@ export function Navbar() {
         <div className="relative z-20 flex items-center space-x-2">
           {/* Cart */}
           <div className="relative inline-block">
-            <button 
+            <button
               onClick={() => useCartStore.getState().setIsOpen(true)}
               className={`relative z-10 flex items-center justify-center p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white transition-all duration-300 rounded-full overflow-hidden ${
-                totalItems > 0 && !isHighlighted ? "shadow-md bg-white border border-[#ffff03]/50" : ""
+                totalItems > 0 && !isHighlighted
+                  ? "shadow-md bg-white border border-[#ffff03]/50"
+                  : ""
               } ${
-                isHighlighted ? "scale-125 ring-2 ring-[#ffff03] bg-yellow-100 dark:bg-yellow-900/30 shadow-lg" : ""
+                isHighlighted
+                  ? "scale-125 ring-2 ring-[#ffff03] bg-yellow-100 dark:bg-yellow-900/30 shadow-lg"
+                  : ""
               }`}
             >
-              {totalItems > 0 && !isHighlighted && (
+              {totalItems > 0 && !isHighlighted && !isCartOpen && (
                 <div className="absolute inset-0 pointer-events-none -z-10 bg-white">
-                  <div className="adobe-fluid-bg">
-                    <div className="adobe-blob-1"></div>
-                    <div className="adobe-blob-2"></div>
-                    <div className="adobe-blob-3"></div>
+                  <div className="fluid-bg">
+                    <div className="blob-1"></div>
+                    <div className="blob-2"></div>
+                    <div className="blob-3"></div>
                   </div>
                 </div>
               )}
@@ -211,20 +227,24 @@ export function Navbar() {
           <div className="flex items-center space-x-2">
             {/* Cart */}
             <div className="relative inline-block">
-              <button 
+              <button
                 onClick={() => useCartStore.getState().setIsOpen(true)}
                 className={`relative z-10 flex items-center justify-center p-2 text-[#27247b] hover:text-[#27247b]/80 dark:text-neutral-300 dark:hover:text-white transition-all duration-300 rounded-full overflow-hidden ${
-                  totalItems > 0 && !isHighlighted ? "shadow-md bg-white border border-[#ffff03]/50" : ""
+                  totalItems > 0 && !isHighlighted
+                    ? "shadow-md bg-white border border-[#ffff03]/50"
+                    : ""
                 } ${
-                  isHighlighted ? "scale-125 ring-2 ring-[#ffff03] bg-yellow-100 dark:bg-yellow-900/30 shadow-lg" : ""
+                  isHighlighted
+                    ? "scale-125 ring-2 ring-[#ffff03] bg-yellow-100 dark:bg-yellow-900/30 shadow-lg"
+                    : ""
                 }`}
               >
-                {totalItems > 0 && !isHighlighted && (
+                {totalItems > 0 && !isHighlighted && !isCartOpen && (
                   <div className="absolute inset-0 pointer-events-none -z-10 bg-white">
-                    <div className="adobe-fluid-bg">
-                      <div className="adobe-blob-1"></div>
-                      <div className="adobe-blob-2"></div>
-                      <div className="adobe-blob-3"></div>
+                    <div className="fluid-bg">
+                      <div className="blob-1"></div>
+                      <div className="blob-2"></div>
+                      <div className="blob-3"></div>
                     </div>
                   </div>
                 )}

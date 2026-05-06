@@ -907,7 +907,7 @@ function CheckoutContent() {
                           </option>
                           <option value="Karachi">Karachi</option>
                           <option value="Other City/Town">
-                            Other City/Town (Delivery Charges Apply)
+                            Other City (<span className="font-semibold text-red-500"> Separate Courier Delivery Charges</span>)
                           </option>
                         </select>
                       </div>
