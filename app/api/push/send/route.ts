@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import { sendPushNotifications, getSubscriptions } from "@/lib/push";
 
 export async function POST(req: Request) {
+  console.log("[Push API] POST /api/push/send received");
   try {
     const body = await req.json();
+    console.log("[Push API] body:", {
+      title: body.title,
+      bodyLen: body.body?.length,
+      url: body.url,
+    });
+
     if (!body.title || !body.body) {
       return NextResponse.json(
         { success: false, error: "title and body required" },
@@ -11,6 +18,7 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log("[Push API] calling sendPushNotifications...");
     const result = await sendPushNotifications({
       title: body.title,
       body: body.body,
@@ -18,6 +26,7 @@ export async function POST(req: Request) {
       icon: body.icon || "/logo.png",
       tag: body.tag || "general",
     });
+    console.log("[Push API] result:", result);
 
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {

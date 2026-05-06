@@ -92,8 +92,10 @@ export async function removeSubscription(endpoint: string) {
 
 export async function getSubscriptions(): Promise<PushSub[]> {
   try {
+    console.log("[Push] getSubscriptions: querying Appwrite...");
     const db = getDB();
     const result = await db.listRows(DB_ID, SUBS_TABLE, [Query.limit(10000)]);
+    console.log("[Push] getSubscriptions: found", result.rows.length, "subs");
     return (result.rows as any[]).map((r) => ({
       $id: r.$id,
       endpoint: r.endpoint,
@@ -108,7 +110,9 @@ export async function getSubscriptions(): Promise<PushSub[]> {
 }
 
 export async function sendPushNotifications(payload: NotificationPayload) {
+  console.log("[Push] sendPushNotifications: starting");
   const subs = await getSubscriptions();
+  console.log("[Push] sendPushNotifications:", subs.length, "subs");
   if (subs.length === 0)
     return { sent: 0, failed: 0, total: 0, errors: [] as string[] };
 
@@ -119,12 +123,14 @@ export async function sendPushNotifications(payload: NotificationPayload) {
     icon: payload.icon || "/logo.png",
     tag: payload.tag || "general",
   });
+  console.log("[Push] payload:", notificationPayload.slice(0, 200));
 
   let sent = 0;
   let failed = 0;
   const errors: string[] = [];
 
   for (const sub of subs) {
+    console.log("[Push] sending to", sub.endpoint.slice(0, 60), "...");
     try {
       await webpush.sendNotification(
         {
@@ -135,16 +141,23 @@ export async function sendPushNotifications(payload: NotificationPayload) {
         { TTL: 86400 },
       );
       sent++;
+      console.log("[Push] sent OK");
     } catch (err: any) {
       failed++;
       const msg = `Endpoint ${sub.endpoint.slice(0, 60)}... status=${err.statusCode} error=${err.message}`;
       console.error("[Push] send failed:", msg);
       errors.push(msg);
-      if (err.statusCode === 410 || err.statusCode === 404) {
+      if (
+        err.statusCode === 410 ||
+        err.statusCode === 404 ||
+        err.statusCode === 403
+      ) {
+        console.log("[Push] removing stale subscription");
         await removeSubscription(sub.endpoint);
       }
     }
   }
 
+  console.log("[Push] done. sent:", sent, "failed:", failed);
   return { sent, failed, total: subs.length, errors };
 }

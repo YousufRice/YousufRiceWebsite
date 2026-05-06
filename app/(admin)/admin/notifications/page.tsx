@@ -79,7 +79,9 @@ export default function AdminNotificationsPage() {
     try {
       new Notification("Test Notification", {
         body: "If you see this, your browser/OS allows notifications.",
-        icon: "/logo.png",
+        icon: "/icon-192x192.png",
+        requireInteraction: true,
+        tag: "test-local",
       });
       toast.success("Local notification sent! Did you see it?");
     } catch (err: any) {
@@ -265,8 +267,6 @@ export default function AdminNotificationsPage() {
             {diagnostics ? (
               <div>
                 <p className="text-sm text-gray-600 mb-2">
-                  <span className="font-medium">{diagnostics.count}</span>{" "}
-                  active subscription(s)
                   <span className="font-medium">{diagnostics.count}</span>{" "}
                   active subscription(s)
                 </p>
