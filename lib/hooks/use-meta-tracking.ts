@@ -42,6 +42,7 @@ interface TrackEventParams {
   customData?: MetaCustomData;
   testEventCode?: string;
   deliveryMode?: "await" | "background" | "navigation";
+  skipBrowserPixel?: boolean;
 }
 
 interface TrackingContext {
@@ -78,6 +79,7 @@ export function useMetaTracking() {
       customData = {},
       testEventCode,
       deliveryMode = "await",
+      skipBrowserPixel = false,
     }: TrackEventParams) => {
       try {
         // Generate unique event ID for deduplication
@@ -102,7 +104,7 @@ export function useMetaTracking() {
         const { fbp, fbc } = getFacebookCookies();
 
         // 1. Browser-side: Track with Meta Pixel
-        if (typeof window !== "undefined" && window.fbq) {
+        if (!skipBrowserPixel && typeof window !== "undefined" && window.fbq) {
           window.fbq("track", eventName, customData, { eventID: eventId });
           console.log(`[Meta Pixel] ${eventName} tracked with ID: ${eventId}`);
         }
@@ -184,8 +186,13 @@ export function useMetaTracking() {
 
   // Convenience methods for common events
   const trackPageView = useCallback(() => {
+    const win = typeof window !== "undefined" ? (window as any) : null;
+    const initialEventId = win?.__metaPageViewEventId ?? undefined;
+    if (win) win.__metaPageViewEventId = undefined;
     return trackEvent({
       eventName: "PageView",
+      eventId: initialEventId,
+      skipBrowserPixel: !!initialEventId,
       testEventCode: TEST_EVENT_CODE || undefined,
     });
   }, [trackEvent]);
@@ -213,13 +220,16 @@ export function useMetaTracking() {
       return trackEvent({
         eventName: "ViewContent",
         userData: productData.userData,
-        customData: buildTrackingCustomData({
-          content_name: productData.contentName,
-          content_ids: [productData.contentId],
-          content_type: productData.contentType || "product",
-          value: productData.value,
-          currency: productData.currency || "PKR",
-        }, productData.trackingContext),
+        customData: buildTrackingCustomData(
+          {
+            content_name: productData.contentName,
+            content_ids: [productData.contentId],
+            content_type: productData.contentType || "product",
+            value: productData.value,
+            currency: productData.currency || "PKR",
+          },
+          productData.trackingContext,
+        ),
         deliveryMode: "background",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
@@ -250,20 +260,23 @@ export function useMetaTracking() {
       return trackEvent({
         eventName: "AddToCart",
         userData: cartData.userData,
-        customData: buildTrackingCustomData({
-          content_name: cartData.contentName,
-          content_ids: [cartData.contentId],
-          content_type: "product",
-          value: cartData.value,
-          currency: cartData.currency || "PKR",
-          contents: [
-            {
-              id: cartData.contentId,
-              quantity: cartData.quantity || 1,
-              item_price: cartData.value,
-            },
-          ],
-        }, cartData.trackingContext),
+        customData: buildTrackingCustomData(
+          {
+            content_name: cartData.contentName,
+            content_ids: [cartData.contentId],
+            content_type: "product",
+            value: cartData.value,
+            currency: cartData.currency || "PKR",
+            contents: [
+              {
+                id: cartData.contentId,
+                quantity: cartData.quantity || 1,
+                item_price: cartData.value,
+              },
+            ],
+          },
+          cartData.trackingContext,
+        ),
         deliveryMode: "background",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
@@ -298,13 +311,16 @@ export function useMetaTracking() {
           stableKey: checkoutData.stableKey,
         }),
         userData: checkoutData.userData,
-        customData: buildTrackingCustomData({
-          value: checkoutData.value,
-          currency: checkoutData.currency || "PKR",
-          num_items: checkoutData.numItems,
-          content_ids: checkoutData.contentIds,
-          content_type: "product",
-        }, checkoutData.trackingContext),
+        customData: buildTrackingCustomData(
+          {
+            value: checkoutData.value,
+            currency: checkoutData.currency || "PKR",
+            num_items: checkoutData.numItems,
+            content_ids: checkoutData.contentIds,
+            content_type: "product",
+          },
+          checkoutData.trackingContext,
+        ),
         deliveryMode: "navigation",
         testEventCode: TEST_EVENT_CODE || undefined,
       });
@@ -344,15 +360,18 @@ export function useMetaTracking() {
           stableKey: purchaseData.orderId,
         }),
         userData: purchaseData.userData,
-        customData: buildTrackingCustomData({
-          value: purchaseData.value,
-          currency: purchaseData.currency || "PKR",
-          order_id: purchaseData.orderId,
-          content_ids: purchaseData.contentIds,
-          content_type: "product",
-          num_items: purchaseData.numItems,
-          contents: purchaseData.contents,
-        }, purchaseData.trackingContext),
+        customData: buildTrackingCustomData(
+          {
+            value: purchaseData.value,
+            currency: purchaseData.currency || "PKR",
+            order_id: purchaseData.orderId,
+            content_ids: purchaseData.contentIds,
+            content_type: "product",
+            num_items: purchaseData.numItems,
+            contents: purchaseData.contents,
+          },
+          purchaseData.trackingContext,
+        ),
         deliveryMode: "background",
         testEventCode: TEST_EVENT_CODE || undefined,
       });

@@ -53,6 +53,14 @@ export function CartDrawer() {
     const isAgent = Boolean(agentLabel);
     const orderChannel = getOrderChannelFromAgentLabel(agentLabel);
 
+    // Make tracking deterministic: stable item ordering + stable IDs
+    const itemsForTracking = [...items].sort((a, b) =>
+      a.product.$id.localeCompare(b.product.$id),
+    );
+    const uniqueContentIds = Array.from(
+      new Set(itemsForTracking.map((item) => item.product.$id)),
+    );
+
     // Don't send user data if it's an agent
     const userData =
       user && !isAgent
@@ -69,15 +77,17 @@ export function CartDrawer() {
     trackInitiateCheckout({
       value: totalPrice,
       currency: "PKR",
-      numItems: items.reduce((sum, item) => sum + item.quantity, 0),
-      contentIds: items.map((item) => item.product.$id),
+      numItems: itemsForTracking.reduce((sum, item) => sum + item.quantity, 0),
+      contentIds: uniqueContentIds,
       userData,
       trackingContext: {
         orderChannel,
         agentLabel,
         placedByUserId: user?.$id,
       },
-      stableKey: items.map((item) => `${item.product.$id}:${item.quantity}`).join("|"),
+      stableKey: itemsForTracking
+        .map((item) => `${item.product.$id}:${item.quantity}`)
+        .join("|"),
     });
 
     setIsOpen(false);

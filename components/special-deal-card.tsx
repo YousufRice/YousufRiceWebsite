@@ -23,6 +23,7 @@ import { calculatePrice, formatCurrency, getPricePerKg } from "@/lib/utils";
 import { storage, STORAGE_BUCKET_ID } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 
 interface SpecialDealCardProps {
   product: Product;
@@ -37,6 +38,7 @@ export function SpecialDealCard({
   const addBag = useCartStore((state) => state.addBag);
   const removeBag = useCartStore((state) => state.removeBag);
   const router = useRouter();
+  const { trackAddToCart } = useMetaTracking();
 
   const totalKg = bagCount * 25;
   const pricePerKg = getPricePerKg(product, totalKg || 25);
@@ -47,6 +49,18 @@ export function SpecialDealCard({
     : null;
 
   const handleAddBag = () => {
+    const newBagCount = bagCount + 1;
+    const newTotalKg = newBagCount * 25;
+    const newTotalPrice = calculatePrice(product, newTotalKg);
+
+    trackAddToCart({
+      contentName: product.name,
+      contentId: product.$id,
+      value: newTotalPrice,
+      currency: "PKR",
+      quantity: newTotalKg,
+    });
+
     setBagCount((prev) => prev + 1);
     addBag(product, 25);
     useCartStore.getState().setIsOpen(true);
@@ -93,7 +107,7 @@ export function SpecialDealCard({
       useCartStore.getState().setIsOpen(false);
       useCartStore.getState().highlightCart();
       router.push("/checkout");
-    }, 3000);
+    }, 150);
   };
 
   return (

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Script from 'next/script';
-import { useEffect, Suspense } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useMetaTracking } from '@/lib/hooks/use-meta-tracking';
+import Script from "next/script";
+import { useEffect, Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useMetaTracking } from "@/lib/hooks/use-meta-tracking";
 
 // 2025: Use Dataset ID for unified browser + server tracking
 const META_DATASET_ID = process.env.NEXT_PUBLIC_META_DATASET_ID;
@@ -22,7 +22,9 @@ function MetaPixelContent() {
   }, [pathname, searchParams, trackPageView]);
 
   if (!META_DATASET_ID) {
-    console.warn('NEXT_PUBLIC_META_DATASET_ID not found in environment variables');
+    console.warn(
+      "NEXT_PUBLIC_META_DATASET_ID not found in environment variables",
+    );
     return null;
   }
 
@@ -41,7 +43,10 @@ function MetaPixelContent() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
+            var _mpvid = 'pv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
             fbq('init', '${META_DATASET_ID}');
+            fbq('track', 'PageView', {}, { eventID: _mpvid });
+            window.__metaPageViewEventId = _mpvid;
           `,
         }}
       />
@@ -49,7 +54,7 @@ function MetaPixelContent() {
         <img
           height="1"
           width="1"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           src={`https://www.facebook.com/tr?id=${META_DATASET_ID}&ev=PageView&noscript=1`}
           alt=""
         />

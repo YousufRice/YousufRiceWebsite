@@ -96,12 +96,13 @@ export function useBagSelection(product: Product, isBundle: boolean = false) {
       },
     });
 
-    // Wait 3 seconds, close drawer, highlight cart icon again, and route
+    // Don't delay navigation; send tracking separately (Meta uses sendBeacon/keepalive).
+    // Small timeout keeps UI responsive and lets the toast render.
     setTimeout(() => {
       useCartStore.getState().setIsOpen(false);
       useCartStore.getState().highlightCart();
       router.push('/checkout');
-    }, 3000);
+    }, 150);
   };
 
   return {

@@ -6,6 +6,13 @@ import { useCartStore } from "@/lib/store/cart-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   tablesDB,
@@ -681,7 +688,7 @@ function CheckoutContent() {
           firstName: cleanedName.split(" ")[0],
           lastName: cleanedName.split(" ").slice(1).join(" "),
           city: finalCity || undefined,
-          externalId: (!isAgent && user?.$id) ? user.$id : customerId, // CRITICAL: Link to customer/user ID, but NEVER agent ID
+          externalId: !isAgent && user?.$id ? user.$id : customerId, // CRITICAL: Link to customer/user ID, but NEVER agent ID
         },
         trackingContext: {
           orderChannel,
@@ -886,10 +893,9 @@ function CheckoutContent() {
                         <label className="block text-sm font-bold text-[#27247b] mb-2">
                           City *
                         </label>
-                        <select
+                        <Select
                           value={formData.city}
-                          onChange={(e) => {
-                            const val = e.target.value;
+                          onValueChange={(val) => {
                             setFormData({
                               ...formData,
                               city: val,
@@ -899,17 +905,21 @@ function CheckoutContent() {
                                   : formData.otherCity,
                             });
                           }}
-                          required
-                          className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base bg-gray-50 cursor-pointer appearance-none"
                         >
-                          <option value="" disabled>
-                            Select City
-                          </option>
-                          <option value="Karachi">Karachi</option>
-                          <option value="Other City/Town">
-                            Other City (<span className="font-semibold text-red-500"> Separate Courier Delivery Charges</span>)
-                          </option>
-                        </select>
+                          <SelectTrigger className="w-full border-2 border-gray-300 focus:border-[#ffff03] focus:ring-2 focus:ring-[#ffff03]/20 rounded-lg p-3 text-base bg-gray-50 cursor-pointer">
+                            <SelectValue placeholder="Select City" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Karachi">Karachi</SelectItem>
+                            <SelectItem value="Other City/Town">
+                              Other City (
+                              <span className="font-semibold text-red-500">
+                                Separate Courier Delivery Charges
+                              </span>
+                              )
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {formData.city === "Other City/Town" && (
