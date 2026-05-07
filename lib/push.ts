@@ -120,7 +120,7 @@ export async function sendPushNotifications(payload: NotificationPayload) {
     title: payload.title,
     body: payload.body,
     url: payload.url || "/",
-    icon: payload.icon || "/logo.png",
+    icon: payload.icon || "/icon-192x192.png",
     tag: payload.tag || "general",
   });
   console.log("[Push] payload:", notificationPayload.slice(0, 200));
