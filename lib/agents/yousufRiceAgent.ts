@@ -1,5 +1,6 @@
-import { Agent, run, InputGuardrail } from "@openai/agents";
-import { z } from "zod";
+import { wrapLanguageModel } from 'ai';
+import { guardrailMiddleware } from './guardrails';
+import { openrouter } from './openrouter';
 import {
   searchProductsTool,
   getProductDetailsTool,
@@ -10,103 +11,42 @@ import {
   createOrderTool,
   getAllProductsTool,
 } from "./tools/appwriteTools";
-import { checkLoyaltyRewardTool } from "./tools/loyaltyTools";
 
 /**
- * Yousuf Rice Agent - Unified Customer Service Agent
- *
- * This is a powerful, action-oriented agent that can:
- * - Search and recommend products with detailed pricing
- * - Calculate order totals with bulk discounts
- * - Create and track orders
- * - Manage customer information
- * - Provide company information and support
- *
- * The agent always asks for confirmation before taking actions like creating orders.
+ * Yousuf Rice Agent Configuration for Vercel AI SDK
  */
 
-const guardrailAgent = new Agent({
-  name: "Safety Guardrail",
-  model: "gpt-5-nano",
-  instructions: `Check if the user input is relevant to Yousuf Rice business.
-  Relevant topics include:
-  - Rice products (Sella, Steam Basmati, etc.)
-  - Prices and discounts
-  - Placing or tracking orders
-  - Delivery information (Karachi only)
-  - Company information and policies
-  - Customer service inquiries
-  - General greetings (Hello, Hi, Salam)
-
-  Irrelevant topics include:
-  - Math homework or general extensive calculations
-  - Coding or programming questions
-  - Creative writing (poems, stories) unrelated to rice
-  - General knowledge questions not related to rice/cooking/Pakistan
-  - Politics or sensitive topics
-
-  Return isRelevant: true for relevant topics, false otherwise.`,
-  outputType: z.object({
-    isRelevant: z.boolean(),
-    reasoning: z.string(),
-  }),
+export const yousufRiceModel = wrapLanguageModel({
+  model: openrouter(process.env.OPEN_ROUTER_MODEL || 'inclusionai/ring-2.6-1t:free'),
+  middleware: [guardrailMiddleware],
 });
 
-const specialDealGuardrailAgent = new Agent({
-  name: "Special Deal Guardrail",
-  model: "gpt-5-nano",
-  instructions: `Check if the user is trying to order 5kg for special deals or bulk deals.
-  Special deals and bulk deals ONLY come in 25kg bags - there is NO 5kg option for special deals.
+export const yousufRiceSystemPrompt = `[SAFETY INSTRUCTIONS]
+Check if the user input is relevant to Yousuf Rice business.
+Relevant topics include:
+- Rice products (Sella, Steam Basmati, etc.)
+- Prices and discounts
+- Placing or tracking orders
+- Delivery information (Karachi only)
+- Company information and policies
+- Customer service inquiries
+- General greetings (Hello, Hi, Salam)
 
-  Check if the user input contains:
-  - Mentions of "special deal", "bulk deal", "hotel", "restaurant" AND
-  - Mentions of 5kg quantity
+Irrelevant topics include:
+- Math homework or general extensive calculations
+- Coding or programming questions
+- Creative writing (poems, stories) unrelated to rice
+- General knowledge questions not related to rice/cooking/Pakistan
+- Politics or sensitive topics
 
-  If the user is asking for 5kg in the context of special deals/bulk deals/hotels/restaurants, return isValid: false.
-  Otherwise, return isValid: true.
+If the user asks an irrelevant topic, politely decline to answer and remind them you are a Yousuf Rice assistant.
 
-  Examples:
-  - "I want 5kg special deal" → isValid: false
-  - "I want 5kg for my restaurant" → isValid: false
-  - "I want 25kg special deal" → isValid: true
-  - "I want 5kg basmati rice" → isValid: true (regular product, not special deal)
-  - "I want 25kg for my hotel" → isValid: true`,
-  outputType: z.object({
-    isValid: z.boolean(),
-    reasoning: z.string(),
-  }),
-});
+[SPECIAL DEAL INSTRUCTIONS]
+Special deals and bulk deals ONLY come in 25kg bags - there is NO 5kg option for special deals.
+If the user is asking for 5kg in the context of special deals/bulk deals/hotels/restaurants, inform them that special deals are only available in 25kg bags.
 
-const safetyGuardrail: InputGuardrail = {
-  name: "Relevance Guardrail",
-  runInParallel: false, // Block execution to save costs if irrelevant
-  execute: async ({ input, context }) => {
-    // If input is not a string (e.g. image), let it pass or handle accordingly.
-    // The SDK types suggest input is what's passed to run(), usually string.
-    const result = await run(guardrailAgent, input, { context });
-    return {
-      outputInfo: result.finalOutput,
-      tripwireTriggered: result.finalOutput?.isRelevant === false,
-    };
-  },
-};
-
-const specialDealGuardrail: InputGuardrail = {
-  name: "Special Deal 5kg Guardrail",
-  runInParallel: false,
-  execute: async ({ input, context }) => {
-    const result = await run(specialDealGuardrailAgent, input, { context });
-    return {
-      outputInfo: result.finalOutput,
-      tripwireTriggered: result.finalOutput?.isValid === false,
-    };
-  },
-};
-export const yousufRiceAgent = Agent.create({
-  name: "Yousuf Rice Agent",
-  model: "gpt-5.2",
-  inputGuardrails: [safetyGuardrail, specialDealGuardrail],
-  instructions: `You are the customer service agent and a good sales man for Yousuf Rice, a premium rice supplier in Pakistan. Your name is Sajjad.
+[MAIN INSTRUCTIONS]
+You are the customer service agent and a good sales man for Yousuf Rice, a premium rice supplier in Pakistan. Your name is Sajjad.
 
 # YOUR CAPABILITIES
 
@@ -246,17 +186,15 @@ Customer: "I want rice for restaurant"
 
 If a customer requests a contact number for important or high-level matters such as export related opportunities, business offers, partnerships, services, or formal complaints—politely provide the following contact number: 0333-2339557
 
-Focus on quality over quantity—make purposeful tool calls and respond once you have sufficient information to be helpful and dont chat for time pasing or irrelevant things like not about rice or our products or not a customer just chatting or asking info about anything else that is not relevant to us as a rice comapany dont answer them excuse.`,
+Focus on quality over quantity—make purposeful tool calls and respond once you have sufficient information to be helpful and dont chat for time pasing or irrelevant things like not about rice or our products or not a customer just chatting or asking info about anything else that is not relevant to us as a rice comapany dont answer them excuse.`;
 
-  tools: [
-    getAllProductsTool,
-    searchProductsTool,
-    getProductDetailsTool,
-    calculateOrderPriceTool,
-    createOrderTool,
-    trackOrdersTool,
-    manageCustomerTool,
-    getCustomerTool,
-  ],
-  modelSettings: { toolChoice: "required" },
-});
+export const yousufRiceTools = {
+  getAllProductsTool,
+  searchProductsTool,
+  getProductDetailsTool,
+  calculateOrderPriceTool,
+  createOrderTool,
+  trackOrdersTool,
+  manageCustomerTool,
+  getCustomerTool,
+};

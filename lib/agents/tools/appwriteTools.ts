@@ -1,4 +1,4 @@
-import { tool } from "@openai/agents";
+import { tool } from "ai";
 import { z } from "zod";
 import { headers } from "next/headers";
 import {
@@ -180,10 +180,9 @@ function validateQuantity(quantity: number): {
  * Returns comprehensive product details including pricing tiers
  */
 export const searchProductsTool = tool({
-  name: "search_products",
   description:
     "Search and browse products with full details including name, description, base price, price tiers for different quantities, specifications, and availability. Use this to help customers find products.",
-  parameters: z.object({
+  inputSchema: z.object({
     searchQuery: z
       .string()
       .nullable()
@@ -210,11 +209,6 @@ export const searchProductsTool = tool({
     inStockOnly,
     forHotelsRestaurants,
     limit,
-  }: {
-    searchQuery: string | null;
-    inStockOnly: boolean;
-    forHotelsRestaurants: boolean | null;
-    limit: number;
   }) {
     try {
       // Validate limit
@@ -229,10 +223,10 @@ export const searchProductsTool = tool({
         Query.orderDesc("$createdAt"),
       ];
 
-      // Apply search query
-      if (searchQuery && searchQuery.trim().length > 0) {
-        queries.push(Query.search("name", searchQuery.trim()));
-      }
+      // Appwrite requires fulltext index for Query.search, so we will filter in memory
+      // if (searchQuery && searchQuery.trim().length > 0) {
+      //   queries.push(Query.search("name", searchQuery.trim()));
+      // }
 
       // Apply stock filter
       if (inStockOnly) {
@@ -253,10 +247,20 @@ export const searchProductsTool = tool({
         ),
       ])) as any;
 
-      // Filter by hotel/restaurant in-memory (since field doesn't exist in DB)
       let filteredDocs = response.rows;
+
+      // Filter by search query in-memory
+      if (searchQuery && searchQuery.trim().length > 0) {
+        const queryLower = searchQuery.trim().toLowerCase();
+        filteredDocs = filteredDocs.filter((doc: any) => {
+          const searchText = `${doc.name} ${doc.description || ""}`.toLowerCase();
+          return searchText.includes(queryLower);
+        });
+      }
+
+      // Filter by hotel/restaurant in-memory (since field doesn't exist in DB)
       if (forHotelsRestaurants !== null) {
-        filteredDocs = response.rows.filter((doc: any) => {
+        filteredDocs = filteredDocs.filter((doc: any) => {
           const searchText = `${doc.name} ${
             doc.description || ""
           }`.toLowerCase();
@@ -323,10 +327,9 @@ export const searchProductsTool = tool({
  * Tool to get complete product details by ID
  */
 export const getProductDetailsTool = tool({
-  name: "get_product_details",
   description:
     "Get complete detailed information about a specific product including all pricing tiers, specifications, and availability. Use this when customer asks about a specific product.",
-  parameters: z.object({
+  inputSchema: z.object({
     productId: z.string().describe("The unique product ID"),
   }),
   async execute({ productId }) {
@@ -377,10 +380,9 @@ export const getProductDetailsTool = tool({
  * Tool to track orders and get order history
  */
 export const trackOrdersTool = tool({
-  name: "track_orders",
   description:
     "Track order status and get order history by order ID or customer phone number. Shows detailed order information including items, delivery address, and current status.",
-  parameters: z.object({
+  inputSchema: z.object({
     orderId: z
       .string()
       .nullable()
@@ -397,9 +399,6 @@ export const trackOrdersTool = tool({
   async execute({
     orderId,
     phoneNumber,
-  }: {
-    orderId: string | null;
-    phoneNumber: string | null;
   }) {
     try {
       // Validate inputs
@@ -608,9 +607,8 @@ export const trackOrdersTool = tool({
  * Provide either phoneNumber or email
  */
 export const getCustomerTool = tool({
-  name: "get_customer",
   description: "Get customer information by phone number or email.",
-  parameters: z.object({
+  inputSchema: z.object({
     phoneNumber: z
       .string()
       .nullable()
@@ -625,9 +623,6 @@ export const getCustomerTool = tool({
   async execute({
     phoneNumber,
     email,
-  }: {
-    phoneNumber: string | null;
-    email: string | null;
   }) {
     try {
       // Validate inputs
@@ -702,10 +697,9 @@ export const getCustomerTool = tool({
  * Tool to create or update customer record
  */
 export const manageCustomerTool = tool({
-  name: "manage_customer",
   description:
     "Create a new customer record or update existing customer information. Use this when customer provides their contact details for the first time or wants to update their info.",
-  parameters: z.object({
+  inputSchema: z.object({
     name: z.string().describe("Customer full name"),
     phoneNumber: z
       .string()
@@ -843,10 +837,9 @@ export const manageCustomerTool = tool({
  * Tool to calculate order total with price tiers
  */
 export const calculateOrderPriceTool = tool({
-  name: "calculate_order_price",
   description:
     "Calculate the total price for an order based on products and quantities. Shows price breakdown with any applicable discounts from bulk purchase tiers. Use this before creating an order to show customer the total cost.",
-  parameters: z.object({
+  inputSchema: z.object({
     items: z
       .array(
         z.object({
@@ -1049,10 +1042,9 @@ export const calculateOrderPriceTool = tool({
  * Tool to create a new order (REQUIRES CONFIRMATION)
  */
 export const createOrderTool = tool({
-  name: "create_order",
   description:
     'Create a new order in the system. IMPORTANT: Always get explicit customer confirmation before using this tool. Confirm: customer name, phone, delivery address, items, quantities, and total price. Ask "Shall I place this order for you?" and wait for YES.',
-  parameters: z.object({
+  inputSchema: z.object({
     customerName: z.string().describe("Customer full name"),
     phoneNumber: z.string().describe("Customer phone number with country code"),
     deliveryAddress: z.string().describe("Complete delivery address"),
@@ -1652,10 +1644,9 @@ export const createOrderTool = tool({
  * Tool to get ALL products at once (since catalog is small)
  */
 export const getAllProductsTool = tool({
-  name: "get_all_products",
   description:
     "Get a list of ALL available products in the catalog. Use this tool immediately when the conversation starts or when asked about 'what products do you have', 'show all rice', or 'prices'. This provides the full context of all products including their prices and stock status.",
-  parameters: z.object({}),
+  inputSchema: z.object({}),
   async execute() {
     try {
       // Fetch up to 100 products (we expect ~10)

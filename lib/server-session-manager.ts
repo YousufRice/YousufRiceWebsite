@@ -3,12 +3,12 @@
  * Sessions are stored in memory and cleared when server restarts or user leaves
  */
 
-import { OpenAIConversationsSession } from '@openai/agents';
+import { ModelMessage } from "ai";
 
 interface ServerSession {
   sessionId: string;
   userId: string;
-  openaiSession: OpenAIConversationsSession;
+  messages: ModelMessage[];
   createdAt: Date;
   lastAccessedAt: Date;
   expiresAt: Date;
@@ -34,7 +34,9 @@ class ServerSessionManager {
   /**
    * Create or get existing session for a user
    */
-  async getOrCreateSession(userId: string): Promise<{ sessionId: string; openaiSession: OpenAIConversationsSession }> {
+  async getOrCreateSession(
+    userId: string,
+  ): Promise<{ sessionId: string; messages: ModelMessage[] }> {
     // Check if user has an active session
     const existingSession = this.findActiveSessionByUserId(userId);
 
@@ -43,7 +45,7 @@ class ServerSessionManager {
       this.updateSessionAccess(existingSession.sessionId);
       return {
         sessionId: existingSession.sessionId,
-        openaiSession: existingSession.openaiSession
+        messages: existingSession.messages,
       };
     }
 
@@ -52,14 +54,13 @@ class ServerSessionManager {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (this.SESSION_TIMEOUT_HOURS * 60 * 60 * 1000));
 
-    // Create OpenAI session - let OpenAI generate its own conversation ID
-    // We'll track our server session ID separately
-    const openaiSession = new OpenAIConversationsSession();
+    // Initialize empty message array for the new session
+    const messages: ModelMessage[] = [];
 
     const serverSession: ServerSession = {
       sessionId,
       userId,
-      openaiSession,
+      messages,
       createdAt: now,
       lastAccessedAt: now,
       expiresAt
@@ -71,14 +72,16 @@ class ServerSessionManager {
 
     return {
       sessionId,
-      openaiSession
+      messages,
     };
   }
 
   /**
    * Get session by session ID
    */
-  getSession(sessionId: string): { sessionId: string; openaiSession: OpenAIConversationsSession } | null {
+  getSession(
+    sessionId: string,
+  ): { sessionId: string; messages: ModelMessage[] } | null {
     const session = this.sessions.get(sessionId);
 
     if (!session) {
@@ -96,7 +99,7 @@ class ServerSessionManager {
 
     return {
       sessionId: session.sessionId,
-      openaiSession: session.openaiSession
+      messages: session.messages,
     };
   }
 
@@ -238,7 +241,9 @@ class ServerSessionManager {
   /**
    * Force create a new session for a user (clear existing)
    */
-  async createNewSession(userId: string): Promise<{ sessionId: string; openaiSession: OpenAIConversationsSession }> {
+  async createNewSession(
+    userId: string,
+  ): Promise<{ sessionId: string; messages: ModelMessage[] }> {
     // Delete existing sessions for this user
     this.deleteUserSessions(userId);
 

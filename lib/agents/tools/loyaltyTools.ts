@@ -1,4 +1,4 @@
-import { tool } from "@openai/agents";
+import { tool } from "ai";
 import { z } from "zod";
 import { LoyaltyService } from "@/lib/services/loyalty-service";
 import { tablesDB, DATABASE_ID, CUSTOMERS_TABLE_ID } from "@/lib/appwrite";
@@ -14,26 +14,29 @@ function formatPhoneNumber(phone: string): string {
   return "+92" + digits;
 }
 
+const CheckLoyaltyRewardSchema = z.object({
+  phoneNumber: z
+    .string()
+    .nullable()
+    .default(null)
+    .describe("Customer phone number"),
+  email: z
+    .string()
+    .nullable()
+    .default(null)
+    .describe("Customer email address"),
+});
+
+type CheckLoyaltyRewardInput = z.infer<typeof CheckLoyaltyRewardSchema>;
+
 /**
  * Tool to check if a customer has any active loyalty rewards
  */
 export const checkLoyaltyRewardTool = tool({
-  name: "check_loyalty_reward",
   description:
     "Check if a customer has an active loyalty discount code. Use this when identifying a customer to see if they have any available rewards to redeem.",
-  parameters: z.object({
-    phoneNumber: z
-      .string()
-      .nullable()
-      .default(null)
-      .describe("Customer phone number"),
-    email: z
-      .string()
-      .nullable()
-      .default(null)
-      .describe("Customer email address"),
-  }),
-  async execute({ phoneNumber, email }) {
+  inputSchema: CheckLoyaltyRewardSchema,
+  async execute({ phoneNumber, email }: CheckLoyaltyRewardInput) {
     if (process.env.NEXT_PUBLIC_ENABLE_LOYALTY_DISCOUNT !== 'true') {
       return {
         success: false,
