@@ -5,7 +5,7 @@
   "description": "Yousuf Rice monorepo — Next.js web app + Expo mobile app",
   "scripts": {
     "dev": "turbo run dev",
-    "build": "turbo run build && rm -rf .next && cp -rL apps/web/.next .next",
+    "build": "turbo run build && rm -rf .next && cp -rL apps/web/.next .next && cp apps/web/next.config.ts next.config.ts",
     "lint": "turbo run lint",
     "web": "pnpm --filter @yousuf-rice/web dev",
     "mobile": "pnpm --filter @yousuf-rice/mobile start",
