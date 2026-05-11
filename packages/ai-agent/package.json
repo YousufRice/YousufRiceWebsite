@@ -1,0 +1,15 @@
+{
+  "name": "@yousuf-rice/ai-agent",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@yousuf-rice/api-client": "workspace:*",
+    "ai": "^6.0.177",
+    "@ai-sdk/openai": "^3.0.63"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@yousuf-rice/hooks",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@yousuf-rice/api-client": "workspace:*",
+    "@yousuf-rice/config": "workspace:*",
+    "@yousuf-rice/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/react": "^19.2.14"
+  }
+}

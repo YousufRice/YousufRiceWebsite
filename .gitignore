@@ -20,6 +20,14 @@
 # production
 /build
 
+# expo
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/web-build/
+*.jks
+*.key
+*.mobileprovision
+
 # misc
 .DS_Store
 *.pem
@@ -39,5 +47,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# turbo
+.turbo
 
 certificates
