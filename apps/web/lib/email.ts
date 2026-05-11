@@ -11,15 +11,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verify transporter configuration (non-blocking)
-transporter.verify()
-  .then(() => {
+let verified = false;
+
+// Lazy verify — only runs on first actual send, not at module load/build time
+async function verifyTransporter() {
+  if (verified) return;
+  try {
+    await transporter.verify();
+    verified = true;
     console.log('✅ SMTP server is ready to send emails');
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error('❌ SMTP connection error: ', error);
     console.error('Email functionality may not work. Please check SMTP_PASSWORD in .env.local');
-  });
+  }
+}
 
 interface OrderItem {
   productName: string;
@@ -347,6 +352,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationData) {
   };
 
   try {
+    await verifyTransporter();
     const info = await transporter.sendMail(mailOptions);
     console.log('Order confirmation email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
@@ -456,6 +462,7 @@ export async function sendVerificationOTP(email: string, otp: string, name?: str
   };
 
   try {
+    await verifyTransporter();
     const info = await transporter.sendMail(mailOptions);
     console.log('Verification OTP email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
@@ -558,6 +565,7 @@ export async function sendPasswordResetOTP(email: string, otp: string, name?: st
   };
 
   try {
+    await verifyTransporter();
     const info = await transporter.sendMail(mailOptions);
     console.log('Password reset OTP email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
@@ -685,6 +693,7 @@ export async function sendContactFormEmail(data: ContactFormData) {
   };
 
   try {
+    await verifyTransporter();
     const info = await transporter.sendMail(mailOptions);
     console.log('Contact form email sent:', info.messageId);
     return { success: true, messageId: info.messageId };

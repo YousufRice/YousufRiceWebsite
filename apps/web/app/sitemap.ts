@@ -19,7 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: [Query.equal('available', true)] });
       products = response.rows as unknown as Product[];
     } catch (error) {
-      console.error('Error fetching products for sitemap:', error);
+      // Suppress expected build-time fetch errors (no network during prerender)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching products for sitemap:', error);
+      }
       // Return empty products array to allow build to continue
     }
   } else {
