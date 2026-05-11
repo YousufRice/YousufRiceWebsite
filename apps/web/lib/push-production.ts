@@ -1449,8 +1449,8 @@ export function verifyPushSecret(secret: string): boolean {
   return result === 0;
 }
 
-// Initialize on module load
-initializeVapid();
+// VAPID is initialized lazily when API routes actually need it,
+// so static generation during build doesn't trigger the warning.
 
 // Re-export webpush for direct access if needed
 export { webpush };
