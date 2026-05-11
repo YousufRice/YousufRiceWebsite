@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Output build to repo root so monorepo deployment platforms find .next
-  distDir: "../../.next",
-
   // ============================================
   // Next.js 16 Advanced Features
   // ============================================
