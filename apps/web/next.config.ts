@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   // But disable it for API routes to avoid build-time authentication issues
   cacheComponents: true,
 
+  // Required for Appwrite SSR adapter — produces a minimal standalone server
+  output: "standalone",
+
   // Configure cache profiles for optimal performance
   cacheLife: {
     // Default profile for most content
