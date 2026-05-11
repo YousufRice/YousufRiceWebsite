@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   
   // Only fetch products if we have valid database configuration
   // This prevents build errors when database isn't accessible during build time
-  if (DATABASE_ID && PRODUCTS_TABLE_ID && DATABASE_ID !== 'undefined' && PRODUCTS_TABLE_ID !== 'undefined') {
+  if (DATABASE_ID && PRODUCTS_TABLE_ID) {
     try {
       const response = await tablesDB.listRows({ databaseId: DATABASE_ID, tableId: PRODUCTS_TABLE_ID, queries: [Query.equal('available', true)] });
       products = response.rows as unknown as Product[];
